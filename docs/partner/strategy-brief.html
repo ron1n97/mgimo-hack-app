@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Деканат+ — стратегия для команды · MGIMO×AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #0b1c2c;
+      --ink-2: #163047;
+      --cream: #f3eadc;
+      --cream-2: #e8dcc8;
+      --copper: #c45c26;
+      --copper-2: #e07a3a;
+      --fog: #8aa0b4;
+      --ok: #2f6f5e;
+      --line: rgba(243, 234, 220, 0.14);
+      --card: rgba(22, 48, 71, 0.72);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Manrope, system-ui, sans-serif;
+      color: var(--cream);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(196, 92, 38, 0.22), transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, rgba(47, 111, 94, 0.18), transparent 50%),
+        linear-gradient(180deg, #07131e 0%, var(--ink) 40%, #0e2436 100%);
+      min-height: 100vh;
+    }
+    a { color: var(--copper-2); }
+    .wrap { width: min(1100px, calc(100% - 2rem)); margin: 0 auto; }
+    header.hero {
+      padding: 4.5rem 0 3rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .eyebrow {
+      display: inline-flex; gap: .5rem; align-items: center;
+      font-size: .75rem; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--fog); font-weight: 600;
+    }
+    .eyebrow span {
+      width: .45rem; height: .45rem; border-radius: 50%; background: var(--copper);
+    }
+    h1 {
+      font-family: Spectral, Georgia, serif;
+      font-weight: 600;
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      line-height: 1.05;
+      margin: 1rem 0 .75rem;
+      max-width: 14ch;
+    }
+    .lede {
+      font-size: 1.15rem;
+      max-width: 42rem;
+      color: var(--cream-2);
+      line-height: 1.55;
+    }
+    .meta {
+      display: flex; flex-wrap: wrap; gap: .6rem;
+      margin-top: 1.75rem;
+    }
+    .pill {
+      border: 1px solid var(--line);
+      background: rgba(11, 28, 44, .55);
+      padding: .45rem .8rem;
+      border-radius: 999px;
+      font-size: .8rem;
+      color: var(--cream-2);
+    }
+    nav.toc {
+      position: sticky; top: 0; z-index: 20;
+      backdrop-filter: blur(12px);
+      background: rgba(7, 19, 30, .78);
+      border-bottom: 1px solid var(--line);
+    }
+    nav.toc .wrap {
+      display: flex; gap: 1rem; overflow-x: auto;
+      padding: .85rem 0; font-size: .85rem;
+    }
+    nav.toc a { color: var(--cream-2); text-decoration: none; white-space: nowrap; }
+    nav.toc a:hover { color: #fff; }
+    section { padding: 3.25rem 0; border-bottom: 1px solid var(--line); }
+    h2 {
+      font-family: Spectral, Georgia, serif;
+      font-size: clamp(1.7rem, 3vw, 2.35rem);
+      margin: 0 0 1rem;
+    }
+    h3 { margin: 0 0 .5rem; font-size: 1.05rem; }
+    p, li { line-height: 1.55; color: var(--cream-2); }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    @media (max-width: 900px) {
+      .grid-4 { grid-template-columns: 1fr 1fr; }
+      .grid-2, .split { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .grid-4 { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 1.15rem 1.2rem;
+    }
+    .card.accent { border-color: rgba(196, 92, 38, .45); }
+    .num {
+      font-family: Spectral, Georgia, serif;
+      font-size: 2rem;
+      color: var(--copper-2);
+      line-height: 1;
+      margin-bottom: .4rem;
+    }
+    .tag {
+      display: inline-block;
+      font-size: .7rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--fog);
+      margin-bottom: .35rem;
+    }
+    .split {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    .phone {
+      background: #050d14;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: .7rem;
+      box-shadow: 0 30px 80px rgba(0,0,0,.35);
+    }
+    .phone img {
+      width: 100%;
+      display: block;
+      border-radius: 20px;
+    }
+    .caption {
+      font-size: .8rem;
+      color: var(--fog);
+      margin-top: .65rem;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .92rem;
+    }
+    th, td {
+      text-align: left;
+      padding: .7rem .55rem;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    th { color: var(--fog); font-weight: 600; font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; }
+    .idea {
+      border-left: 3px solid var(--copper);
+      padding-left: 1rem;
+      margin: 1rem 0;
+    }
+    .roles {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    footer {
+      padding: 2.5rem 0 3.5rem;
+      color: var(--fog);
+      font-size: .85rem;
+    }
+    .formula {
+      font-family: Spectral, Georgia, serif;
+      font-size: 1.35rem;
+      color: #fff;
+      background: linear-gradient(135deg, rgba(196,92,38,.2), rgba(47,111,94,.15));
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 1.1rem 1.25rem;
+      margin: 1.25rem 0 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow"><span></span> MGIMO×AI · Вайб-кодинг · бриф для команды</div>
+      <h1>Деканат+</h1>
+      <p class="lede">
+        Защита стратегии для Максима и Романа: мы не «накидаем ЛК».
+        Мы <strong style="color:#fff">покупаем среднее по 4 критериям жюри</strong> —
+        и под каждый критерий уже есть конкретный ход.
+      </p>
+      <div class="meta">
+        <span class="pill">Ставка: Option C+</span>
+        <span class="pill">Скин: МГИМО (концепт)</span>
+        <span class="pill">Дедлайн сдачи: 22.11.2026</span>
+        <span class="pill">Команда: 2 человека</span>
+      </div>
+      <p class="formula">Итог = среднее экспертов по (Идея + ИИ-процесс + Имплементация + Качество) ÷ 4</p>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="wrap">
+      <a href="#why">Зачем так</a>
+      <a href="#c1">Кр.1 Идея</a>
+      <a href="#c2">Кр.2 ИИ</a>
+      <a href="#c3">Кр.3 Имплем.</a>
+      <a href="#c4">Кр.4 Качество</a>
+      <a href="#product">Продукт</a>
+      <a href="#mocks">Мокапы</a>
+      <a href="#ideas">Идеи+</a>
+      <a href="#plan">План / роли</a>
+    </div>
+  </nav>
+
+  <section id="why">
+    <div class="wrap">
+      <h2>Почему идём от критериев</h2>
+      <div class="grid-2">
+        <div class="card accent">
+          <h3>Жюри считает среднее, не «вау-одну фичу»</h3>
+          <p>Регламент: 4 критерия × до 10, итог — среднее всех экспертов. Красивый UI без PDF процесса или герой-фича без mobile = проигрыш по среднему.</p>
+        </div>
+        <div class="card">
+          <h3>Толпа сделает CRUD + фиолетовый чат</h3>
+          <p>Наш ответ: боли → сценарий → ИИ на данных кабинета → forensic process-log → RU-хост. Каждое «да» в скоупе должно поднимать критерий; иначе вычёркиваем.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="c1">
+    <div class="wrap">
+      <div class="tag">Критерий 1 · до 10</div>
+      <h2>Проработанность идеи</h2>
+      <p>Жюри смотрит: понятна ли боль, полные ли сценарии ядра, есть ли смелость.</p>
+      <div class="grid-2" style="margin-top:1.25rem">
+        <div class="card">
+          <div class="num">01</div>
+          <h3>Опросник → в группу</h3>
+          <p>Широкий срез: частоты болей (расписание / справки / «как дела» / уведомления). Черновик уже в <code>docs/research/survey-draft.md</code>.</p>
+        </div>
+        <div class="card">
+          <div class="num">02</div>
+          <h3>Фокус-группа студентов</h3>
+          <p>Глубокий срез: формулировки, сценарии, «как должно быть». Два исследования разного масштаба = броня кр.1 в PDF.</p>
+        </div>
+      </div>
+      <div class="card" style="margin-top:1rem">
+        <h3>Что продвигаем в продукте (из PAINS)</h3>
+        <p>Фрагментация сервисов · ад с телефона · чёрный ящик статуса справки · поздние переносы · «как у меня дела» · тонущие дедлайны. Плюс в PDF называем боли препода/деканата даже без их кабинета в v1.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="c2">
+    <div class="wrap">
+      <div class="tag">Критерий 2 · до 10</div>
+      <h2>Масштаб нейротехнологий</h2>
+      <div class="grid-2">
+        <div class="card accent">
+          <h3>Слой A — как собираем</h3>
+          <ul>
+            <li>Код и дизайн — через ИИ-ассистентов (Cursor и др.)</li>
+            <li>Стратегия до кода — скилл <strong>/idea</strong> (P0→P4, Options, Monte Carlo)</li>
+            <li><code>docs/process-log/</code> + PDF сдачи: промпты, фейлы, субагенты</li>
+            <li><code>CLAUDE.md</code> / SCOPE — инструкции для агентов</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Слой B — ИИ внутри продукта</h3>
+          <ul>
+            <li><strong>AI1</strong> Черновик заявки/справки из контекста кабинета</li>
+            <li><strong>AI2</strong> «Что делать дальше» по успеваемости</li>
+            <li><strong>AI3</strong> «Объясни» перенос / дедлайн в ленте</li>
+          </ul>
+          <p>Не FAQ-бот «спроси что угодно про вуз».</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="c3">
+    <div class="wrap">
+      <div class="tag">Критерий 3 · до 10</div>
+      <h2>Имплементация</h2>
+      <p><strong>Sign-off на Романе:</strong> агент собирает, Роман подтверждает «можно жюри».</p>
+      <table>
+        <thead><tr><th>Must</th><th>Как доказываем</th></tr></thead>
+        <tbody>
+          <tr><td>Живой URL из РФ без VPN</td><td>Timeweb/Yandex + mirror (не sole Vercel/Railway)</td></tr>
+          <tr><td>Ядро 5/5 на телефоне ≥360px</td><td>Демо-скрипт + чужой телефон</td></tr>
+          <tr><td>2 аккаунта, изоляция</td><td>IDOR-попытка в демо</td></tr>
+          <tr><td>Пароли/секреты</td><td>Хеш паролей, env only</td></tr>
+          <tr><td>Только вымышленные данные</td><td>Seed A/B; RUZ публичный + fallback</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="c4">
+    <div class="wrap">
+      <div class="tag">Критерий 4 · до 10</div>
+      <h2>Качество</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Дисциплина сборки</h3>
+          <p>Боевой <code>CLAUDE.md</code>: TDD на критичной логике, мелкие коммиты, ADR, questions, pre-commit, release log (<code>CHANGELOG.md</code>).</p>
+        </div>
+        <div class="card">
+          <h3>UX-стандарт</h3>
+          <p>Mobile-first · status theater заявок · empty/error/loading · свой визуал (ink/cream/copper), не purple-SaaS и не копия лого МГИМО.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="product">
+    <div class="wrap">
+      <h2>Что такое продукт одной фразой</h2>
+      <p class="lede" style="margin:0">
+        Личный кабинет студента «цифровой деканат будущего»: всё ядро брифа в одном месте,
+        один hero-сценарий (учёба → заявка → статус), ИИ на данных кабинета,
+        живое расписание RUZ МГИМО + seed fallback. Это <em>концепт конкурса</em>, не офиц. сервис.
+      </p>
+      <div class="grid-4" style="margin-top:1.5rem">
+        <div class="card"><h3>Сегодня</h3><p>Home: пары + риск + CTA</p></div>
+        <div class="card"><h3>Расписание</h3><p>Неделя, переносы, RUZ</p></div>
+        <div class="card"><h3>Учёба</h3><p>Оценки + AI2 next actions</p></div>
+        <div class="card"><h3>Заявки</h3><p>Статус-таймлайн + AI1</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="mocks">
+    <div class="wrap">
+      <h2>Наброски экранов (не финал)</h2>
+      <p>Направление визуала для согласования. Реальный UI соберём в коде; это «о чём спорим».</p>
+      <div class="split" style="margin-top:1.5rem">
+        <div>
+          <div class="phone"><img src="assets/mock-home-phone.jpg" alt="Мокап: Сегодня / Home" /></div>
+          <p class="caption">Home «Сегодня» — боль фрагментации + academic risk + вход в ИИ-заявку</p>
+        </div>
+        <div>
+          <div class="phone"><img src="assets/mock-request-ai.jpg" alt="Мокап: Заявка с ИИ" /></div>
+          <p class="caption">Заявка — status theater + черновик ИИ (студент всегда подтверждает)</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ideas">
+    <div class="wrap">
+      <h2>Идеи сверху (если буфер)</h2>
+      <div class="idea">
+        <h3>«Режим сессии»</h3>
+        <p>Отдельный вид home за 2 недели до сессии: зачёты/экзамены, что ещё не закрыто, какие справки часто просят. Сильный кр.1 без нового модуля.</p>
+      </div>
+      <div class="idea">
+        <h3>Security как сцена демо</h3>
+        <p>В видео: логин B → вставка URL заявки A → «нет доступа». Превращает требование брифа в вау для кр.3/4.</p>
+      </div>
+      <div class="idea">
+        <h3>Карта болей в онбординге</h3>
+        <p>Первый заход: «что бесит больше всего?» → персонализирует порядок виджетов (даже на seed). Мост к опросу.</p>
+      </div>
+      <div class="idea">
+        <h3>Не делать в v1</h3>
+        <p>Dual СамГТУ, LMS, админка сотрудника как столп, FAQ-чат без контекста — жрёт срок и среднее.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="plan">
+    <div class="wrap">
+      <h2>Роли и ближайшие шаги</h2>
+      <div class="roles">
+        <div class="card accent">
+          <h3>Максим (капитан)</h3>
+          <ul>
+            <li>Сдача в ЛК, документы</li>
+            <li>Пост опросника в группу</li>
+            <li>RU-хост + mirror (R1)</li>
+            <li>Финальная сборка PDF</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Роман</h3>
+          <ul>
+            <li>Билд с ИИ + process-log / CHANGELOG</li>
+            <li>Фокус-группа / разбор ответов</li>
+            <li>Sign-off имплементации (кр.3)</li>
+            <li>Видео-демо с телефона</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card" style="margin-top:1rem">
+        <h3>Сейчас (до кода / параллельно)</h3>
+        <ol>
+          <li>Согласовать этот бриф (ты здесь)</li>
+          <li>Завести форму опроса и кинуть в группу</li>
+          <li>Назначить слот ФГ</li>
+          <li>Сказать агенту «собирай» — скелет ЛК + AI1 stub</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <p>Концепт для MGIMO×AI Challenge · не официальный сервис вуза · без товарного знака МГИМО.</p>
+      <p>Канон: <code>CLAUDE.md</code>, <code>docs/CRITERIA.md</code>, хаб <code>~/ideas/mgimo-hack-app/digital-dekanat/</code>. Версия брифа: 2026-11-04.</p>
+      <p>Открыть файл: <code>docs/partner/strategy-brief.html</code></p>
+    </div>
+  </footer>
+</body>
+</html>

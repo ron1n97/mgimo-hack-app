@@ -1,12 +1,10 @@
-# Research — критерий 1 (проработанность)
+# Research
 
-Два исследования разного масштаба (owner lock 2026-11-04):
+| Файл | О чём |
+|------|--------|
+| [competitive-landscape-ru-2026-11-08.md](./competitive-landscape-ru-2026-11-08.md) | РФ: МГИМО, ITMO, ВШЭ, Modeus, 1С, Галактика, Дневач/Кампус… |
+| [student-experience-platforms-benchmark-2026-11-08.md](./student-experience-platforms-benchmark-2026-11-08.md) | Мир: Canvas, Blackboard, Workday, Ellucian, AI-копилоты |
+| [ideal-product-backlog.md](./ideal-product-backlog.md) | **Идеальный Деканат+** — что берём у кого, фазы 0/1/2 |
+| [survey-draft.md](./survey-draft.md) | Черновик опроса в группу |
 
-| ID | Формат | Масштаб | Цель | Статус |
-|----|--------|---------|------|--------|
-| R-SURVEY | Опросник → студенческая группа (чат/VK/TG) | широкий, быстрый N | Частоты болей S1–S8, приоритеты разделов | todo |
-| R-FG | Фокус-группа студентов | узкий, глубокий | Сценарии, формулировки, «как должно быть» | todo |
-
-Артефакты класть сюда: `survey-*.md`, `focus-group-*.md`, сырые ответы (без реальных ФИО — аноним/псевдонимы).
-
-Связь: `docs/PAINS.md` обновлять фактами из R-SURVEY/R-FG (менять H→F с источником).
+Читать порядок: landscape → global benchmark → **ideal backlog**.

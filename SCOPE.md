@@ -1,44 +1,31 @@
-# SCOPE LOCK — digital-dekanat (Option C+)
-Updated: 2026-11-04 · Owner: criteria-first + AI imba + pains
+# SCOPE LOCK — Деканат+ (long platform)
 
-Читать вместе с `CLAUDE.md`, `docs/CRITERIA.md`, `docs/PAINS.md`, `docs/AI_FEATURES.md`.
+Updated: 2026-11-08 · Owner: long-horizon, all surfaces
 
-## Y — must ship
+См. `docs/OWNER_DECISIONS.md`, `docs/adr/0003-long-horizon-all-surfaces.md`.
 
-### Бриф-ядро
-- [ ] Auth + 2 student profiles (fake PII)
-- [ ] Schedule: today + week (RUZ MGIMO + seed fallback)
-- [ ] Grades + «how am I doing»
-- [ ] Requests/certificates + status (**status theater**)
-- [ ] Notifications
-- [ ] Mobile ≥360px
-- [ ] Data isolation (no IDOR)
-- [ ] Password hashing; secrets in env only
-- [ ] Contest disclaimer; no official uni logo
-- [ ] RU-reachable host + mirror
-- [ ] Process PDF / process-log from day 1
-- [ ] Jury accounts documented
+## Горизонт
+Делаем **платформу надолго**. Сдача конкурса 22.11 = важный релиз, не потолок.
 
-### Имба (owner lock)
-- [ ] Pains surfaced in UI/demo/PDF (`docs/PAINS.md`)
-- [ ] Every feature maps to ≥1 criterion (`docs/CRITERIA.md`)
-- [ ] **AI1** draft request/certificate from cabinet context
-- [ ] **AI2** next actions on grades
-- [ ] **AI3** explain notification / schedule change
-- [ ] Narrative seeds: student A (risk) + student B (calm)
+## Y — строим
+- Web + **PWA**
+- **Mobile** (кроссплатформа, один код)
+- **Telegram bot**
+- Auth: регистрация + логин (нормальная схема)
+- Postgres + Redis + workers в **Docker Compose** (+ путь к CI deploy)
+- Расписание МГИМО: sync групп через RUZ
+- Успеваемость, заявки/справки+статус, уведомления
+- In-product AI (AI1–AI3) через **Z Code / OpenRouter-compatible**
+- Кабинет **студента и сотрудника**
+- Боли + критерии + process-log + CHANGELOG
+- Конкурсный дисклеймер, fake PII в демо-данных, без лого вуза
 
-## N — forbidden until freeze
-- SamGTU dual-skin
-- LMS / courses as pillar
-- Employee admin as blocker (seed OK only if free)
-- Generic FAQ chatbot as only AI
-- Extra modules without removing a Y item
-- Vercel/Railway as sole public URL
-- Real PII / real uni systems / official logo
+## N — всё ещё нельзя
+- Реальные ПДн / боевые логины вуза
+- Официальный логотип МГИМО
+- Секреты в git
+- SQLite как основная БД
+- Sole Vercel/Railway как единственный прод для жюри из РФ
 
-## Kill-switch → Checklist Floor (A)
-If by D3 no schedule path (RUZ|seed) OR by D10 mobile core red → keep AI as **mocked UI** + finish brief Y; do not add LMS.
-
-## Arbiter
-Dispute → delete a feature, never add. Criteria > pet feature.  
-Captains: Maxim (submit), Roman (build).
+## Релизы
+Режем на рабочие куски в `CHANGELOG.md`. Не «один коммит = весь мир».

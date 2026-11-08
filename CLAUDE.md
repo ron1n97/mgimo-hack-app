@@ -1,6 +1,6 @@
 # mgimo-hack-app — Цифровой деканат будущего
 
-MGIMO×AI Challenge · **Вайб-кодинг** · Option C+ (criteria-first · AI imba · pains).
+MGIMO×AI Challenge · **Вайб-кодинг** · long-horizon platform (см. `docs/OWNER_DECISIONS.md`).
 
 Канон стратегии: `~/ideas/mgimo-hack-app/digital-dekanat/`  
 Vault: `/Users/ron1n97/ron1n_vault/ideas/digital-dekanat/`
@@ -8,11 +8,13 @@ Vault: `/Users/ron1n97/ron1n_vault/ideas/digital-dekanat/`
 ## Имба (не спорно)
 
 1. Критерии жюри на 100% → `docs/CRITERIA.md`
-2. In-product ИИ → `docs/AI_FEATURES.md`
+2. In-product ИИ → `docs/AI_FEATURES.md` · провайдер **Z Code (OpenRouter-compatible)**
 3. Боли стейкхолдеров → `docs/PAINS.md` + исследования → `docs/research/`
 4. Всё через ИИ + документация процесса → `docs/process-log/` + PDF сдачи
 5. Качество как в боевых репо: TDD, pre-commit, ADR, мелкие коммиты
-6. Release log обязательно → `CHANGELOG.md` / `docs/releases/`
+6. Release log → `CHANGELOG.md` / `docs/releases/`
+7. Поверхности: **Web/PWA + Mobile + Telegram** · студент **и** сотрудник
+8. Infra: Docker · Postgres · Redis · workers · без SQLite-SoT
 
 ## Критерии → кто закрывает
 
@@ -105,9 +107,15 @@ URL из РФ без VPN до 28.11.2026. Не sole Vercel/Railway. Mirror об�
 
 ---
 
-## Стек (дефолт)
+## Стек (зафиксирован направлением 0003)
 
-Next.js App Router + TypeScript · session auth · SQLite/Postgres · RUZ + seed · RU-хост.  
+- Web/PWA: Next.js (или BFF+отдельный фронт — ADR при скаффолде)
+- Mobile: Expo / React Native (общий API с web)
+- Bot: Telegram
+- API + auth (JWT/session) · **Postgres** · Redis · RUZ sync worker
+- LLM: OpenAI-compatible client → Z Code base URL + key из env
+- Docker Compose (+ CI deploy на RU-хост владельца)
+
 Смена — только ADR.
 
 ## Команда

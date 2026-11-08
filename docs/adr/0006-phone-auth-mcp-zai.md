@@ -19,3 +19,8 @@
 + Единая поверхность tools для бота и IDE.
 + Auth без пароля в Telegram при привязанном телефоне.
 − Нужен выделенный BotFather-бот; демо-телефоны вымышленные.
+
+## Агент (дополнение)
+- ReAct-подобный multi-round tool loop + память диалога.
+- HITL на write/sensitive (`create_request`, `update_request_status`) — кнопки в Telegram, gate вне промпта.
+- MCP annotations `readOnlyHint` / `destructiveHint` для IDE-клиентов.

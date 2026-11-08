@@ -9,3 +9,5 @@ export {
 export type { CabinetClientOptions } from './client';
 export { executeCabinetTool } from './execute';
 export type { ToolArgs } from './execute';
+export { TOOL_RISK, toolRisk, needsApproval } from './policy';
+export type { ToolRisk } from './policy';

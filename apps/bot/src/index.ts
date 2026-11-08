@@ -1,12 +1,22 @@
-import { Bot, GrammyError, HttpError, Keyboard } from 'grammy';
+import { Bot, GrammyError, HttpError, InlineKeyboard, Keyboard } from 'grammy';
 import {
   CabinetClient,
   loginByEmail,
   loginByPhone,
 } from '@dekanat/cabinet-tools';
 import { DEMO_ACCOUNTS } from '@dekanat/shared';
+import { runCabinetAgent } from './agent';
+import {
+  createApproval,
+  decideApproval,
+  formatImpact,
+} from './approvals';
+import {
+  appendTurn,
+  clearHistory,
+  historyForModel,
+} from './memory';
 import { clearSession, getSession, setSession } from './session';
-import { runCabinetAgent } from './llm';
 
 function loadEnvFile(path: string) {
   try {
@@ -72,29 +82,65 @@ function userLabel(user: unknown): string {
   );
 }
 
+async function profileHint(client: CabinetClient): Promise<string> {
+  try {
+    const me = (await client.getProfile()) as {
+      role?: string;
+      phoneE164?: string | null;
+      studentProfile?: {
+        fullName?: string;
+        groupLabel?: string;
+        course?: number;
+      } | null;
+      staffProfile?: { fullName?: string; department?: string } | null;
+    };
+    if (me.studentProfile) {
+      return `${me.studentProfile.fullName}, ${me.studentProfile.groupLabel}, курс ${me.studentProfile.course}, role=${me.role}`;
+    }
+    if (me.staffProfile) {
+      return `${me.staffProfile.fullName}, ${me.staffProfile.department}, role=${me.role}`;
+    }
+    return `role=${me.role}`;
+  } catch {
+    return '';
+  }
+}
+
 bot.command('start', async (ctx) => {
-  const demos = DEMO_ACCOUNTS.map(
-    (a) => `• ${a.phone} → ${a.email}`,
-  ).join('\n');
+  const demos = DEMO_ACCOUNTS.map((a) => `• ${a.phone} → ${a.email}`).join(
+    '\n',
+  );
   await ctx.reply(
     [
-      'Деканат+ — ИИ-бот кабинета (концепт, не офиц. сервис вуза).',
+      'Деканат+ — реактивный ИИ-агент кабинета (концепт, не офиц. сервис).',
       '',
-      'Авторизация: поделитесь контактом (номер должен быть привязан к аккаунту).',
+      '1) Поделитесь контактом (номер = аккаунт).',
+      '2) Пишите обычным текстом — агент сам дергает tools.',
+      '3) Создание заявки / смена статуса — кнопки «Подтвердить / Отклонить».',
+      '',
       'Демо-номера:',
       demos,
       '',
-      `Или /login email password · веб: ${webUrl}`,
-      'После входа пишите обычным текстом — ИИ дергает tools кабинета (расписание, оценки, заявки…).',
-      '/logout — выйти · /whoami — кто я',
+      `/login email password · веб: ${webUrl}`,
+      '/whoami · /logout · /reset (очистить память диалога)',
     ].join('\n'),
     { reply_markup: contactKeyboard },
   );
 });
 
 bot.command('logout', async (ctx) => {
-  if (ctx.from) clearSession(ctx.from.id);
-  await ctx.reply('Сессия сброшена.', { reply_markup: contactKeyboard });
+  if (ctx.from) {
+    clearSession(ctx.from.id);
+    clearHistory(ctx.from.id);
+  }
+  await ctx.reply('Сессия и память сброшены.', {
+    reply_markup: contactKeyboard,
+  });
+});
+
+bot.command('reset', async (ctx) => {
+  if (ctx.from) clearHistory(ctx.from.id);
+  await ctx.reply('Память диалога очищена. Сессия входа сохранена.');
 });
 
 bot.command('whoami', async (ctx) => {
@@ -110,24 +156,9 @@ bot.command('whoami', async (ctx) => {
     accessToken: s.accessToken,
   });
   try {
-    const me = (await client.getProfile()) as {
-      email?: string;
-      role?: string;
-      phoneE164?: string;
-      studentProfile?: { fullName?: string; groupLabel?: string };
-    };
+    const hint = await profileHint(client);
     await ctx.reply(
-      [
-        s.label ? `Сессия: ${s.label}` : 'Сессия активна',
-        me.email ? `email: ${me.email}` : '',
-        me.role ? `role: ${me.role}` : '',
-        me.phoneE164 ? `phone: ${me.phoneE164}` : '',
-        me.studentProfile?.groupLabel
-          ? `группа: ${me.studentProfile.groupLabel}`
-          : '',
-      ]
-        .filter(Boolean)
-        .join('\n'),
+      [`Сессия: ${s.label ?? 'ok'}`, hint].filter(Boolean).join('\n'),
     );
   } catch (err) {
     await ctx.reply(`Профиль: ${String(err)}`);
@@ -148,8 +179,9 @@ bot.command('login', async (ctx) => {
     if (!ctx.from) return;
     const label = userLabel(auth.user);
     setSession(ctx.from.id, auth.accessToken, label);
+    clearHistory(ctx.from.id);
     await ctx.reply(
-      `Ок, вошли как ${label}. Пишите вопрос текстом — ИИ с tools кабинета.`,
+      `Ок, ${label}. Пишите текст — агент с tools + подтверждение мутаций.`,
       { reply_markup: { remove_keyboard: true } },
     );
   } catch (err) {
@@ -160,34 +192,51 @@ bot.command('login', async (ctx) => {
 bot.on('message:contact', async (ctx) => {
   const contact = ctx.message.contact;
   if (!ctx.from) return;
-  // Only accept own contact
   if (contact.user_id && contact.user_id !== ctx.from.id) {
     await ctx.reply('Нужен ваш собственный контакт из Telegram.');
     return;
   }
-  const phone = contact.phone_number;
   try {
-    const auth = await loginByPhone(apiUrl, phone, String(ctx.from.id));
+    const auth = await loginByPhone(
+      apiUrl,
+      contact.phone_number,
+      String(ctx.from.id),
+    );
     const label = userLabel(auth.user);
     setSession(ctx.from.id, auth.accessToken, label);
+    clearHistory(ctx.from.id);
     await ctx.reply(
       [
         `Вошли как ${label}.`,
-        'Номер привязан к аккаунту — доступны действия кабинета через ИИ.',
-        'Примеры: «что сегодня?», «расписание на неделю», «мои долги», «создай заявку на справку…»',
+        'Агент: память диалога, чтение без спроса, запись — только после ваших кнопок.',
+        'Примеры: «что сегодня», «долги и что делать», «черновик справки для военкомата».',
       ].join('\n'),
       { reply_markup: { remove_keyboard: true } },
     );
   } catch (err) {
     await ctx.reply(
       [
-        `Не нашли аккаунт по номеру ${phone}.`,
-        'Демо: +79001111111 (Анна), +79002222222 (Борис), +79003333333 (staff).',
-        'Либо /login email password',
+        `Не нашли аккаунт по номеру ${contact.phone_number}.`,
+        'Демо: +79001111111 / +79002222222 / +79003333333',
         String(err),
       ].join('\n'),
       { reply_markup: contactKeyboard },
     );
+  }
+});
+
+bot.callbackQuery(/^ap:(ok|no):(.+)$/, async (ctx) => {
+  const ok = ctx.match[1] === 'ok';
+  const id = ctx.match[2];
+  const decided = decideApproval(id, ok);
+  await ctx.answerCallbackQuery({
+    text: decided ? (ok ? 'Подтверждено' : 'Отклонено') : 'Устарело',
+  });
+  try {
+    await ctx.editMessageReplyMarkup({ reply_markup: undefined });
+    await ctx.reply(ok ? '✅ Действие подтверждено, продолжаю…' : '❌ Отклонено.');
+  } catch {
+    /* message may be old */
   }
 });
 
@@ -196,7 +245,7 @@ bot.on('message:text', async (ctx) => {
   if (!text || text.startsWith('/')) return;
 
   const s = ctx.from ? getSession(ctx.from.id) : undefined;
-  if (!s) {
+  if (!s || !ctx.from) {
     await ctx.reply('Сначала войдите контактом или /login.', {
       reply_markup: contactKeyboard,
     });
@@ -208,24 +257,77 @@ bot.on('message:text', async (ctx) => {
     return;
   }
 
-  await ctx.replyWithChatAction('typing');
   const client = new CabinetClient({
     apiUrl,
     accessToken: s.accessToken,
   });
+  const hint = await profileHint(client);
+  const telegramId = ctx.from.id;
+
+  let statusMsgId: number | undefined;
+  const statusChatId = ctx.chat.id;
+
+  async function setStatus(line: string) {
+    await ctx.replyWithChatAction('typing');
+    try {
+      if (statusMsgId == null) {
+        const m = await ctx.reply(`⏳ ${line}`);
+        statusMsgId = m.message_id;
+      } else {
+        await bot.api.editMessageText(
+          statusChatId,
+          statusMsgId,
+          `⏳ ${line}`,
+        );
+      }
+    } catch {
+      /* ignore edit races */
+    }
+  }
 
   try {
     const answer = await runCabinetAgent({
       llm: { apiKey: zKey, baseUrl: zBase, model: zModel },
       client,
       userText: text,
+      history: historyForModel(telegramId),
+      label: s.label,
+      profileHint: hint,
+      hooks: {
+        onStatus: setStatus,
+        requestApproval: async (toolName, args) => {
+          const { id, promise } = createApproval({
+            telegramId,
+            toolName,
+            args,
+          });
+          const kb = new InlineKeyboard()
+            .text('✅ Подтвердить', `ap:ok:${id}`)
+            .text('❌ Отклонить', `ap:no:${id}`);
+          await ctx.reply(
+            [
+              '⚠️ Нужно ваше подтверждение (агент не пишет в API без вас):',
+              formatImpact(toolName, args),
+            ].join('\n'),
+            { reply_markup: kb },
+          );
+          return promise;
+        },
+      },
     });
-    // Telegram limit
-    if (answer.length > 4000) {
-      await ctx.reply(answer.slice(0, 3900) + '\n…');
-    } else {
-      await ctx.reply(answer);
+
+    if (statusMsgId != null) {
+      try {
+        await bot.api.deleteMessage(statusChatId, statusMsgId);
+      } catch {
+        /* */
+      }
     }
+
+    const out =
+      answer.length > 4000 ? answer.slice(0, 3900) + '\n…' : answer;
+    await ctx.reply(out);
+    appendTurn(telegramId, text, out);
   } catch (err) {
     await ctx.reply(`ИИ ошибка: ${String(err).slice(0, 500)}`);
   }
@@ -240,6 +342,6 @@ bot.catch((err) => {
 });
 
 console.log(
-  `[bot] start api=${apiUrl} model=${zModel} zai=${zKey ? 'yes' : 'no'}`,
+  `[bot] agent api=${apiUrl} model=${zModel} zai=${zKey ? 'yes' : 'no'}`,
 );
 bot.start();

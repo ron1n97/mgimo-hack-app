@@ -16,6 +16,7 @@ import {
   CABINET_TOOL_DEFINITIONS,
   CabinetClient,
   executeCabinetTool,
+  toolRisk,
 } from '@dekanat/cabinet-tools';
 
 const apiUrl =
@@ -39,11 +40,19 @@ const server = new Server(
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: CABINET_TOOL_DEFINITIONS.map((t) => ({
-    name: t.function.name,
-    description: t.function.description,
-    inputSchema: t.function.parameters,
-  })),
+  tools: CABINET_TOOL_DEFINITIONS.map((t) => {
+    const risk = toolRisk(t.function.name);
+    return {
+      name: t.function.name,
+      description: t.function.description,
+      inputSchema: t.function.parameters,
+      annotations: {
+        readOnlyHint: risk === 'read',
+        destructiveHint: risk === 'sensitive',
+        openWorldHint: false,
+      },
+    };
+  }),
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (req) => {

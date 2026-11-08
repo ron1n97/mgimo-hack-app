@@ -25,6 +25,10 @@ model User {
   email        String   @unique
   passwordHash String
   role         Role     @default(STUDENT)
+  /// E.164 phone for Telegram contact auth (demo: +7900…)
+  phoneE164    String?  @unique
+  /// Linked Telegram user id (stringified bigint)
+  telegramId   String?  @unique
   createdAt    DateTime @default(now())
 
   studentProfile StudentProfile?

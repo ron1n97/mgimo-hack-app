@@ -8,6 +8,7 @@
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
+    "@dekanat/cabinet-tools": "workspace:*",
     "@dekanat/shared": "workspace:*",
     "grammy": "^1.35.0"
   },

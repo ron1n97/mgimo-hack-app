@@ -1,22 +1,22 @@
-# @dekanat/bot — Telegram (Grammy)
+# @dekanat/bot — Telegram AI cabinet
 
-## Commands
+## Auth
+1. **Phone (preferred):** share Telegram contact — number must match `User.phoneE164`.
+2. Fallback: `/login email password`
 
-| Command | Behavior |
-|---------|----------|
-| `/start` | Disclaimer + demo login help |
-| `/login email password` | Demo auth via `POST /auth/login` (not production-ideal) |
-| `/today` | `GET /today/me` with Bearer JWT |
-| `/schedule` | `GET /schedule/me` |
-| `/requests` | `GET /requests/me` |
-| `/logout` | Clear in-memory session |
+Demo phones (seed): `+79001111111` Anna · `+79002222222` Boris · `+79003333333` staff.
 
-If `TELEGRAM_BOT_TOKEN` is empty, the process exits 0 (Compose profile `bot` can stay off).
+## AI
+After login, free-text messages go to z.ai (`ZCODE_*`) with **cabinet tools** (same as MCP):
+schedule, grades, requests, notifications, AI1–AI3, staff queue.
 
-## Run
+## Env
+- `TELEGRAM_BOT_TOKEN` — **dedicated** BotFather token (not Hermes gateway)
+- `API_URL`, `ZCODE_API_KEY`, `ZCODE_BASE_URL`, `ZCODE_MODEL`
 
 ```bash
-export TELEGRAM_BOT_TOKEN=...
-export API_URL=http://localhost:3001
 pnpm --filter @dekanat/bot dev
 ```
+
+## MCP
+See `apps/mcp` — same tools over stdio for Cursor/Claude.

@@ -1,14 +1,37 @@
-/** In-memory demo sessions: telegram user id → JWT. Not for production scale. */
-const tokens = new Map<number, string>();
+type Session = {
+  accessToken: string;
+  label?: string;
+};
 
-export function setUserToken(telegramUserId: number, token: string): void {
-  tokens.set(telegramUserId, token);
+const byTelegramId = new Map<number, Session>();
+
+export function getSession(telegramId: number): Session | undefined {
+  return byTelegramId.get(telegramId);
 }
 
-export function getUserToken(telegramUserId: number): string | undefined {
-  return tokens.get(telegramUserId);
+export function setSession(
+  telegramId: number,
+  accessToken: string,
+  label?: string,
+): void {
+  byTelegramId.set(telegramId, { accessToken, label });
 }
 
-export function clearUserToken(telegramUserId: number): void {
-  tokens.delete(telegramUserId);
+export function clearSession(telegramId: number): void {
+  byTelegramId.delete(telegramId);
+}
+
+/** @deprecated use getSession */
+export function getUserToken(telegramId: number): string | undefined {
+  return byTelegramId.get(telegramId)?.accessToken;
+}
+
+/** @deprecated use setSession */
+export function setUserToken(telegramId: number, token: string): void {
+  setSession(telegramId, token);
+}
+
+/** @deprecated use clearSession */
+export function clearUserToken(telegramId: number): void {
+  clearSession(telegramId);
 }

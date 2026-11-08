@@ -30,3 +30,4 @@ apps/api/prisma/*.db
 # local
 *.local
 pnpm-lock.yaml.bak
+.secrets/

@@ -6,6 +6,7 @@ import {
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { LoginPhoneDto } from './dto/login-phone.dto';
 import { RegisterDto } from './dto/register.dto';
 
 @Controller('auth')
@@ -20,6 +21,11 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.auth.login(dto);
+  }
+
+  @Post('login-phone')
+  loginPhone(@Body() dto: LoginPhoneDto) {
+    return this.auth.loginByPhone(dto);
   }
 
   @Get('me')

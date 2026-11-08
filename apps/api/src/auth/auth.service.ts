@@ -7,8 +7,10 @@ import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
+import { LoginPhoneDto } from './dto/login-phone.dto';
 import { RegisterDto } from './dto/register.dto';
 import { hashPassword, verifyPassword } from './password';
+import { normalizePhone } from './phone';
 
 @Injectable()
 export class AuthService {
@@ -81,6 +83,38 @@ export class AuthService {
     return this.tokenResponse(user);
   }
 
+  /** Telegram / bot: match account by linked phone, optionally bind telegramId. */
+  async loginByPhone(dto: LoginPhoneDto) {
+    const phone = normalizePhone(dto.phone);
+    if (!phone) {
+      throw new UnauthorizedException('Invalid phone');
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { phoneE164: phone },
+      include: { studentProfile: true, staffProfile: true },
+    });
+    if (!user) {
+      throw new UnauthorizedException('Phone not linked to any account');
+    }
+    if (dto.telegramId) {
+      const tid = String(dto.telegramId);
+      const clash = await this.prisma.user.findFirst({
+        where: { telegramId: tid, NOT: { id: user.id } },
+      });
+      if (clash) {
+        throw new ConflictException('Telegram already linked to another account');
+      }
+      if (user.telegramId !== tid) {
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { telegramId: tid },
+        });
+        user.telegramId = tid;
+      }
+    }
+    return this.tokenResponse(user);
+  }
+
   async me(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -96,6 +130,8 @@ export class AuthService {
     id: string;
     email: string;
     role: Role;
+    phoneE164?: string | null;
+    telegramId?: string | null;
     studentProfile?: unknown;
     staffProfile?: unknown;
   }) {
@@ -114,6 +150,8 @@ export class AuthService {
     id: string;
     email: string;
     role: Role;
+    phoneE164?: string | null;
+    telegramId?: string | null;
     studentProfile?: unknown;
     staffProfile?: unknown;
   }) {
@@ -121,6 +159,8 @@ export class AuthService {
       id: user.id,
       email: user.email,
       role: user.role,
+      phoneE164: user.phoneE164 ?? null,
+      telegramId: user.telegramId ?? null,
       studentProfile: user.studentProfile ?? null,
       staffProfile: user.staffProfile ?? null,
       disclaimer:

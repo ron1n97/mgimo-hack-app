@@ -35,6 +35,7 @@ async function main() {
       email: 'anna.risk@demo.local',
       passwordHash,
       role: Role.STUDENT,
+      phoneE164: '+79001111111',
       studentProfile: {
         create: {
           fullName: 'Анна Рискова',
@@ -53,6 +54,7 @@ async function main() {
       email: 'boris.ok@demo.local',
       passwordHash,
       role: Role.STUDENT,
+      phoneE164: '+79002222222',
       studentProfile: {
         create: {
           fullName: 'Борис Спокойный',
@@ -71,6 +73,7 @@ async function main() {
       email: 'staff@demo.local',
       passwordHash,
       role: Role.STAFF,
+      phoneE164: '+79003333333',
       staffProfile: {
         create: {
           fullName: 'Елена Деканатская',
@@ -285,9 +288,10 @@ async function main() {
 
   console.log('Seed OK.');
   console.log('Accounts (password Demo123!):');
-  console.log('  anna.risk@demo.local  — student, academic risk');
-  console.log('  boris.ok@demo.local   — student, calm');
-  console.log('  staff@demo.local      — staff');
+  console.log('  anna.risk@demo.local  — student, academic risk — phone +79001111111');
+  console.log('  boris.ok@demo.local   — student, calm — phone +79002222222');
+  console.log('  staff@demo.local      — staff — phone +79003333333');
+  console.log('Telegram bot: share contact with matching demo phone to auth.');
   console.log('DISCLAIMER: contest fictional data, not official MGIMO.');
 }
 

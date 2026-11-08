@@ -1,0 +1,25 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { AiModule } from './ai/ai.module';
+import { AuthModule } from './auth/auth.module';
+import { GradesModule } from './grades/grades.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { RequestsModule } from './requests/requests.module';
+import { ScheduleModule } from './schedule/schedule.module';
+import { TodayModule } from './today/today.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
+    AuthModule,
+    ScheduleModule,
+    GradesModule,
+    RequestsModule,
+    NotificationsModule,
+    TodayModule,
+    AiModule,
+  ],
+})
+export class AppModule {}

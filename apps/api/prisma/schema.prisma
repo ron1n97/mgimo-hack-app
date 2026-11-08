@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  STAFF
+  ADMIN
+}
+
+enum TicketStatus {
+  SUBMITTED
+  IN_PROGRESS
+  DONE
+  REJECTED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STUDENT)
+  createdAt    DateTime @default(now())
+
+  studentProfile StudentProfile?
+  staffProfile   StaffProfile?
+  grades         Grade[]         @relation("StudentGrades")
+  tickets        RequestTicket[] @relation("StudentTickets")
+  requestEvents  RequestEvent[]  @relation("RequestActor")
+  notifications  Notification[]
+}
+
+model StudentProfile {
+  userId     String  @id
+  fullName   String
+  faculty    String
+  program    String
+  course     Int
+  groupLabel String
+  groupRuzId String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model StaffProfile {
+  userId     String @id
+  fullName   String
+  department String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ScheduleLesson {
+  id            String   @id @default(cuid())
+  ruzExternalId String
+  groupRuzId    String
+  groupLabel    String
+  date          DateTime @db.Date
+  begin         String
+  end           String
+  discipline    String
+  lecturer      String?
+  auditorium    String?
+  building      String?
+  kindOfWork    String?
+  isCancelled   Boolean  @default(false)
+  isMoved       Boolean  @default(false)
+  rawJson       Json?
+
+  @@unique([ruzExternalId, groupRuzId, date, begin])
+  @@index([groupRuzId, date])
+  @@index([date])
+}
+
+model Grade {
+  id            String  @id @default(cuid())
+  studentUserId String
+  discipline    String
+  grade         String
+  gradeType     String
+  semester      String
+  isDebt        Boolean @default(false)
+
+  student User @relation("StudentGrades", fields: [studentUserId], references: [id], onDelete: Cascade)
+
+  @@index([studentUserId])
+}
+
+model RequestTicket {
+  id            String       @id @default(cuid())
+  studentUserId String
+  type          String
+  title         String
+  body          String
+  status        TicketStatus @default(SUBMITTED)
+  aiDraft       String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  student User           @relation("StudentTickets", fields: [studentUserId], references: [id], onDelete: Cascade)
+  events  RequestEvent[]
+
+  @@index([studentUserId])
+  @@index([status])
+}
+
+model RequestEvent {
+  id          String        @id @default(cuid())
+  ticketId    String
+  fromStatus  TicketStatus?
+  toStatus    TicketStatus
+  note        String?
+  actorUserId String
+  createdAt   DateTime      @default(now())
+
+  ticket RequestTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actor  User          @relation("RequestActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  kind      String
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}

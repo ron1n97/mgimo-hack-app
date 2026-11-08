@@ -14,6 +14,12 @@ build/
 out/
 coverage/
 .turbo/
+.expo/
+android/
+ios/
+
+# prisma
+apps/api/prisma/*.db
 
 # OS / IDE
 .DS_Store
@@ -23,3 +29,4 @@ coverage/
 
 # local
 *.local
+pnpm-lock.yaml.bak

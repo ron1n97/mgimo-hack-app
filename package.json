@@ -1,0 +1,17 @@
+{
+  "name": "dekanat-plus",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter \"./apps/*\" run dev",
+    "build": "pnpm -r --filter \"./apps/*\" --filter \"./packages/*\" run build",
+    "test": "pnpm -r --filter \"./apps/api\" run test",
+    "lint": "pnpm -r run lint --if-present",
+    "db:generate": "pnpm --filter @dekanat/api exec prisma generate",
+    "db:migrate": "pnpm --filter @dekanat/api exec prisma migrate deploy",
+    "db:seed": "pnpm --filter @dekanat/api run seed",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
+  }
+}

@@ -1,25 +1,54 @@
 # Деканат+ — MGIMO×AI · Вайб-кодинг
 
-Прототип личного кабинета студента («цифровой деканат будущего») для номинации **Вайб-кодинг**.
+Платформа личного кабинета студента / сотрудника (концепт конкурса, **не** официальный сервис вуза).
 
-> Концепт конкурса, не официальный сервис вуза. Без логотипа МГИМО. Только вымышленные ПДн.
+## Стек
+
+| App | Стек |
+|-----|------|
+| `apps/api` | NestJS + Prisma + Postgres + JWT |
+| `apps/web` | Next.js 15 PWA |
+| `apps/mobile` | Expo |
+| `apps/bot` | Grammy (Telegram) |
+| `apps/worker` | RUZ MGIMO sync |
+| `packages/shared` | zod DTOs |
+
+Всё поднимается через **Docker Compose** (postgres, redis, api, web, worker; bot — profile).
+
+## Быстрый старт (локально)
+
+```bash
+cp .env.example .env
+docker compose up -d postgres redis
+cd apps/api && DATABASE_URL='postgresql://dekanat:dekanat@localhost:5432/dekanat?schema=public' pnpm exec prisma migrate deploy
+DATABASE_URL='postgresql://dekanat:dekanat@localhost:5432/dekanat?schema=public' pnpm run seed
+DATABASE_URL=... JWT_SECRET=dev pnpm run start:dev   # :3001
+# другой терминал
+cd apps/web && NEXT_PUBLIC_API_URL=http://localhost:3001 pnpm dev  # :3000
+```
+
+Или целиком: `pnpm docker:up` (после сборки образов).
+
+## Демо-аккаунты (пароль `Demo123!`)
+
+| Email | Роль |
+|-------|------|
+| anna.risk@demo.local | студент (academic risk) |
+| boris.ok@demo.local | студент (спокойный) |
+| staff@demo.local | сотрудник |
+
+## Документы
+
+- `CLAUDE.md` · `SCOPE.md` · `docs/OWNER_DECISIONS.md`
+- Ресёрч: `docs/research/ideal-product-backlog.md`
+- Бриф для Максима: `docs/partner/strategy-brief.html`
+
+## Тесты
+
+```bash
+cd apps/api && pnpm test
+```
 
 ## Команда
 
-| Роль | GitHub |
-|------|--------|
-| Билд / кр.3 | [@ron1n97](https://github.com/ron1n97) (Роман) |
-| Капитан / сдача | [@adonalsiummax](https://github.com/adonalsiummax) (Максим) |
-
-## С чего читать
-
-1. [`CLAUDE.md`](./CLAUDE.md) — закон для агентов и правила сборки  
-2. [`SCOPE.md`](./SCOPE.md) — Y/N  
-3. [`docs/CRITERIA.md`](./docs/CRITERIA.md) — идём от критериев  
-4. [`docs/partner/strategy-brief.html`](./docs/partner/strategy-brief.html) — бриф для команды (открой в браузере)  
-5. [`docs/strategy/`](./docs/strategy/) — situation, options, decision, MC  
-6. [`CHANGELOG.md`](./CHANGELOG.md) — релизы  
-
-## Статус
-
-`v0.0.0` — docs / стратегия. Код приложения — следующий релиз.
+Роман (@ron1n97) · Максим (@adonalsiummax)

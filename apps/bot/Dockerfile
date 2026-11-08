@@ -1,0 +1,24 @@
+FROM node:22-alpine AS deps
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+COPY package.json pnpm-workspace.yaml ./
+COPY apps/bot/package.json apps/bot/
+COPY packages/shared/package.json packages/shared/
+RUN pnpm install --filter @dekanat/bot... --frozen-lockfile=false
+
+FROM deps AS build
+WORKDIR /app
+COPY packages/shared packages/shared
+COPY apps/bot apps/bot
+RUN pnpm --filter @dekanat/shared run build \
+  && pnpm --filter @dekanat/bot run build
+
+FROM node:22-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/packages/shared ./packages/shared
+COPY --from=build /app/apps/bot/dist ./apps/bot/dist
+COPY --from=build /app/apps/bot/package.json ./apps/bot/package.json
+WORKDIR /app/apps/bot
+CMD ["node", "dist/index.js"]

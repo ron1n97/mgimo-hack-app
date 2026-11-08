@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Деканат+",
+    "slug": "dekanat-plus",
+    "scheme": "dekanat",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "plugins": ["expo-router"],
+    "ios": { "supportsTablet": true },
+    "android": { "adaptiveIcon": { "backgroundColor": "#0B1C2C" } }
+  }
+}

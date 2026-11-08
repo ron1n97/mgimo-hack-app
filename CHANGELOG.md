@@ -6,19 +6,22 @@
 ## [Unreleased]
 
 ### Added
-- Канон проекта: `CLAUDE.md`, `SCOPE.md`, `docs/CRITERIA.md`, `docs/PAINS.md`, `docs/AI_FEATURES.md`
-- ADR 0001 criteria-first + AI + pains; ADR 0002 research + release log + criterion ownership
-- ADR 0003 long-horizon · web+mobile+tg · Z Code · `docs/OWNER_DECISIONS.md`
-- Research pack 2026-11-08: RU landscape + global SX benchmark + **ideal-product-backlog**
-- Research plan: опросник + фокус-группа (`docs/research/`)
-- Process log: стратегия через скилл `/idea` (`docs/process-log/2026-11-04-strategy-idea-skill.md`)
-- Partner strategy HTML + mock screens: `docs/partner/strategy-brief.html`
+- Research pack + ideal backlog (2026-11-08)
 
-### Changed
-- Scope: AI1–AI3 и status theater = Y (не XOR)
-- Горизонт: long platform; дедлайн = milestone сдачи, не потолок амбиции
+## [0.1.0] — 2026-11-08
+
+### Added
+- Monorepo: `api` (Nest+Prisma), `web` (Next PWA), `mobile` (Expo), `bot`, `worker` (RUZ), `shared`
+- Docker Compose: postgres, redis, api, web, worker (+ bot profile)
+- Auth JWT, seed demo users, Today/schedule/grades/requests/notifications/staff/AI stubs
+- Unit tests (12) + IDOR smoke (cross-user request → 404)
+- ADR 0004 stack
+
+### Notes
+- Demo passwords in README; fictional PII only
+- Z Code key via env when available
 
 ## [0.0.0] — 2026-11-04
 
 ### Added
-- Инициализация репозитория конкурса (docs-only pre-code)
+- Docs foundation / strategy

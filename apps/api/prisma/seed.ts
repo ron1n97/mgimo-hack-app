@@ -15,14 +15,13 @@ function utcDate(y: number, m: number, d: number): Date {
 async function main() {
   console.log('Seeding Деканат+ demo data (contest / fictional)…');
 
-  // Idempotent wipe (order-safe via CASCADE)
+  // Idempotent wipe — keep ScheduleLesson so RUZ worker data survives reseeds
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
       "RequestEvent",
       "RequestTicket",
       "Notification",
       "Grade",
-      "ScheduleLesson",
       "StudentProfile",
       "StaffProfile",
       "User"
@@ -42,8 +41,8 @@ async function main() {
           faculty: 'Международные отношения',
           program: 'Бакалавриат МО',
           course: 3,
-          groupLabel: 'МО-301',
-          groupRuzId: 'demo-group-mo301',
+          groupLabel: '2МЭО-01',
+          groupRuzId: '8033',
         },
       },
     },
@@ -60,8 +59,8 @@ async function main() {
           faculty: 'Международные отношения',
           program: 'Бакалавриат МО',
           course: 3,
-          groupLabel: 'МО-301',
-          groupRuzId: 'demo-group-mo301',
+          groupLabel: '2МЭО-02',
+          groupRuzId: '8035',
         },
       },
     },
@@ -87,11 +86,12 @@ async function main() {
   const d = today.getUTCDate();
 
   await prisma.scheduleLesson.createMany({
+    skipDuplicates: true,
     data: [
       {
         ruzExternalId: 'demo-l1',
-        groupRuzId: 'demo-group-mo301',
-        groupLabel: 'МО-301',
+        groupRuzId: '8033',
+        groupLabel: '2МЭО-01',
         date: utcDate(y, m, d),
         begin: '09:00',
         end: '10:30',
@@ -106,8 +106,8 @@ async function main() {
       },
       {
         ruzExternalId: 'demo-l2',
-        groupRuzId: 'demo-group-mo301',
-        groupLabel: 'МО-301',
+        groupRuzId: '8033',
+        groupLabel: '2МЭО-01',
         date: utcDate(y, m, d),
         begin: '11:00',
         end: '12:30',
@@ -122,8 +122,8 @@ async function main() {
       },
       {
         ruzExternalId: 'demo-l3',
-        groupRuzId: 'demo-group-mo301',
-        groupLabel: 'МО-301',
+        groupRuzId: '8033',
+        groupLabel: '2МЭО-01',
         date: utcDate(y, m, d + 1 > 28 ? d : d + 1),
         begin: '09:00',
         end: '10:30',

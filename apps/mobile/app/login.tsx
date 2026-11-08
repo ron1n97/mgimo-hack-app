@@ -9,13 +9,14 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { DEMO_ACCOUNTS } from '@dekanat/shared';
+import { Disclaimer } from '@/components/Disclaimer';
 import { login } from '@/lib/api';
 import { saveToken } from '@/lib/auth-store';
 import { colors } from '@/lib/theme';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState(DEMO_ACCOUNTS[0].email);
-  const [password, setPassword] = useState(DEMO_ACCOUNTS[0].password);
+  const [email, setEmail] = useState<string>(DEMO_ACCOUNTS[0].email);
+  const [password, setPassword] = useState<string>(DEMO_ACCOUNTS[0].password);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -24,10 +25,10 @@ export default function LoginScreen() {
     setError(null);
     try {
       const auth = await login(email.trim(), password);
-      await saveToken(auth.tokens.accessToken);
+      await saveToken(auth.accessToken);
       router.replace('/today');
     } catch (err) {
-      setError(String(err));
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -36,11 +37,13 @@ export default function LoginScreen() {
   return (
     <View style={styles.root}>
       <Text style={styles.brand}>Деканат+</Text>
-      <Text style={styles.sub}>Демо-вход · концепт, не сервис вуза</Text>
+      <Text style={styles.sub}>Демо-вход студента</Text>
+      <Disclaimer compact />
 
       <TextInput
         style={styles.input}
         autoCapitalize="none"
+        autoCorrect={false}
         keyboardType="email-address"
         placeholder="email"
         placeholderTextColor={colors.inkMuted}
@@ -89,7 +92,6 @@ const styles = StyleSheet.create({
   },
   sub: {
     color: colors.inkMuted,
-    marginBottom: 20,
   },
   input: {
     borderWidth: 1,

@@ -42,8 +42,10 @@ export const UserPublicSchema = z.object({
 export type UserPublic = z.infer<typeof UserPublicSchema>;
 
 export const AuthResponseSchema = z.object({
-  user: UserPublicSchema,
-  tokens: AuthTokensSchema,
+  user: UserPublicSchema.passthrough(),
+  accessToken: z.string(),
+  /** @deprecated nest returns flat accessToken; kept for older clients */
+  tokens: AuthTokensSchema.optional(),
 });
 export type AuthResponse = z.infer<typeof AuthResponseSchema>;
 

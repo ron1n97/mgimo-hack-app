@@ -10,6 +10,7 @@ type Mode = "login" | "register";
 const DEMO = [
   { email: "anna.risk@demo.local", password: "Demo123!", note: "студент (риск)" },
   { email: "boris.ok@demo.local", password: "Demo123!", note: "студент" },
+  { email: "staff@demo.local", password: "Demo123!", note: "сотрудник" },
 ] as const;
 
 export default function AuthPage() {

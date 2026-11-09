@@ -93,59 +93,83 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Start ssh-agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Known hosts
+      - name: Write SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
+          umask 077
           mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Bootstrap host (docker + swap)
+      - name: Login GHCR (runner)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull images on runner
+        env:
+          TAG: ${{ needs.build-and-push.outputs.image_tag }}
         run: |
-          scp -o IdentitiesOnly=yes scripts/server-bootstrap.sh \
+          for s in api worker web bot; do
+            docker pull "${IMAGE_PREFIX}/$s:$TAG"
+            docker tag "${IMAGE_PREFIX}/$s:$TAG" "${IMAGE_PREFIX}/$s:latest"
+          done
+
+      - name: Bootstrap host
+        run: |
+          scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
+            scripts/server-bootstrap.sh \
             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/server-bootstrap.sh"
-          ssh -o IdentitiesOnly=yes \
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
             'bash /tmp/server-bootstrap.sh'
 
       - name: Upload compose + env
         env:
           PROD_ENV: ${{ secrets.PROD_ENV }}
+          TAG: ${{ needs.build-and-push.outputs.image_tag }}
         run: |
-          ssh -o IdentitiesOnly=yes \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+          HOST="${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes "$HOST" \
             'mkdir -p /opt/mgimo-hack-app'
-          scp -o IdentitiesOnly=yes docker-compose.prod.yml \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/mgimo-hack-app/docker-compose.yml"
+          scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
+            docker-compose.prod.yml "$HOST:/opt/mgimo-hack-app/docker-compose.yml"
           umask 077
-          printf '%s\n' "$PROD_ENV" > /tmp/dekanat.prod.env
-          scp -o IdentitiesOnly=yes /tmp/dekanat.prod.env \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/mgimo-hack-app/.env"
-          ssh -o IdentitiesOnly=yes \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+          {
+            printf '%s\n' "$PROD_ENV"
+            echo "IMAGE_PREFIX=${IMAGE_PREFIX}"
+            echo "IMAGE_TAG=${TAG}"
+          } > /tmp/dekanat.prod.env
+          scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
+            /tmp/dekanat.prod.env "$HOST:/opt/mgimo-hack-app/.env"
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes "$HOST" \
             'chmod 600 /opt/mgimo-hack-app/.env'
           rm -f /tmp/dekanat.prod.env
 
-      - name: Pull & up
+      - name: Stream images to host (no GHCR pull on VPS)
         env:
-          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.build-and-push.outputs.image_tag }}
         run: |
-          ssh -o IdentitiesOnly=yes \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            "set -euo pipefail
-             echo '$GHCR_TOKEN' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin
-             cd /opt/mgimo-hack-app
-             export IMAGE_PREFIX='${{ env.IMAGE_PREFIX }}'
-             export IMAGE_TAG='$IMAGE_TAG'
-             # merge image vars into runtime without wiping secrets
-             grep -q '^IMAGE_PREFIX=' .env && sed -i \"s|^IMAGE_PREFIX=.*|IMAGE_PREFIX=$IMAGE_PREFIX|\" .env || echo IMAGE_PREFIX=$IMAGE_PREFIX >> .env
-             grep -q '^IMAGE_TAG=' .env && sed -i \"s|^IMAGE_TAG=.*|IMAGE_TAG=$IMAGE_TAG|\" .env || echo IMAGE_TAG=$IMAGE_TAG >> .env
-             docker compose pull
-             docker compose up -d --remove-orphans
-             docker compose ps
-             docker compose exec -T api node -e \"console.log('api-boot-check')\" || true
-            "
+          HOST="${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
+          docker save \
+            "${IMAGE_PREFIX}/api:${TAG}" \
+            "${IMAGE_PREFIX}/worker:${TAG}" \
+            "${IMAGE_PREFIX}/web:${TAG}" \
+            "${IMAGE_PREFIX}/bot:${TAG}" \
+            "${IMAGE_PREFIX}/api:latest" \
+            "${IMAGE_PREFIX}/worker:latest" \
+            "${IMAGE_PREFIX}/web:latest" \
+            "${IMAGE_PREFIX}/bot:latest" \
+          | gzip -1 \
+          | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes "$HOST" \
+              'gunzip | docker load'
+
+      - name: Compose up
+        run: |
+          HOST="${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes "$HOST" \
+            'cd /opt/mgimo-hack-app && docker compose up -d --remove-orphans && docker compose ps'

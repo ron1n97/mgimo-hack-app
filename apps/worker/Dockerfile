@@ -13,9 +13,11 @@ FROM deps AS build
 WORKDIR /app
 COPY apps/worker apps/worker
 COPY apps/api/prisma apps/api/prisma
+# Generate from monorepo root so Prisma doesn't invent /app/apps as project root
+ENV PRISMA_GENERATE_SKIP_AUTOINSTALL=1
+RUN ./node_modules/.bin/prisma generate --schema apps/api/prisma/schema.prisma
 WORKDIR /app/apps/worker
-RUN pnpm exec prisma generate --schema ../api/prisma/schema.prisma \
-  && pnpm run build
+RUN pnpm run build
 
 FROM node:22-alpine AS runner
 RUN apk add --no-cache openssl libc6-compat

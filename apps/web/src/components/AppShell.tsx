@@ -72,7 +72,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
-            {user?.role === "staff" ? (
+            {user?.role === "staff" || user?.role === "admin" ? (
               <Link
                 href="/staff/requests"
                 className={`rounded-lg px-3 py-1.5 text-sm transition ${
@@ -82,6 +82,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 }`}
               >
                 Очередь
+              </Link>
+            ) : null}
+            {user?.role === "admin" ? (
+              <Link
+                href="/admin"
+                className={`rounded-lg px-3 py-1.5 text-sm transition ${
+                  pathname.startsWith("/admin")
+                    ? "bg-copper text-cream"
+                    : "text-ink-muted hover:bg-cream-deep/60 hover:text-ink"
+                }`}
+              >
+                Админ
               </Link>
             ) : null}
           </nav>

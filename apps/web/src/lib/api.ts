@@ -119,7 +119,10 @@ type ApiUser = {
 };
 
 function mapRole(role: string): UserRole {
-  return role === "STAFF" || role === "ADMIN" || role === "staff" ? "staff" : "student";
+  const r = role.toUpperCase();
+  if (r === "ADMIN") return "admin";
+  if (r === "STAFF") return "staff";
+  return "student";
 }
 
 export function mapUser(raw: ApiUser): User {
@@ -180,15 +183,19 @@ function mapLesson(raw: Record<string, unknown>): ScheduleItem {
   const date =
     typeof dateRaw === "string"
       ? dateRaw.slice(0, 10)
-      : undefined;
+      : dateRaw instanceof Date
+        ? dateRaw.toISOString().slice(0, 10)
+        : undefined;
   return {
     id: String(raw.id),
     title: String(raw.discipline ?? raw.title ?? "Занятие"),
     startTime: String(raw.begin ?? raw.startTime ?? ""),
     endTime: String(raw.end ?? raw.endTime ?? ""),
+    date,
     room: (raw.auditorium as string | undefined) ?? (raw.room as string | undefined),
     teacher: (raw.lecturer as string | undefined) ?? (raw.teacher as string | undefined),
-    type: [date, raw.kindOfWork ?? raw.type].filter(Boolean).join(" · ") || undefined,
+    kind: (raw.kindOfWork as string | undefined) ?? (raw.type as string | undefined),
+    building: raw.building as string | undefined,
   };
 }
 
@@ -199,11 +206,14 @@ function mapGrade(raw: Record<string, unknown>): GradeItem {
     value: String(raw.grade ?? raw.value ?? ""),
     date: String(raw.semester ?? raw.date ?? ""),
     kind: (raw.gradeType as string | undefined) ?? (raw.kind as string | undefined),
+    isDebt: Boolean(raw.isDebt),
   };
 }
 
 function mapRequest(raw: Record<string, unknown>): ServiceRequest {
-  const student = raw.student as { fullName?: string } | undefined;
+  const student = raw.student as
+    | { fullName?: string; studentProfile?: { fullName?: string } }
+    | undefined;
   const profile = raw.studentProfile as { fullName?: string } | undefined;
   return {
     id: String(raw.id),
@@ -213,7 +223,10 @@ function mapRequest(raw: Record<string, unknown>): ServiceRequest {
     status: mapStatus(String(raw.status ?? "SUBMITTED")),
     createdAt: String(raw.createdAt ?? ""),
     updatedAt: raw.updatedAt ? String(raw.updatedAt) : undefined,
-    studentName: student?.fullName ?? profile?.fullName,
+    studentName:
+      student?.studentProfile?.fullName ??
+      student?.fullName ??
+      profile?.fullName,
   };
 }
 
@@ -288,24 +301,38 @@ export async function updateProfile(payload: {
 
 export async function fetchToday(): Promise<TodayHub> {
   const raw = await request<{
+    date?: string;
     schedule?: Record<string, unknown>[];
     lessons?: Record<string, unknown>[];
+    nextLesson?: Record<string, unknown> | null;
     openRequests?: unknown[];
     unreadNotifications?: unknown[];
+    recentGrades?: Record<string, unknown>[];
     academicRisk?: { debts?: Record<string, unknown>[] };
   }>("/today/me");
 
   const lessons = (raw.lessons ?? raw.schedule ?? []).map(mapLesson);
-  const debts = (raw.academicRisk?.debts ?? []).map(mapGrade);
+  const recent =
+    raw.recentGrades?.map(mapGrade) ??
+    (raw.academicRisk?.debts ?? []).map(mapGrade);
 
   return {
-    nextLesson: lessons[0] ?? null,
+    date: raw.date,
+    lessons,
+    nextLesson: raw.nextLesson ? mapLesson(raw.nextLesson) : lessons[0] ?? null,
     openRequests: Array.isArray(raw.openRequests) ? raw.openRequests.length : 0,
     unreadNotifications: Array.isArray(raw.unreadNotifications)
       ? raw.unreadNotifications.length
       : 0,
-    recentGrades: debts.slice(0, 5),
+    recentGrades: recent.slice(0, 8),
   };
+}
+
+function localIso(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function weekBounds(): { from: string; to: string } {
@@ -314,10 +341,31 @@ function weekBounds(): { from: string; to: string } {
   const mondayOffset = day === 0 ? -6 : 1 - day;
   const monday = new Date(now);
   monday.setDate(now.getDate() + mondayOffset);
+  monday.setHours(12, 0, 0, 0);
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
-  const iso = (d: Date) => d.toISOString().slice(0, 10);
-  return { from: iso(monday), to: iso(sunday) };
+  return { from: localIso(monday), to: localIso(sunday) };
+}
+
+export async function fetchAdminOverview(): Promise<{
+  counts: {
+    students: number;
+    staff: number;
+    admins: number;
+    openTickets: number;
+    debts: number;
+    lessons: number;
+  };
+  users: Array<{
+    id: string;
+    email: string;
+    role: string;
+    phone?: string | null;
+    name: string;
+    meta?: string | null;
+  }>;
+}> {
+  return request("/admin/overview");
 }
 
 export async function fetchSchedule(from?: string, to?: string): Promise<ScheduleItem[]> {

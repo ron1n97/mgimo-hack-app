@@ -33,7 +33,7 @@ export default function StaffRequestsPage() {
 
   useEffect(() => {
     const user = getUser();
-    if (user && user.role !== "staff") {
+    if (user && user.role !== "staff" && user.role !== "admin") {
       router.replace("/today");
       return;
     }
@@ -58,7 +58,9 @@ export default function StaffRequestsPage() {
       <header>
         <p className="text-xs font-medium uppercase tracking-wider text-copper">Кабинет сотрудника</p>
         <h1 className="mt-1 font-serif text-3xl text-ink">Очередь заявок</h1>
-        <p className="mt-1 text-sm text-ink-muted">Доступно при role=staff.</p>
+        <p className="mt-1 text-sm text-ink-muted">
+          Кабинет сотрудника деканата — смена статусов заявок.
+        </p>
       </header>
 
       {loading ? <LoadingState /> : null}

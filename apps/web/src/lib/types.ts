@@ -1,4 +1,4 @@
-export type UserRole = "student" | "staff";
+export type UserRole = "student" | "staff" | "admin";
 
 export type User = {
   id: string;
@@ -23,9 +23,11 @@ export type ScheduleItem = {
   title: string;
   startTime: string;
   endTime: string;
+  date?: string;
   room?: string;
   teacher?: string;
-  type?: string;
+  kind?: string;
+  building?: string;
 };
 
 export type GradeItem = {
@@ -34,6 +36,7 @@ export type GradeItem = {
   value: string;
   date: string;
   kind?: string;
+  isDebt?: boolean;
 };
 
 export type RequestStatus = "draft" | "submitted" | "in_review" | "approved" | "rejected";
@@ -58,6 +61,8 @@ export type NotificationItem = {
 };
 
 export type TodayHub = {
+  date?: string;
+  lessons: ScheduleItem[];
   nextLesson?: ScheduleItem | null;
   openRequests: number;
   unreadNotifications: number;

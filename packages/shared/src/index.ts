@@ -149,10 +149,22 @@ export const DEMO_ACCOUNTS = [
     note: 'Студент B — спокойный',
   },
   {
+    email: 'roman.guskov@demo.local',
+    password: 'Demo123!',
+    phone: '+79005555555',
+    note: 'Студент — Гуськов Р.Д.',
+  },
+  {
     email: 'staff@demo.local',
     password: 'Demo123!',
     phone: '+79003333333',
     note: 'Сотрудник деканата',
+  },
+  {
+    email: 'admin@demo.local',
+    password: 'Demo123!',
+    phone: '+79004444444',
+    note: 'Админ платформы',
   },
 ] as const;
 

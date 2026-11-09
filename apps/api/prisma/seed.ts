@@ -83,6 +83,40 @@ async function main() {
     },
   });
 
+  await prisma.user.create({
+    data: {
+      email: 'admin@demo.local',
+      passwordHash,
+      role: Role.ADMIN,
+      phoneE164: '+79004444444',
+      staffProfile: {
+        create: {
+          fullName: 'Админ Платформы',
+          department: 'Цифровой деканат',
+        },
+      },
+    },
+  });
+
+  const roman = await prisma.user.create({
+    data: {
+      email: 'roman.guskov@demo.local',
+      passwordHash,
+      role: Role.STUDENT,
+      phoneE164: '+79005555555',
+      studentProfile: {
+        create: {
+          fullName: 'Гуськов Роман Дмитриевич',
+          faculty: 'Международные отношения',
+          program: 'Бакалавриат МО',
+          course: 3,
+          groupLabel: '2МЭО-01',
+          groupRuzId: '8033',
+        },
+      },
+    },
+  });
+
   const today = new Date();
   const y = today.getUTCFullYear();
   const m = today.getUTCMonth() + 1;
@@ -191,6 +225,46 @@ async function main() {
         grade: '5',
         gradeType: 'pass',
         semester: '2025-осень',
+        isDebt: false,
+      },
+      {
+        studentUserId: roman.id,
+        discipline: 'Международное право',
+        grade: '4',
+        gradeType: 'exam',
+        semester: '2025-осень',
+        isDebt: false,
+      },
+      {
+        studentUserId: roman.id,
+        discipline: 'История дипломатии',
+        grade: '5',
+        gradeType: 'exam',
+        semester: '2025-осень',
+        isDebt: false,
+      },
+      {
+        studentUserId: roman.id,
+        discipline: 'Иностранный язык (английский)',
+        grade: '5',
+        gradeType: 'pass',
+        semester: '2025-осень',
+        isDebt: false,
+      },
+      {
+        studentUserId: roman.id,
+        discipline: 'Мировая экономика',
+        grade: '3',
+        gradeType: 'exam',
+        semester: '2025-осень',
+        isDebt: false,
+      },
+      {
+        studentUserId: roman.id,
+        discipline: 'Политология',
+        grade: '4',
+        gradeType: 'pass',
+        semester: '2024-весна',
         isDebt: false,
       },
     ],

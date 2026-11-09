@@ -10,7 +10,9 @@ type Mode = "login" | "register";
 const DEMO = [
   { email: "anna.risk@demo.local", password: "Demo123!", note: "студент (риск)" },
   { email: "boris.ok@demo.local", password: "Demo123!", note: "студент" },
-  { email: "staff@demo.local", password: "Demo123!", note: "сотрудник" },
+  { email: "roman.guskov@demo.local", password: "Demo123!", note: "студент (Роман)" },
+  { email: "staff@demo.local", password: "Demo123!", note: "сотрудник деканата" },
+  { email: "admin@demo.local", password: "Demo123!", note: "админ" },
 ] as const;
 
 export default function AuthPage() {
@@ -42,7 +44,13 @@ export default function AuthPage() {
               fullName: fullName.trim(),
             });
       setSession(result.accessToken, result.user);
-      router.replace(result.user.role === "staff" ? "/staff/requests" : "/today");
+      const home =
+        result.user.role === "admin"
+          ? "/admin"
+          : result.user.role === "staff"
+            ? "/staff/requests"
+            : "/today";
+      router.replace(home);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Неизвестная ошибка");
     } finally {

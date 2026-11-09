@@ -49,7 +49,14 @@ export default function TodayPage() {
         </h1>
         {user?.groupName ? (
           <p className="mt-1 text-sm text-ink-muted">Группа {user.groupName}</p>
-        ) : null}
+        ) : (
+          <p className="mt-1 text-sm text-ink-muted">
+            <Link href="/profile" className="text-copper underline-offset-2 hover:underline">
+              Выберите группу в профиле
+            </Link>
+            , чтобы видеть пары.
+          </p>
+        )}
       </header>
 
       {loading ? <LoadingState label="Собираем день…" /> : null}
@@ -57,28 +64,67 @@ export default function TodayPage() {
 
       {!loading && !error && data ? (
         <>
-          <section className="rounded-2xl bg-ink p-5 text-cream shadow-soft">
-            <p className="text-xs uppercase tracking-wider text-cream/60">Следующая пара</p>
-            {data.nextLesson ? (
-              <div className="mt-3">
-                <h2 className="font-serif text-2xl leading-snug">{data.nextLesson.title}</h2>
-                <p className="mt-2 text-sm text-cream/80">
-                  {data.nextLesson.startTime}–{data.nextLesson.endTime}
-                  {data.nextLesson.room ? ` · ${data.nextLesson.room}` : ""}
-                </p>
-                {data.nextLesson.teacher ? (
-                  <p className="mt-1 text-sm text-cream/60">{data.nextLesson.teacher}</p>
-                ) : null}
-              </div>
+          <section>
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <h2 className="font-serif text-xl text-ink">Пары сегодня</h2>
+              <Link href="/schedule" className="text-sm text-copper">
+                Календарь недели →
+              </Link>
+            </div>
+
+            {data.lessons.length === 0 ? (
+              <EmptyState
+                title="На сегодня пар нет"
+                description="Можно дышать — или откройте календарь на неделю."
+              />
             ) : (
-              <p className="mt-3 text-sm text-cream/75">На сегодня пар нет — можно дышать.</p>
+              <ul className="space-y-3">
+                {data.lessons.map((lesson) => {
+                  const isNext = data.nextLesson?.id === lesson.id;
+                  return (
+                    <li
+                      key={lesson.id}
+                      className={`rounded-2xl border px-4 py-4 ${
+                        isNext
+                          ? "border-copper/40 bg-ink text-cream shadow-soft"
+                          : "border-cream-deep bg-white/50"
+                      }`}
+                    >
+                      <p
+                        className={`text-xs font-medium uppercase tracking-wide ${
+                          isNext ? "text-copper" : "text-copper"
+                        }`}
+                      >
+                        {lesson.startTime}–{lesson.endTime}
+                        {lesson.kind ? ` · ${lesson.kind}` : ""}
+                        {isNext ? " · сейчас / следующая" : ""}
+                      </p>
+                      <h3
+                        className={`mt-1 font-serif text-lg ${
+                          isNext ? "text-cream" : "text-ink"
+                        }`}
+                      >
+                        {lesson.title}
+                      </h3>
+                      <p
+                        className={`mt-2 text-sm ${
+                          isNext ? "text-cream/80" : "text-ink-muted"
+                        }`}
+                      >
+                        {[
+                          lesson.room
+                            ? `ауд. ${lesson.room}${lesson.building ? `, ${lesson.building}` : ""}`
+                            : null,
+                          lesson.teacher,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ") || "Преподаватель и кабинет уточняются"}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
-            <Link
-              href="/schedule"
-              className="mt-4 inline-block text-sm text-copper underline-offset-4 hover:underline"
-            >
-              Всё расписание →
-            </Link>
           </section>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -102,7 +148,7 @@ export default function TodayPage() {
 
           <section>
             <div className="mb-3 flex items-end justify-between">
-              <h2 className="font-serif text-xl text-ink">Недавние оценки</h2>
+              <h2 className="font-serif text-xl text-ink">Оценки</h2>
               <Link href="/grades" className="text-sm text-copper">
                 Все
               </Link>
@@ -121,7 +167,11 @@ export default function TodayPage() {
                   >
                     <div>
                       <p className="font-medium text-ink">{g.subject}</p>
-                      <p className="text-xs text-ink-muted">{g.date}</p>
+                      <p className="text-xs text-ink-muted">
+                        {g.date}
+                        {g.kind ? ` · ${g.kind}` : ""}
+                        {g.isDebt ? " · долг" : ""}
+                      </p>
                     </div>
                     <span className="font-serif text-xl text-copper">{g.value}</span>
                   </li>

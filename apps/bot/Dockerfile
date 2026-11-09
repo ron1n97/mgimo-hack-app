@@ -16,7 +16,7 @@ COPY apps/bot apps/bot
 RUN pnpm --filter @dekanat/shared run build \
   && pnpm --filter @dekanat/cabinet-tools run build \
   && pnpm --filter @dekanat/bot run build \
-  && pnpm --filter @dekanat/bot deploy --prod --legacy /out
+  && pnpm --filter @dekanat/bot deploy --prod /out
 
 FROM node:22-alpine AS runner
 WORKDIR /app

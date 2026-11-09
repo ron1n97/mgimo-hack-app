@@ -23,6 +23,9 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [groupRuzId, setGroupRuzId] = useState("");
+  const [faculty, setFaculty] = useState("");
+  const [program, setProgram] = useState("");
+  const [course, setCourse] = useState("1");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -33,6 +36,9 @@ export default function ProfilePage() {
       setEmail(me.email);
       setPhone(me.phone ?? "");
       setGroupRuzId(me.groupRuzId ?? "");
+      setFaculty(me.faculty && me.faculty !== "Не указан" ? me.faculty : "");
+      setProgram(me.program && me.program !== "Не указана" ? me.program : "");
+      setCourse(String(me.course && me.course > 0 ? me.course : 1));
       setGroups(g);
       const token = getToken();
       if (token) setSession(token, me);
@@ -54,15 +60,19 @@ export default function ProfilePage() {
     setOk(null);
     try {
       const selected = groups.find((g) => g.groupRuzId === groupRuzId);
+      const courseNum = Number(course);
       const updated = await updateProfile({
         fullName: fullName.trim(),
         phone: phone.trim(),
+        faculty: faculty.trim() || "Не указан",
+        program: program.trim() || "Не указана",
+        course: Number.isFinite(courseNum) ? courseNum : 1,
         groupRuzId: groupRuzId || undefined,
         groupLabel: selected?.groupLabel,
       });
       const token = getToken();
       if (token) setSession(token, updated);
-      setOk("Сохранено. Расписание и вход в бота обновятся сразу.");
+      setOk("Сохранено. Расписание, бот и шапка заявлений обновятся сразу.");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось сохранить");
     } finally {
@@ -78,7 +88,7 @@ export default function ProfilePage() {
       <header>
         <h1 className="font-serif text-3xl text-ink">Профиль</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          Группа для расписания и телефон для Telegram-бота.
+          Данные для расписания, Telegram-бота и шапки заявлений.
         </p>
       </header>
 
@@ -93,7 +103,7 @@ export default function ProfilePage() {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
-            placeholder="Как к вам обращаться"
+            placeholder="Как в зачётке"
             autoComplete="name"
           />
         </label>
@@ -105,6 +115,41 @@ export default function ProfilePage() {
             disabled
             className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/20 px-3 py-2.5 text-ink-muted"
           />
+        </label>
+
+        <label className="block text-sm">
+          <span className="text-ink-muted">Факультет</span>
+          <input
+            value={faculty}
+            onChange={(e) => setFaculty(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
+            placeholder="Международные отношения"
+          />
+        </label>
+
+        <label className="block text-sm">
+          <span className="text-ink-muted">Направление / программа</span>
+          <input
+            value={program}
+            onChange={(e) => setProgram(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
+            placeholder="Бакалавриат МО"
+          />
+        </label>
+
+        <label className="block text-sm">
+          <span className="text-ink-muted">Курс</span>
+          <select
+            value={course}
+            onChange={(e) => setCourse(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
+          >
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="block text-sm">

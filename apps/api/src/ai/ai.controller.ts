@@ -1,4 +1,13 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Header,
+  Post,
+  Res,
+  StreamableFile,
+  UseGuards,
+} from '@nestjs/common';
+import type { Response } from 'express';
 import {
   CurrentUser,
   JwtPayloadUser,
@@ -10,6 +19,7 @@ import {
   ExplainNotificationDto,
   NextActionsDto,
 } from './dto/ai.dto';
+import { ExportDocxDto } from './dto/export-docx.dto';
 
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
@@ -22,6 +32,24 @@ export class AiController {
     @Body() dto: DraftRequestDto,
   ) {
     return this.ai.draftRequest(user.userId, dto);
+  }
+
+  @Post('export-docx')
+  @Header(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  )
+  async exportDocx(
+    @CurrentUser() user: JwtPayloadUser,
+    @Body() dto: ExportDocxDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { filename, buffer } = await this.ai.exportDocx(user.userId, dto);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,
+    );
+    return new StreamableFile(buffer);
   }
 
   @Post('next-actions')

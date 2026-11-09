@@ -135,6 +135,9 @@ export function mapUser(raw: ApiUser): User {
     groupName: raw.studentProfile?.groupLabel,
     groupRuzId: raw.studentProfile?.groupRuzId ?? undefined,
     phone: raw.phoneE164 ?? undefined,
+    faculty: raw.studentProfile?.faculty,
+    program: raw.studentProfile?.program,
+    course: raw.studentProfile?.course,
   };
 }
 
@@ -378,6 +381,56 @@ export async function draftRequestWithAi(payload: {
     source: raw.source === "stub" ? "stub" : "zcode",
     disclaimer: raw.disclaimer,
   };
+}
+
+export async function downloadRequestDocx(payload: {
+  type: string;
+  body: string;
+  subject?: string;
+}): Promise<void> {
+  const token = getToken();
+  const headers: Record<string, string> = {
+    Accept:
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "Content-Type": "application/json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/ai/export-docx`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    throw new ApiError("Сервер недоступен. Проверьте интернет и попробуйте снова.", 0);
+  }
+
+  if (response.status === 401) {
+    clearSession();
+    if (typeof window !== "undefined" && window.location.pathname !== "/") {
+      window.location.href = "/";
+    }
+    throw new ApiError("Нужно войти снова", 401);
+  }
+
+  if (!response.ok) {
+    throw new ApiError(`Не удалось скачать Word (${response.status})`, response.status);
+  }
+
+  const blob = await response.blob();
+  const cd = response.headers.get("Content-Disposition") ?? "";
+  const match = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i.exec(cd);
+  const filename = decodeURIComponent(match?.[1] || match?.[2] || "zayavlenie.docx");
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export async function fetchNotifications(): Promise<NotificationItem[]> {

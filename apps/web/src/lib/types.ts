@@ -8,6 +8,9 @@ export type User = {
   groupName?: string;
   groupRuzId?: string;
   phone?: string;
+  faculty?: string;
+  program?: string;
+  course?: number;
 };
 
 export type AuthResponse = {

@@ -1,12 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { buildApplicationDocx } from './application-docx';
 import { completeWithFallback } from './ai-complete';
 import {
   DraftRequestDto,
   ExplainNotificationDto,
   NextActionsDto,
 } from './dto/ai.dto';
+import { ExportDocxDto } from './dto/export-docx.dto';
+import { isProfilePlaceholder, sanitizeDraftText } from './sanitize-draft';
+
+type StudentBits = {
+  fullName: string;
+  faculty?: string;
+  program?: string;
+  course?: number;
+  groupLabel?: string;
+};
 
 @Injectable()
 export class AiService {
@@ -33,23 +44,62 @@ export class AiService {
     return this.config.get<string>('ZCODE_MODEL') ?? 'glm-5.3';
   }
 
+  private profileBits(profile: {
+    fullName: string;
+    faculty: string;
+    program: string;
+    course: number;
+    groupLabel: string;
+  } | null): StudentBits | null {
+    if (!profile) return null;
+    return {
+      fullName: profile.fullName,
+      faculty: isProfilePlaceholder(profile.faculty)
+        ? undefined
+        : profile.faculty,
+      program: isProfilePlaceholder(profile.program)
+        ? undefined
+        : profile.program,
+      course: profile.course > 0 ? profile.course : undefined,
+      groupLabel: isProfilePlaceholder(profile.groupLabel)
+        ? undefined
+        : profile.groupLabel,
+    };
+  }
+
+  private profilePromptLine(bits: StudentBits | null): string {
+    if (!bits) return 'Профиль студента не заполнен — не выдумывай факультет/группу.';
+    const parts = [
+      `ФИО: ${bits.fullName}`,
+      bits.course ? `курс: ${bits.course}` : null,
+      bits.faculty ? `факультет: ${bits.faculty}` : null,
+      bits.program ? `программа: ${bits.program}` : null,
+      bits.groupLabel ? `группа: ${bits.groupLabel}` : null,
+    ].filter(Boolean);
+    return `Данные студента (используй только их, без плейсхолдеров в квадратных скобках): ${parts.join('; ')}`;
+  }
+
   async draftRequest(userId: string, dto: DraftRequestDto) {
     const profile = await this.prisma.studentProfile.findUnique({
       where: { userId },
     });
+    const bits = this.profileBits(profile);
+
     const system = [
-      'Ты помощник цифрового деканата. Пишешь черновик официальной заявки на русском.',
-      'Используй факты из контекста (причина, сроки), но сгладь мат и сленг до делового стиля.',
-      'Не выдумывай номер студенческого и не давай юридических гарантий.',
-      'Верни только текст заявления, без markdown-заголовков про «что заполнить», если можно обойтись 4–8 предложениями.',
+      'Ты секретарь деканата. Пишешь готовый текст ЗАЯВЛЕНИЯ на русском для подачи в вуз.',
+      'Формат ответа — ТОЛЬКО текст заявления: шапка справа (кому/от кого), затем слово ЗАЯВЛЕНИЕ, затем 1–3 абзаца сути, в конце строки даты и подписи.',
+      'Запрещено: markdown (**), заголовки #, списки, блок «Примечания», советы что заполнить, плейсхолдеры вроде [ФИО декана] или «не указано».',
+      'Если каких-то данных нет в профиле — просто не пиши эту строку, не ставь скобки.',
+      'Сгладь мат и сленг до делового стиля, сохрани смысл причины и сроков.',
+      'Если ФИО выглядит мужским, а в контексте беременность — формулируй аккуратно (например отпуск по уходу / в связи с беременностью супруги / семейные обстоятельства), не приписывай беременность носителю мужского ФИО.',
+      'Не выдумывай номер студенческого и юридические гарантии.',
     ].join(' ');
+
     const userPrompt = [
       `Тип заявки: ${dto.type}`,
-      profile
-        ? `Студент: ${profile.fullName}, ${profile.faculty}, ${profile.program}, курс ${profile.course}, группа ${profile.groupLabel}`
-        : 'Профиль студента не заполнен',
-      dto.context ? `Контекст от студента: ${dto.context}` : '',
-      'Сформируй короткий черновик текста заявки.',
+      this.profilePromptLine(bits),
+      dto.context ? `Пояснение студента: ${dto.context}` : '',
+      'Выдай только текст заявления.',
     ]
       .filter(Boolean)
       .join('\n');
@@ -60,18 +110,45 @@ export class AiService {
       model: this.model,
       system,
       user: userPrompt,
-      stub: () => this.stubDraft(dto.type, profile?.fullName, dto.context),
+      stub: () => this.stubDraft(dto.type, bits, dto.context),
       logger: (msg) => this.logger.warn(msg),
     });
 
+    const draft = sanitizeDraftText(result.text);
+
     return {
       type: dto.type,
-      draft: result.text,
+      draft,
       source: result.source,
       disclaimer:
         result.source === 'stub'
           ? 'Показан шаблон: ИИ временно недоступен. Отредактируйте текст вручную.'
           : 'Черновик ИИ — проверьте перед отправкой. Не юр. консультация.',
+    };
+  }
+
+  async exportDocx(userId: string, dto: ExportDocxDto): Promise<{
+    filename: string;
+    buffer: Buffer;
+  }> {
+    const profile = await this.prisma.studentProfile.findUnique({
+      where: { userId },
+    });
+    const bits = this.profileBits(profile);
+    const body = sanitizeDraftText(dto.body);
+    const buffer = await buildApplicationDocx({
+      studentName: bits?.fullName ?? 'Студент',
+      faculty: bits?.faculty,
+      program: bits?.program,
+      course: bits?.course,
+      groupLabel: bits?.groupLabel,
+      requestType: dto.type,
+      body,
+    });
+    const safeType = dto.type.replace(/[^\p{L}\p{N}]+/gu, '_').slice(0, 40);
+    return {
+      filename: `zayavlenie_${safeType || 'dekanat'}.docx`,
+      buffer,
     };
   }
 
@@ -144,17 +221,35 @@ export class AiService {
     };
   }
 
-  private stubDraft(type: string, fullName?: string, context?: string): string {
-    const name = fullName ?? 'Студент';
+  private stubDraft(
+    type: string,
+    bits: StudentBits | null,
+    context?: string,
+  ): string {
+    const name = bits?.fullName ?? 'Студент';
+    const header: string[] = ['Декану факультета'];
+    if (bits?.faculty) header.push(`«${bits.faculty}»`);
+    header.push('');
+    header.push(`от ${name}`);
+    if (bits?.course) header.push(`студента(ки) ${bits.course} курса`);
+    if (bits?.groupLabel) header.push(`группы ${bits.groupLabel}`);
+    if (bits?.program) header.push(`направление: ${bits.program}`);
+
     const reason = context?.trim()
-      ? `Суть обращения: ${context.trim().slice(0, 280)}.`
-      : 'Прошу оказать содействие по указанному вопросу в рамках учебного процесса.';
-    return (
-      `Прошу рассмотреть обращение типа «${type}».\n\n` +
-      `Я, ${name}, обращаюсь по следующей причине. ${reason} ` +
-      `Готов(а) предоставить дополнительные сведения и документы по запросу деканата.\n\n` +
-      `С уважением,\n${name}`
-    );
+      ? context.trim().slice(0, 400)
+      : 'по указанному вопросу в рамках учебного процесса';
+
+    return [
+      ...header,
+      '',
+      'ЗАЯВЛЕНИЕ',
+      '',
+      `Прошу рассмотреть обращение типа «${type}». ${reason}.`,
+      'Готов(а) предоставить дополнительные сведения и документы по запросу деканата.',
+      '',
+      'Дата: ______________',
+      `Подпись: ______________ / ${name} /`,
+    ].join('\n');
   }
 
   private stubNextActions(debtDisciplines: string[]): string {

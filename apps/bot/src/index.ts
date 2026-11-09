@@ -214,14 +214,23 @@ bot.on('message:contact', async (ctx) => {
       { reply_markup: { remove_keyboard: true } },
     );
   } catch (err) {
+    const demos = DEMO_ACCOUNTS.map((a) => `• ${a.phone} → ${a.email}`).join(
+      '\n',
+    );
     await ctx.reply(
       [
-        `Не нашли аккаунт по номеру ${contact.phone_number}.`,
-        'Демо: +79001111111 / +79002222222 / +79003333333',
-        String(err),
+        `Номер ${contact.phone_number} ещё не привязан к аккаунту.`,
+        '',
+        'Как починить:',
+        `1) Веб ${webUrl}/profile — укажите этот телефон и сохраните`,
+        '2) Или /login email password — и снова поделитесь контактом',
+        '',
+        'Демо-номера:',
+        demos,
       ].join('\n'),
       { reply_markup: contactKeyboard },
     );
+    console.warn('[bot] phone login failed', contact.phone_number, err);
   }
 });
 
@@ -242,7 +251,13 @@ bot.callbackQuery(/^ap:(ok|no):(.+)$/, async (ctx) => {
 
 bot.on('message:text', async (ctx) => {
   const text = ctx.message.text?.trim() ?? '';
-  if (!text || text.startsWith('/')) return;
+  if (!text) return;
+  if (text.startsWith('/')) {
+    await ctx.reply('Не знаю такую команду. Напишите /help или /start.', {
+      reply_markup: contactKeyboard,
+    });
+    return;
+  }
 
   const s = ctx.from ? getSession(ctx.from.id) : undefined;
   if (!s || !ctx.from) {
@@ -341,7 +356,24 @@ bot.catch((err) => {
   else console.error('[bot]', e);
 });
 
+bot.command('help', async (ctx) => {
+  await ctx.reply(
+    [
+      '/start — вход',
+      '/login email password — войти по почте',
+      '/whoami — кто я',
+      '/reset — очистить память диалога',
+      '/logout — выйти',
+      `Веб: ${webUrl}`,
+    ].join('\n'),
+    { reply_markup: contactKeyboard },
+  );
+});
+
 console.log(
-  `[bot] agent api=${apiUrl} model=${zModel} zai=${zKey ? 'yes' : 'no'}`,
+  `[bot] agent api=${apiUrl} web=${webUrl} model=${zModel} zai=${zKey ? 'yes' : 'no'}`,
 );
-bot.start();
+bot.start({
+  drop_pending_updates: true,
+  onStart: (info) => console.log(`[bot] polling as @${info.username}`),
+});

@@ -7,16 +7,17 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/worker/package.json apps/worker/
 COPY apps/api/package.json apps/api/
 COPY apps/api/prisma apps/api/prisma
-RUN pnpm install --filter @dekanat/worker... --frozen-lockfile=false
+# Install worker + api so Prisma can resolve @prisma/client next to the schema
+RUN pnpm install --filter @dekanat/worker... --filter @dekanat/api... --frozen-lockfile=false
 
 FROM deps AS build
 WORKDIR /app
 COPY apps/worker apps/worker
 COPY apps/api/prisma apps/api/prisma
-# Use the workspace package's local prisma (pnpm path), cwd = apps/worker
+# Generate against apps/api (where schema + @prisma/client live)
+WORKDIR /app/apps/api
+RUN pnpm exec prisma generate
 WORKDIR /app/apps/worker
-ENV PRISMA_GENERATE_SKIP_AUTOINSTALL=1
-RUN pnpm exec prisma generate --schema ../api/prisma/schema.prisma
 RUN pnpm run build
 
 FROM node:22-alpine AS runner
@@ -25,6 +26,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps/worker/node_modules ./apps/worker/node_modules
+COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/apps/worker/dist ./apps/worker/dist
 COPY --from=build /app/apps/worker/package.json ./apps/worker/package.json
 COPY --from=build /app/apps/api/prisma ./apps/api/prisma

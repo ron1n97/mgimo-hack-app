@@ -1,0 +1,88 @@
+# Production stack — images from GHCR (built in CI).
+# Env file: /opt/mgimo-hack-app/.env (not in git)
+name: dekanat
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dekanat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-dekanat}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dekanat}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    mem_limit: 256m
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    mem_limit: 64m
+
+  api:
+    image: ${IMAGE_PREFIX:-ghcr.io/ron1n97/mgimo-hack-app}/api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dekanat}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dekanat}?schema=public
+      REDIS_URL: redis://redis:6379
+      API_PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: 256m
+
+  worker:
+    image: ${IMAGE_PREFIX:-ghcr.io/ron1n97/mgimo-hack-app}/worker:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dekanat}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dekanat}?schema=public
+      REDIS_URL: redis://redis:6379
+      RUZ_BASE_URL: ${RUZ_BASE_URL:-https://ruz.mgimo.ru}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: 192m
+
+  web:
+    image: ${IMAGE_PREFIX:-ghcr.io/ron1n97/mgimo-hack-app}/web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "80:3000"
+    depends_on:
+      - api
+    mem_limit: 256m
+
+  bot:
+    image: ${IMAGE_PREFIX:-ghcr.io/ron1n97/mgimo-hack-app}/bot:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      API_URL: http://api:3001
+    depends_on:
+      - api
+    mem_limit: 192m
+
+volumes:
+  pgdata:

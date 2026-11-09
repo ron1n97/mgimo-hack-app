@@ -2,16 +2,16 @@
 FROM node:22-alpine AS deps
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
-COPY package.json pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
-RUN pnpm install --filter @dekanat/api... --frozen-lockfile || pnpm install --filter @dekanat/api...
+RUN pnpm install --filter @dekanat/api... --frozen-lockfile=false
 
 FROM node:22-alpine AS build
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
-COPY package.json pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api ./apps/api
 WORKDIR /app/apps/api
 RUN pnpm exec prisma generate
@@ -29,4 +29,5 @@ COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/apps/api/prisma ./apps/api/prisma
 WORKDIR /app/apps/api
 EXPOSE 3001
-CMD ["node", "dist/main.js"]
+# migrate then start
+CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node dist/main.js"]

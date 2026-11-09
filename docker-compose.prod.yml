@@ -74,15 +74,21 @@ services:
       - api
     mem_limit: 256m
 
+  # NOTE: many RU VPS block api.telegram.org — bot will look "up" but stay mute.
+  # Prefer running bot on a host with Telegram access (or set HTTPS_PROXY / ALL_PROXY).
   bot:
     image: ${IMAGE_PREFIX:-ghcr.io/ron1n97/mgimo-hack-app}/bot:${IMAGE_TAG:-latest}
     restart: unless-stopped
     env_file: .env
     environment:
       API_URL: http://api:3001
+      HTTPS_PROXY: ${TELEGRAM_HTTPS_PROXY:-}
+      ALL_PROXY: ${TELEGRAM_ALL_PROXY:-}
     depends_on:
       - api
     mem_limit: 192m
+    profiles:
+      - telegram
 
 volumes:
   pgdata:

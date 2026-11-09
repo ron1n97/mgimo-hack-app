@@ -112,14 +112,27 @@ export function extractStatementBody(raw: string): string {
   return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
-/** И.О. Фамилия from «Фамилия Имя Отчество». */
+const SURNAME_TAIL =
+  /(ов|ова|ев|ева|ёв|ёва|ин|ина|ын|ына|ский|ская|цкий|цкая|ук|юк|енко|ко)$/i;
+
+/** И.О. Фамилия — supports «Фамилия Имя Отчество» and «Имя Фамилия». */
 export function shortName(fullName: string): string {
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return '__________';
   if (parts.length === 1) return parts[0];
-  const family = parts[0];
-  const initials = parts
-    .slice(1)
+
+  let family: string;
+  let nameParts: string[];
+  if (parts.length === 2 && SURNAME_TAIL.test(parts[1]) && !SURNAME_TAIL.test(parts[0])) {
+    // Имя Фамилия
+    family = parts[1];
+    nameParts = [parts[0]];
+  } else {
+    // Фамилия Имя Отчество
+    family = parts[0];
+    nameParts = parts.slice(1);
+  }
+  const initials = nameParts
     .map((p) => (p[0] ? `${p[0].toUpperCase()}.` : ''))
     .join('');
   return `${initials} ${family}`.trim();

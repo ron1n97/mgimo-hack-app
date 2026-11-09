@@ -32,6 +32,10 @@ describe('shortName', () => {
   it('formats Фамилия Имя Отчество as И.О. Фамилия', () => {
     expect(shortName('Гуськов Роман Дмитриевич')).toBe('Р.Д. Гуськов');
   });
+
+  it('formats Имя Фамилия as И. Фамилия', () => {
+    expect(shortName('Анна Рискова')).toBe('А. Рискова');
+  });
 });
 
 describe('assembleApplicationText', () => {

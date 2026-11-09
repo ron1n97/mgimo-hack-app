@@ -1,7 +1,7 @@
 {
   "name": "Деканат+",
   "short_name": "Деканат+",
-  "description": "Цифровой деканат — концепт MGIMO×AI Challenge",
+  "description": "Расписание, заявки и учёба в одном кабинете",
   "start_url": "/today",
   "display": "standalone",
   "background_color": "#F3EADC",

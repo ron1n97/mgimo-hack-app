@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     default: "Деканат+",
     template: "%s · Деканат+",
   },
-  description: "Цифровой деканат — концепт для MGIMO×AI Challenge",
+  description: "Расписание, заявки и учёба в одном кабинете",
   applicationName: "Деканат+",
   manifest: "/manifest.webmanifest",
   appleWebApp: {

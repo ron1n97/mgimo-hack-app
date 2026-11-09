@@ -14,7 +14,13 @@
 | `PUBLIC_API_URL` | baked into Next (`NEXT_PUBLIC_API_URL`) |
 | `PROD_ENV` | full production `.env` body for `/opt/mgimo-hack-app/.env` |
 
-You normally **don’t** paste secrets by hand — agent/owner refreshes with `gh secret set`.
+You normally **don’t** paste secrets by hand — they were set with `gh secret set`
+(`SSH_*`, `PUBLIC_API_URL`, `PROD_ENV` with ZCODE + Telegram + DB password).
+
+Images go runner → VPS via `docker save | ssh docker load` (VPS does not need
+`read:packages` on a personal PAT).
+
+Live: web `http://SSH_HOST/` · API `http://SSH_HOST:3001`.
 
 ## Host layout
 - `/opt/mgimo-hack-app/docker-compose.yml` ← `docker-compose.prod.yml`

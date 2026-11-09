@@ -26,21 +26,22 @@ export class RegisterDto {
   @IsString()
   fullName!: string;
 
-  @ValidateIf((o: RegisterDto) => (o.role ?? Role.STUDENT) === Role.STUDENT)
+  /** Optional — API fills defaults for contest demo signup */
+  @IsOptional()
   @IsString()
   faculty?: string;
 
-  @ValidateIf((o: RegisterDto) => (o.role ?? Role.STUDENT) === Role.STUDENT)
+  @IsOptional()
   @IsString()
   program?: string;
 
-  @ValidateIf((o: RegisterDto) => (o.role ?? Role.STUDENT) === Role.STUDENT)
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(6)
   course?: number;
 
-  @ValidateIf((o: RegisterDto) => (o.role ?? Role.STUDENT) === Role.STUDENT)
+  @IsOptional()
   @IsString()
   groupLabel?: string;
 
@@ -49,6 +50,7 @@ export class RegisterDto {
   groupRuzId?: string;
 
   @ValidateIf((o: RegisterDto) => o.role === Role.STAFF || o.role === Role.ADMIN)
+  @IsOptional()
   @IsString()
   department?: string;
 }

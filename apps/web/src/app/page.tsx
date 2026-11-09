@@ -118,7 +118,7 @@ export default function AuthPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
               autoComplete={mode === "login" ? "current-password" : "new-password"}
-              minLength={6}
+              minLength={8}
             />
           </label>
 

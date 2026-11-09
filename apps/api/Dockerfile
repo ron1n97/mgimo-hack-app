@@ -1,5 +1,6 @@
 # Build context: monorepo root
 FROM node:22-alpine AS deps
+RUN apk add --no-cache openssl libc6-compat
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
@@ -7,6 +8,7 @@ COPY apps/api/package.json ./apps/api/
 RUN pnpm install --filter @dekanat/api... --frozen-lockfile=false
 
 FROM node:22-alpine AS build
+RUN apk add --no-cache openssl libc6-compat
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -18,6 +20,7 @@ RUN pnpm exec prisma generate
 RUN pnpm run build
 
 FROM node:22-alpine AS runner
+RUN apk add --no-cache openssl libc6-compat
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 ENV NODE_ENV=production

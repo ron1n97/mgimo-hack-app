@@ -1,4 +1,6 @@
+# Build context: monorepo root
 FROM node:22-alpine AS deps
+RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
@@ -11,10 +13,12 @@ FROM deps AS build
 WORKDIR /app
 COPY apps/worker apps/worker
 COPY apps/api/prisma apps/api/prisma
-RUN pnpm --filter @dekanat/worker exec prisma generate --schema ../api/prisma/schema.prisma \
-  && pnpm --filter @dekanat/worker run build
+WORKDIR /app/apps/worker
+RUN pnpm exec prisma generate --schema ../api/prisma/schema.prisma \
+  && pnpm run build
 
 FROM node:22-alpine AS runner
+RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules

@@ -19,11 +19,13 @@ export default function NewRequestPage() {
   const [body, setBody] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [drafting, setDrafting] = useState(false);
 
   async function onDraft() {
     setError(null);
+    setHint(null);
     setDrafting(true);
     try {
       const result = await draftRequestWithAi({
@@ -32,6 +34,14 @@ export default function NewRequestPage() {
         notes: notes || undefined,
       });
       setBody(result.draft);
+      if (result.source === "stub") {
+        setHint(
+          result.disclaimer ??
+            "Показан шаблон: ИИ временно недоступен. Отредактируйте текст вручную.",
+        );
+      } else {
+        setHint("Черновик от ИИ — проверьте перед отправкой.");
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось получить черновик ИИ");
     } finally {
@@ -124,6 +134,11 @@ export default function NewRequestPage() {
           />
         </div>
 
+        {hint && !error ? (
+          <p className="rounded-xl border border-ink/10 bg-ink/[0.03] px-3 py-2 text-sm text-ink-muted">
+            {hint}
+          </p>
+        ) : null}
         {error ? (
           <p className="rounded-xl border border-copper/25 bg-copper/5 px-3 py-2 text-sm text-copper-dark" role="alert">
             {error}

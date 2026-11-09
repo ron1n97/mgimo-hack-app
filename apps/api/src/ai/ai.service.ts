@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { completeWithFallback } from './ai-complete';
 import {
   DraftRequestDto,
   ExplainNotificationDto,
@@ -9,6 +10,8 @@ import {
 
 @Injectable()
 export class AiService {
+  private readonly logger = new Logger(AiService.name);
+
   constructor(
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
@@ -22,40 +25,53 @@ export class AiService {
   private get baseUrl(): string {
     return (
       this.config.get<string>('ZCODE_BASE_URL') ??
-      'https://openrouter.ai/api/v1'
+      'https://api.z.ai/api/coding/paas/v4'
     );
   }
 
   private get model(): string {
-    return this.config.get<string>('ZCODE_MODEL') ?? 'openai/gpt-4o-mini';
+    return this.config.get<string>('ZCODE_MODEL') ?? 'glm-5.3';
   }
 
   async draftRequest(userId: string, dto: DraftRequestDto) {
     const profile = await this.prisma.studentProfile.findUnique({
       where: { userId },
     });
-    const system =
-      'Ты помощник цифрового деканата. Пишешь черновик заявки/справки на русском. Без юридических гарантий. Не выдумывай номер студенческого.';
+    const system = [
+      'Ты помощник цифрового деканата. Пишешь черновик официальной заявки на русском.',
+      'Используй факты из контекста (причина, сроки), но сгладь мат и сленг до делового стиля.',
+      'Не выдумывай номер студенческого и не давай юридических гарантий.',
+      'Верни только текст заявления, без markdown-заголовков про «что заполнить», если можно обойтись 4–8 предложениями.',
+    ].join(' ');
     const userPrompt = [
       `Тип заявки: ${dto.type}`,
       profile
         ? `Студент: ${profile.fullName}, ${profile.faculty}, ${profile.program}, курс ${profile.course}, группа ${profile.groupLabel}`
         : 'Профиль студента не заполнен',
-      dto.context ? `Контекст: ${dto.context}` : '',
-      'Сформируй короткий черновик текста заявки (3–6 предложений).',
+      dto.context ? `Контекст от студента: ${dto.context}` : '',
+      'Сформируй короткий черновик текста заявки.',
     ]
       .filter(Boolean)
       .join('\n');
 
-    const text = await this.complete(system, userPrompt, () =>
-      this.stubDraft(dto.type, profile?.fullName),
-    );
+    const result = await completeWithFallback({
+      apiKey: this.apiKey,
+      baseUrl: this.baseUrl,
+      model: this.model,
+      system,
+      user: userPrompt,
+      stub: () => this.stubDraft(dto.type, profile?.fullName, dto.context),
+      logger: (msg) => this.logger.warn(msg),
+    });
 
     return {
       type: dto.type,
-      draft: text,
-      source: this.apiKey ? 'zcode' : 'stub',
-      disclaimer: 'Черновик ИИ — проверьте перед отправкой. Не юр. консультация.',
+      draft: result.text,
+      source: result.source,
+      disclaimer:
+        result.source === 'stub'
+          ? 'Показан шаблон: ИИ временно недоступен. Отредактируйте текст вручную.'
+          : 'Черновик ИИ — проверьте перед отправкой. Не юр. консультация.',
     };
   }
 
@@ -77,14 +93,23 @@ export class AiService {
       .filter(Boolean)
       .join('\n');
 
-    const text = await this.complete(system, userPrompt, () =>
-      this.stubNextActions(debts.map((d) => d.discipline)),
-    );
+    const result = await completeWithFallback({
+      apiKey: this.apiKey,
+      baseUrl: this.baseUrl,
+      model: this.model,
+      system,
+      user: userPrompt,
+      stub: () => this.stubNextActions(debts.map((d) => d.discipline)),
+      logger: (msg) => this.logger.warn(msg),
+    });
 
     return {
-      actions: text,
-      source: this.apiKey ? 'zcode' : 'stub',
-      disclaimer: 'Рекомендации ИИ, не официальная позиция вуза.',
+      actions: result.text,
+      source: result.source,
+      disclaimer:
+        result.source === 'stub'
+          ? 'Шаблонные шаги: ИИ временно недоступен.'
+          : 'Рекомендации ИИ, не официальная позиция вуза.',
     };
   }
 
@@ -99,60 +124,35 @@ export class AiService {
       .filter(Boolean)
       .join('\n');
 
-    const text = await this.complete(system, userPrompt, () =>
-      this.stubExplain(dto.title, dto.body),
-    );
+    const result = await completeWithFallback({
+      apiKey: this.apiKey,
+      baseUrl: this.baseUrl,
+      model: this.model,
+      system,
+      user: userPrompt,
+      stub: () => this.stubExplain(dto.title, dto.body),
+      logger: (msg) => this.logger.warn(msg),
+    });
 
     return {
-      explanation: text,
-      source: this.apiKey ? 'zcode' : 'stub',
-      disclaimer: 'Пояснение ИИ, уточняйте у деканата при сомнениях.',
+      explanation: result.text,
+      source: result.source,
+      disclaimer:
+        result.source === 'stub'
+          ? 'Краткое пояснение-шаблон: ИИ временно недоступен.'
+          : 'Пояснение ИИ, уточняйте у деканата при сомнениях.',
     };
   }
 
-  private async complete(
-    system: string,
-    user: string,
-    stub: () => string,
-  ): Promise<string> {
-    if (!this.apiKey) {
-      return stub();
-    }
-    try {
-      const res = await fetch(`${this.baseUrl.replace(/\/$/, '')}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: this.model,
-          messages: [
-            { role: 'system', content: system },
-            { role: 'user', content: user },
-          ],
-          temperature: 0.4,
-        }),
-      });
-      if (!res.ok) {
-        return stub();
-      }
-      const data = (await res.json()) as {
-        choices?: Array<{ message?: { content?: string } }>;
-      };
-      const content = data.choices?.[0]?.message?.content?.trim();
-      return content || stub();
-    } catch {
-      return stub();
-    }
-  }
-
-  private stubDraft(type: string, fullName?: string): string {
+  private stubDraft(type: string, fullName?: string, context?: string): string {
     const name = fullName ?? 'Студент';
+    const reason = context?.trim()
+      ? `Суть обращения: ${context.trim().slice(0, 280)}.`
+      : 'Прошу оказать содействие по указанному вопросу в рамках учебного процесса.';
     return (
       `Прошу рассмотреть обращение типа «${type}».\n\n` +
-      `Я, ${name}, прошу подготовить/оказать содействие по указанному вопросу в рамках учебного процесса. ` +
-      `Готов(а) предоставить дополнительные сведения по запросу деканата.\n\n` +
+      `Я, ${name}, обращаюсь по следующей причине. ${reason} ` +
+      `Готов(а) предоставить дополнительные сведения и документы по запросу деканата.\n\n` +
       `С уважением,\n${name}`
     );
   }

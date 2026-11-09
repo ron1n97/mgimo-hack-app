@@ -360,16 +360,24 @@ export async function draftRequestWithAi(payload: {
   type: string;
   subject: string;
   notes?: string;
-}): Promise<{ draft: string }> {
+}): Promise<{ draft: string; source: "zcode" | "stub"; disclaimer?: string }> {
   const context = [payload.subject, payload.notes].filter(Boolean).join(". ");
-  const raw = await request<{ draft: string }>("/ai/draft-request", {
+  const raw = await request<{
+    draft: string;
+    source?: "zcode" | "stub";
+    disclaimer?: string;
+  }>("/ai/draft-request", {
     method: "POST",
     body: {
       type: payload.type,
       context: context || undefined,
     },
   });
-  return { draft: raw.draft };
+  return {
+    draft: raw.draft,
+    source: raw.source === "stub" ? "stub" : "zcode",
+    disclaimer: raw.disclaimer,
+  };
 }
 
 export async function fetchNotifications(): Promise<NotificationItem[]> {

@@ -15,15 +15,11 @@ COPY packages/cabinet-tools packages/cabinet-tools
 COPY apps/bot apps/bot
 RUN pnpm --filter @dekanat/shared run build \
   && pnpm --filter @dekanat/cabinet-tools run build \
-  && pnpm --filter @dekanat/bot run build
+  && pnpm --filter @dekanat/bot run build \
+  && pnpm --filter @dekanat/bot deploy --prod --legacy /out
 
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/packages/shared ./packages/shared
-COPY --from=build /app/packages/cabinet-tools ./packages/cabinet-tools
-COPY --from=build /app/apps/bot/dist ./apps/bot/dist
-COPY --from=build /app/apps/bot/package.json ./apps/bot/package.json
-WORKDIR /app/apps/bot
+COPY --from=build /out/ ./
 CMD ["node", "dist/index.js"]

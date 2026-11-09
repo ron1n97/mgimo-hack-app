@@ -108,7 +108,10 @@ export default function TodayPage() {
               </Link>
             </div>
             {data.recentGrades.length === 0 ? (
-              <EmptyState title="Пока пусто" description="Оценки появятся после синка или сида API." />
+              <EmptyState
+                title="Оценок пока нет"
+                description="Когда появятся результаты — покажем здесь."
+              />
             ) : (
               <ul className="space-y-2">
                 {data.recentGrades.map((g) => (

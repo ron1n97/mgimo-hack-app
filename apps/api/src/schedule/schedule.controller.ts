@@ -11,6 +11,11 @@ import { ScheduleService } from './schedule.service';
 export class ScheduleController {
   constructor(private readonly schedule: ScheduleService) {}
 
+  @Get('groups')
+  groups() {
+    return this.schedule.listGroups();
+  }
+
   @Get('me')
   me(
     @CurrentUser() user: JwtPayloadUser,

@@ -31,6 +31,21 @@ export class ScheduleService {
     return this.findByGroupRuzId(ruzId, from, to);
   }
 
+  /** Distinct academic groups present in synced RUZ lessons. */
+  async listGroups() {
+    const rows = await this.prisma.scheduleLesson.findMany({
+      distinct: ['groupRuzId'],
+      select: { groupRuzId: true, groupLabel: true },
+      orderBy: { groupLabel: 'asc' },
+    });
+    return rows
+      .filter((r) => r.groupRuzId && r.groupLabel)
+      .map((r) => ({
+        groupRuzId: r.groupRuzId,
+        groupLabel: r.groupLabel,
+      }));
+  }
+
   private async findByGroupRuzId(groupRuzId: string, from?: string, to?: string) {
     const dateFilter = this.safeDateFilter(from, to);
     const where: Prisma.ScheduleLessonWhereInput = {

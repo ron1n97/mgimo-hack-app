@@ -77,7 +77,7 @@ async function main() {
       staffProfile: {
         create: {
           fullName: 'Елена Деканатская',
-          department: 'Учебный отдел (демо)',
+          department: 'Учебный отдел',
         },
       },
     },
@@ -101,7 +101,7 @@ async function main() {
         discipline: 'Международное право',
         lecturer: 'Иванова И.И.',
         auditorium: '312',
-        building: 'Главный корпус (демо)',
+        building: 'Главный корпус',
         kindOfWork: 'Лекция',
         isCancelled: false,
         isMoved: false,
@@ -117,7 +117,7 @@ async function main() {
         discipline: 'История дипломатии',
         lecturer: 'Петров П.П.',
         auditorium: '205',
-        building: 'Главный корпус (демо)',
+        building: 'Главный корпус',
         kindOfWork: 'Семинар',
         isCancelled: false,
         isMoved: true,
@@ -133,7 +133,7 @@ async function main() {
         discipline: 'Экономика',
         lecturer: 'Сидорова С.С.',
         auditorium: '401',
-        building: 'Корпус Б (демо)',
+        building: 'Корпус Б',
         kindOfWork: 'Лекция',
         isCancelled: false,
         isMoved: false,
@@ -229,7 +229,7 @@ async function main() {
       studentUserId: boris.id,
       type: 'certificate',
       title: 'Справка об обучении',
-      body: 'Нужна справка об обучении для банка (демо).',
+      body: 'Нужна справка об обучении для банка.',
       status: TicketStatus.DONE,
       events: {
         create: [
@@ -242,7 +242,7 @@ async function main() {
           {
             fromStatus: TicketStatus.SUBMITTED,
             toStatus: TicketStatus.DONE,
-            note: 'Готово к выдаче (демо)',
+            note: 'Готово к выдаче',
             actorUserId: staff.id,
           },
         ],
@@ -280,7 +280,7 @@ async function main() {
       {
         userId: staff.id,
         title: 'Новая заявка',
-        body: 'Поступила заявка от Анны Рисковой (демо).',
+        body: 'Поступила заявка от Анны Рисковой.',
         kind: 'staff_inbox',
       },
     ],

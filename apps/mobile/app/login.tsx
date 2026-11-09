@@ -37,7 +37,7 @@ export default function LoginScreen() {
   return (
     <View style={styles.root}>
       <Text style={styles.brand}>Деканат+</Text>
-      <Text style={styles.sub}>Демо-вход студента</Text>
+      <Text style={styles.sub}>Вход в кабинет</Text>
       <Disclaimer compact />
 
       <TextInput
@@ -45,7 +45,7 @@ export default function LoginScreen() {
         autoCapitalize="none"
         autoCorrect={false}
         keyboardType="email-address"
-        placeholder="email"
+        placeholder="почта"
         placeholderTextColor={colors.inkMuted}
         value={email}
         onChangeText={setEmail}

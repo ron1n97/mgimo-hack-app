@@ -6,6 +6,8 @@ export type User = {
   fullName: string;
   role: UserRole;
   groupName?: string;
+  groupRuzId?: string;
+  phone?: string;
 };
 
 export type AuthResponse = {

@@ -55,10 +55,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal,
     });
-  } catch (err) {
-    const reason = err instanceof Error ? err.message : "network error";
+  } catch {
     throw new ApiError(
-      `API недоступен (${API_URL}). Проверьте NEXT_PUBLIC_API_URL и что бэкенд запущен. ${reason}`,
+      `Сервер недоступен. Проверьте интернет и попробуйте снова.`,
       0,
     );
   }
@@ -90,7 +89,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
         ? Array.isArray((data as { message: unknown }).message)
           ? (data as { message: string[] }).message.join(", ")
           : String((data as { message: string }).message)
-        : `Ошибка API: ${response.status} ${response.statusText}`;
+        : `Ошибка сервера (${response.status})`;
     throw new ApiError(message, response.status);
   }
 
@@ -105,9 +104,14 @@ type ApiUser = {
   id: string;
   email: string;
   role: string;
+  phoneE164?: string | null;
   studentProfile?: {
     fullName?: string;
     groupLabel?: string;
+    groupRuzId?: string | null;
+    faculty?: string;
+    program?: string;
+    course?: number;
   } | null;
   staffProfile?: {
     fullName?: string;
@@ -129,6 +133,8 @@ export function mapUser(raw: ApiUser): User {
     fullName,
     role: mapRole(raw.role),
     groupName: raw.studentProfile?.groupLabel,
+    groupRuzId: raw.studentProfile?.groupRuzId ?? undefined,
+    phone: raw.phoneE164 ?? undefined,
   };
 }
 
@@ -247,6 +253,33 @@ export async function register(payload: {
 
 export async function fetchMe(): Promise<User> {
   const raw = await request<ApiUser>("/auth/me");
+  return mapUser(raw);
+}
+
+export type ScheduleGroup = {
+  groupRuzId: string;
+  groupLabel: string;
+};
+
+export async function fetchScheduleGroups(): Promise<ScheduleGroup[]> {
+  const data = await request<ScheduleGroup[]>("/schedule/groups");
+  return Array.isArray(data) ? data : [];
+}
+
+export async function updateProfile(payload: {
+  fullName?: string;
+  faculty?: string;
+  program?: string;
+  course?: number;
+  groupLabel?: string;
+  groupRuzId?: string;
+  phone?: string;
+  department?: string;
+}): Promise<User> {
+  const raw = await request<ApiUser>("/auth/me", {
+    method: "PATCH",
+    body: payload,
+  });
   return mapUser(raw);
 }
 

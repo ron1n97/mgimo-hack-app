@@ -53,12 +53,11 @@ export default function AuthPage() {
   return (
     <div className="mx-auto flex min-h-[calc(100dvh-2.5rem)] max-w-md flex-col justify-center px-4 py-10">
       <div className="animate-rise">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-copper">Концепт</p>
-        <h1 className="mt-2 font-serif text-4xl leading-tight text-ink sm:text-5xl">
+        <h1 className="font-serif text-4xl leading-tight text-ink sm:text-5xl">
           Деканат<span className="text-copper">+</span>
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-ink-muted">
-          Расписание, оценки и заявки в одном месте — для студентов и сотрудников.
+          Расписание из RUZ, заявки и учёба — в одном кабинете. Для студентов и сотрудников.
         </p>
       </div>
 
@@ -93,19 +92,20 @@ export default function AuthPage() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
-                placeholder="Анна Риск"
+                placeholder="Как к вам обращаться"
                 autoComplete="name"
               />
             </label>
           ) : null}
           <label className="block text-sm">
-            <span className="text-ink-muted">Email</span>
+            <span className="text-ink-muted">Почта</span>
             <input
               required
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
+              placeholder="имя@почта.ru"
               autoComplete="email"
             />
           </label>
@@ -117,6 +117,7 @@ export default function AuthPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
+              placeholder="не меньше 8 символов"
               autoComplete={mode === "login" ? "current-password" : "new-password"}
               minLength={8}
             />
@@ -139,7 +140,9 @@ export default function AuthPage() {
       </div>
 
       <div className="mt-6 rounded-2xl border border-dashed border-ink/15 bg-ink/[0.03] p-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">Демо-аккаунты</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+          Быстрый вход для жюри
+        </p>
         <ul className="mt-3 space-y-2">
           {DEMO.map((acc) => (
             <li key={acc.email}>
@@ -152,10 +155,8 @@ export default function AuthPage() {
                 }}
                 className="w-full rounded-xl px-2 py-2 text-left text-sm transition hover:bg-white/60"
               >
-                <span className="font-medium text-ink">{acc.email}</span>
-                <span className="mt-0.5 block text-xs text-ink-muted">
-                  {acc.password} · {acc.note}
-                </span>
+                <span className="font-medium text-ink">{acc.note}</span>
+                <span className="mt-0.5 block text-xs text-ink-muted">{acc.email}</span>
               </button>
             </li>
           ))}

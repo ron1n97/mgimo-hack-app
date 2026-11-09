@@ -94,10 +94,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               ●
             </Link>
             {user ? (
-              <p className="hidden max-w-[10rem] truncate text-xs text-ink-muted sm:block">
+              <Link
+                href="/profile"
+                className="hidden max-w-[10rem] truncate text-xs text-ink-muted hover:text-ink sm:block"
+                title="Профиль"
+              >
                 {user.fullName}
-              </p>
+              </Link>
             ) : null}
+            <Link
+              href="/profile"
+              className="rounded-lg border border-ink/15 px-2.5 py-1 text-xs text-ink-muted transition hover:border-ink/30 hover:text-ink"
+            >
+              Профиль
+            </Link>
             <button
               type="button"
               onClick={logout}

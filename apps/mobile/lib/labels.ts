@@ -8,7 +8,7 @@ export const TICKET_STATUS_RU: Record<TicketStatus, string> = {
 };
 
 export const CONTEST_DISCLAIMER =
-  'Концепт конкурса MGIMO×AI Challenge. Не официальный сервис вуза.';
+  'Неофициальный кабинет. Расписание — из открытого RUZ МГИМО.';
 
 export const REQUEST_TYPES = [
   'Справка об обучении',

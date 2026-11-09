@@ -61,8 +61,7 @@ export default function NewRequestPage() {
         </Link>
         <h1 className="mt-2 font-serif text-3xl text-ink">Новая заявка</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          Кнопка «Черновик ИИ» вызывает{" "}
-          <code className="text-xs">POST /ai/draft-request</code>.
+          Можно набросать текст кнопкой «Черновик ИИ», потом поправить и отправить.
         </p>
       </header>
 

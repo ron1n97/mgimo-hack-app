@@ -5,9 +5,10 @@ import { usePathname } from "next/navigation";
 
 const items = [
   { href: "/today", label: "Сегодня" },
-  { href: "/schedule", label: "Расписание" },
+  { href: "/schedule", label: "Пары" },
   { href: "/grades", label: "Учёба" },
   { href: "/requests", label: "Заявки" },
+  { href: "/profile", label: "Профиль" },
 ] as const;
 
 export function BottomNav() {

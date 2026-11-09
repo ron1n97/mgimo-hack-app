@@ -19,7 +19,7 @@ export default function GradesPage() {
       const data = await fetchGrades();
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Ошибка загрузки");
+      setError(err instanceof ApiError ? err.message : "Не удалось загрузить оценки");
       setItems([]);
     } finally {
       setLoading(false);
@@ -42,7 +42,10 @@ export default function GradesPage() {
 
       {!loading && !error ? (
         items.length === 0 ? (
-          <EmptyState title="Оценок пока нет" description="Демо-данные появятся после seed API." />
+          <EmptyState
+            title="Пока нет оценок"
+            description="Когда появятся результаты — они отобразятся здесь."
+          />
         ) : (
           <ul className="divide-y divide-cream-deep overflow-hidden rounded-2xl border border-cream-deep bg-white/50">
             {items.map((item) => (

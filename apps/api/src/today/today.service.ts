@@ -55,7 +55,7 @@ export class TodayService {
       openRequests: openTickets.slice(0, 5),
       unreadNotifications: unread.slice(0, 5),
       disclaimer:
-        'Конкурсные демо-данные. Не официальный сервис МГИМО.',
+        'Неофициальный кабинет. Расписание — из открытого RUZ МГИМО.',
     };
   }
 }

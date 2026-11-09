@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
@@ -9,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { LoginPhoneDto } from './dto/login-phone.dto';
 import { RegisterDto } from './dto/register.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { hashPassword, verifyPassword } from './password';
 import { normalizePhone } from './phone';
 
@@ -126,6 +128,76 @@ export class AuthService {
     return this.publicUser(user);
   }
 
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { studentProfile: true, staffProfile: true },
+    });
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+
+    if (dto.phone !== undefined) {
+      const raw = dto.phone.trim();
+      if (!raw) {
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { phoneE164: null },
+        });
+      } else {
+        const phone = normalizePhone(raw);
+        if (!phone) {
+          throw new BadRequestException('Некорректный номер телефона');
+        }
+        const clash = await this.prisma.user.findFirst({
+          where: { phoneE164: phone, NOT: { id: userId } },
+        });
+        if (clash) {
+          throw new ConflictException('Этот номер уже привязан к другому аккаунту');
+        }
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { phoneE164: phone },
+        });
+      }
+    }
+
+    if (user.role === Role.STUDENT && user.studentProfile) {
+      await this.prisma.studentProfile.update({
+        where: { userId },
+        data: {
+          ...(dto.fullName !== undefined ? { fullName: dto.fullName.trim() } : {}),
+          ...(dto.faculty !== undefined ? { faculty: dto.faculty.trim() } : {}),
+          ...(dto.program !== undefined ? { program: dto.program.trim() } : {}),
+          ...(dto.course !== undefined ? { course: dto.course } : {}),
+          ...(dto.groupLabel !== undefined
+            ? { groupLabel: dto.groupLabel.trim() }
+            : {}),
+          ...(dto.groupRuzId !== undefined
+            ? { groupRuzId: dto.groupRuzId.trim() || null }
+            : {}),
+        },
+      });
+    }
+
+    if (
+      (user.role === Role.STAFF || user.role === Role.ADMIN) &&
+      user.staffProfile
+    ) {
+      await this.prisma.staffProfile.update({
+        where: { userId },
+        data: {
+          ...(dto.fullName !== undefined ? { fullName: dto.fullName.trim() } : {}),
+          ...(dto.department !== undefined
+            ? { department: dto.department.trim() }
+            : {}),
+        },
+      });
+    }
+
+    return this.me(userId);
+  }
+
   private tokenResponse(user: {
     id: string;
     email: string;
@@ -164,7 +236,7 @@ export class AuthService {
       studentProfile: user.studentProfile ?? null,
       staffProfile: user.staffProfile ?? null,
       disclaimer:
-        'Конкурсные демо-данные. Не официальный сервис МГИМО. ПДн вымышленные.',
+        'Неофициальный кабинет. Расписание — из открытого RUZ МГИМО.',
     };
   }
 }

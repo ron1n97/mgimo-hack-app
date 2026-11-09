@@ -71,7 +71,7 @@ export default function ScheduleScreen() {
       {!loading && !error && byDate.length === 0 ? (
         <EmptyBlock
           title="Нет занятий"
-          description="Когда API отдаст RUZ/seed — пары появятся здесь."
+          description="Выберите группу в веб-кабинете (Профиль) — пары подтянутся из RUZ."
         />
       ) : null}
 

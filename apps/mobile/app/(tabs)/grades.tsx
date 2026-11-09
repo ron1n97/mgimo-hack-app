@@ -55,7 +55,7 @@ export default function GradesScreen() {
       {!loading && !error && grades.length === 0 ? (
         <EmptyBlock
           title="Пока пусто"
-          description="Оценки появятся после сида или синка API."
+          description="Когда появятся результаты — покажем здесь."
         />
       ) : null}
 

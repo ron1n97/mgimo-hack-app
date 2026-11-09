@@ -55,12 +55,8 @@ async function request<T>(path: string, options: RequestInitAuth = {}): Promise<
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
-  } catch (err) {
-    const reason = err instanceof Error ? err.message : 'network error';
-    throw new ApiError(
-      `API недоступен (${API_URL}). ${reason}`,
-      0,
-    );
+  } catch {
+    throw new ApiError('Сервер недоступен. Проверьте интернет и попробуйте снова.', 0);
   }
 
   const text = await res.text();

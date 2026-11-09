@@ -3,7 +3,7 @@ import { buildApplicationDocx } from './application-docx';
 describe('buildApplicationDocx', () => {
   it('returns a non-empty docx buffer', async () => {
     const buf = await buildApplicationDocx({
-      studentName: 'Иванов Иван Иванович',
+      fullName: 'Иванов Иван Иванович',
       faculty: 'Международные отношения',
       program: 'Бакалавриат МО',
       course: 3,

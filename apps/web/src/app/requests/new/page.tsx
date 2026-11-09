@@ -98,7 +98,7 @@ export default function NewRequestPage() {
         </Link>
         <h1 className="mt-2 font-serif text-3xl text-ink">Новая заявка</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          Черновик ИИ → правки в тексте → Word при необходимости → отправка в деканат.
+          Черновик по ГОСТ → правки → Word (Times New Roman, поля, 1,5 интервал) → отправка.
         </p>
       </header>
 
@@ -157,7 +157,7 @@ export default function NewRequestPage() {
                 disabled={exporting || !body.trim()}
                 className="rounded-lg border border-ink/20 px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-ink/5 disabled:opacity-60"
               >
-                {exporting ? "Собираем…" : "Скачать Word"}
+                {exporting ? "Собираем…" : "Word по ГОСТ"}
               </button>
             </div>
           </div>

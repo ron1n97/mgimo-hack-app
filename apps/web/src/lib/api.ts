@@ -116,6 +116,9 @@ type ApiUser = {
   } | null;
   staffProfile?: {
     fullName?: string;
+    department?: string;
+    scheduleGroupRuzId?: string | null;
+    scheduleGroupLabel?: string | null;
   } | null;
 };
 
@@ -123,6 +126,7 @@ function mapRole(role: string): UserRole {
   const r = role.toUpperCase();
   if (r === "ADMIN") return "admin";
   if (r === "STAFF") return "staff";
+  if (r === "TEACHER") return "teacher";
   return "student";
 }
 
@@ -131,18 +135,32 @@ export function mapUser(raw: ApiUser): User {
     raw.studentProfile?.fullName ??
     raw.staffProfile?.fullName ??
     raw.email;
+  const role = mapRole(raw.role);
+  const isStudent = role === "student";
+  const isStaffLike = role === "staff" || role === "admin";
   return {
     id: raw.id,
     email: raw.email,
     fullName,
-    role: mapRole(raw.role),
-    groupName: raw.studentProfile?.groupLabel,
-    groupRuzId: raw.studentProfile?.groupRuzId ?? undefined,
-    preferredSubGroupOids: raw.studentProfile?.preferredSubGroupOids ?? [],
+    role,
+    groupName: isStudent
+      ? raw.studentProfile?.groupLabel
+      : isStaffLike
+        ? (raw.staffProfile?.scheduleGroupLabel ?? undefined)
+        : undefined,
+    groupRuzId: isStudent
+      ? (raw.studentProfile?.groupRuzId ?? undefined)
+      : isStaffLike
+        ? (raw.staffProfile?.scheduleGroupRuzId ?? undefined)
+        : undefined,
+    preferredSubGroupOids: isStudent
+      ? (raw.studentProfile?.preferredSubGroupOids ?? [])
+      : [],
     phone: raw.phoneE164 ?? undefined,
-    faculty: raw.studentProfile?.faculty,
-    program: raw.studentProfile?.program,
-    course: raw.studentProfile?.course,
+    faculty: isStudent ? raw.studentProfile?.faculty : undefined,
+    program: isStudent ? raw.studentProfile?.program : undefined,
+    course: isStudent ? raw.studentProfile?.course : undefined,
+    department: raw.staffProfile?.department,
   };
 }
 

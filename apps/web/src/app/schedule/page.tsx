@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ApiError, fetchMe, fetchSchedule } from "@/lib/api";
-import type { ScheduleItem } from "@/lib/types";
+import type { ScheduleItem, UserRole } from "@/lib/types";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
@@ -37,6 +37,7 @@ export default function SchedulePage() {
   const [items, setItems] = useState<ScheduleItem[]>([]);
   const [groupName, setGroupName] = useState<string | undefined>();
   const [groupRuzId, setGroupRuzId] = useState<string | undefined>();
+  const [role, setRole] = useState<UserRole>("student");
   const [hasSubPreference, setHasSubPreference] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +52,7 @@ export default function SchedulePage() {
     setError(null);
     try {
       const me = await fetchMe();
+      setRole(me.role);
       setGroupName(me.groupName);
       setGroupRuzId(me.groupRuzId);
       setHasSubPreference((me.preferredSubGroupOids?.length ?? 0) > 0);
@@ -80,6 +82,13 @@ export default function SchedulePage() {
   }, [items, weekStart]);
 
   const noGroup = !groupRuzId && (!groupName || groupName === "Без группы");
+  const isStaffView = role === "admin" || role === "staff";
+  const pickGroupHint = isStaffView
+    ? "Выберите группу для просмотра в профиле — появится календарь."
+    : "Выберите учебную группу в профиле — появится календарь.";
+  const pickGroupCta = isStaffView
+    ? "Выбрать группу для просмотра →"
+    : "Выбрать группу →";
 
   return (
     <div className="animate-rise space-y-6">
@@ -88,8 +97,8 @@ export default function SchedulePage() {
           <h1 className="font-serif text-3xl text-ink">Расписание</h1>
           <p className="mt-1 text-sm text-ink-muted">
             {noGroup
-              ? "Выберите учебную группу в профиле — появится календарь."
-              : `Группа ${groupName} · неделя ${from.slice(5)} — ${to.slice(5)}`}
+              ? pickGroupHint
+              : `${isStaffView ? "Просмотр" : "Группа"} ${groupName} · неделя ${from.slice(5)} — ${to.slice(5)}`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -129,12 +138,16 @@ export default function SchedulePage() {
 
       {noGroup ? (
         <div className="rounded-2xl border border-copper/30 bg-copper/5 px-4 py-4">
-          <p className="text-sm text-ink">Группа ещё не выбрана.</p>
+          <p className="text-sm text-ink">
+            {isStaffView
+              ? "Группа для просмотра ещё не выбрана."
+              : "Группа ещё не выбрана."}
+          </p>
           <Link
             href="/profile"
             className="mt-3 inline-block text-sm font-semibold text-copper underline-offset-4 hover:underline"
           >
-            Выбрать группу →
+            {pickGroupCta}
           </Link>
         </div>
       ) : null}
@@ -148,7 +161,9 @@ export default function SchedulePage() {
             title="На этой неделе пар нет"
             description={
               noGroup
-                ? "Укажите группу в профиле."
+                ? isStaffView
+                  ? "Укажите группу для просмотра в профиле."
+                  : "Укажите группу в профиле."
                 : "Листайте стрелками на соседние недели."
             }
           />

@@ -57,6 +57,9 @@ model StaffProfile {
   userId     String @id
   fullName   String
   department String
+  /// Catalog group for schedule oversight / viewing (not student enrollment)
+  scheduleGroupRuzId  String?
+  scheduleGroupLabel  String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

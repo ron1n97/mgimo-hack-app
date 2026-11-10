@@ -11,6 +11,7 @@ import {
   type ScheduleSubGroup,
 } from "@/lib/api";
 import { setSession, getToken } from "@/lib/auth";
+import type { UserRole } from "@/lib/types";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
 
@@ -22,6 +23,7 @@ export default function ProfilePage() {
   const [groups, setGroups] = useState<ScheduleGroup[]>([]);
   const [subGroups, setSubGroups] = useState<ScheduleSubGroup[]>([]);
   const [subGroupsLoading, setSubGroupsLoading] = useState(false);
+  const [role, setRole] = useState<UserRole>("student");
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -31,12 +33,18 @@ export default function ProfilePage() {
   const [faculty, setFaculty] = useState("");
   const [program, setProgram] = useState("");
   const [course, setCourse] = useState("1");
+  const [department, setDepartment] = useState("");
+
+  const isStudent = role === "student";
+  const isStaffView = role === "admin" || role === "staff";
+  const isTeacher = role === "teacher";
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const [me, g] = await Promise.all([fetchMe(), fetchScheduleGroups()]);
+      setRole(me.role);
       setFullName(me.fullName);
       setEmail(me.email);
       setPhone(me.phone ?? "");
@@ -45,6 +53,7 @@ export default function ProfilePage() {
       setFaculty(me.faculty && me.faculty !== "Не указан" ? me.faculty : "");
       setProgram(me.program && me.program !== "Не указана" ? me.program : "");
       setCourse(String(me.course && me.course > 0 ? me.course : 1));
+      setDepartment(me.department ?? "");
       setGroups(g);
       const token = getToken();
       if (token) setSession(token, me);
@@ -60,7 +69,7 @@ export default function ProfilePage() {
   }, [load]);
 
   useEffect(() => {
-    if (!groupRuzId) {
+    if (!isStudent || !groupRuzId) {
       setSubGroups([]);
       return;
     }
@@ -79,9 +88,9 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [groupRuzId]);
+  }, [groupRuzId, isStudent]);
 
-  function onGroupChange(next: string) {
+  function onStudentGroupChange(next: string) {
     setGroupRuzId(next);
     setPreferredSubGroupOids([]);
   }
@@ -100,19 +109,39 @@ export default function ProfilePage() {
     try {
       const selected = groups.find((g) => g.groupRuzId === groupRuzId);
       const courseNum = Number(course);
-      const updated = await updateProfile({
-        fullName: fullName.trim(),
-        phone: phone.trim(),
-        faculty: faculty.trim() || "Не указан",
-        program: program.trim() || "Не указана",
-        course: Number.isFinite(courseNum) ? courseNum : 1,
-        groupRuzId: groupRuzId || undefined,
-        groupLabel: selected?.groupLabel,
-        preferredSubGroupOids,
-      });
+      const updated = await updateProfile(
+        isStudent
+          ? {
+              fullName: fullName.trim(),
+              phone: phone.trim(),
+              faculty: faculty.trim() || "Не указан",
+              program: program.trim() || "Не указана",
+              course: Number.isFinite(courseNum) ? courseNum : 1,
+              groupRuzId: groupRuzId || undefined,
+              groupLabel: selected?.groupLabel,
+              preferredSubGroupOids,
+            }
+          : isStaffView
+            ? {
+                fullName: fullName.trim(),
+                phone: phone.trim(),
+                department: department.trim() || undefined,
+                groupRuzId: groupRuzId || "",
+                groupLabel: selected?.groupLabel ?? "",
+              }
+            : {
+                fullName: fullName.trim(),
+                phone: phone.trim(),
+                department: department.trim() || undefined,
+              },
+      );
       const token = getToken();
       if (token) setSession(token, updated);
-      setOk("Сохранено. Расписание, бот и шапка заявлений обновятся сразу.");
+      setOk(
+        isStaffView
+          ? "Сохранено. Расписание обновится для выбранной группы просмотра."
+          : "Сохранено. Расписание, бот и шапка заявлений обновятся сразу.",
+      );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось сохранить");
     } finally {
@@ -128,7 +157,11 @@ export default function ProfilePage() {
       <header>
         <h1 className="font-serif text-3xl text-ink">Профиль</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          Данные для расписания, Telegram-бота и шапки заявлений.
+          {isStaffView
+            ? "Контакты сотрудника и группа для просмотра расписания."
+            : isTeacher
+              ? "Данные преподавателя и телефон для Telegram-бота."
+              : "Данные для расписания, Telegram-бота и шапки заявлений."}
         </p>
       </header>
 
@@ -143,7 +176,7 @@ export default function ProfilePage() {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
-            placeholder="Как в зачётке"
+            placeholder={isStudent ? "Как в зачётке" : "ФИО"}
             autoComplete="name"
           />
         </label>
@@ -157,97 +190,148 @@ export default function ProfilePage() {
           />
         </label>
 
-        <label className="block text-sm">
-          <span className="text-ink-muted">Факультет</span>
-          <input
-            value={faculty}
-            onChange={(e) => setFaculty(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
-            placeholder="Международные отношения"
-          />
-        </label>
+        {isStudent ? (
+          <>
+            <label className="block text-sm">
+              <span className="text-ink-muted">Факультет</span>
+              <input
+                value={faculty}
+                onChange={(e) => setFaculty(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
+                placeholder="Международные отношения"
+              />
+            </label>
 
-        <label className="block text-sm">
-          <span className="text-ink-muted">Направление / программа</span>
-          <input
-            value={program}
-            onChange={(e) => setProgram(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
-            placeholder="Бакалавриат МО"
-          />
-        </label>
+            <label className="block text-sm">
+              <span className="text-ink-muted">Направление / программа</span>
+              <input
+                value={program}
+                onChange={(e) => setProgram(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
+                placeholder="Бакалавриат МО"
+              />
+            </label>
 
-        <label className="block text-sm">
-          <span className="text-ink-muted">Курс</span>
-          <select
-            value={course}
-            onChange={(e) => setCourse(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
-          >
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </label>
+            <label className="block text-sm">
+              <span className="text-ink-muted">Курс</span>
+              <select
+                value={course}
+                onChange={(e) => setCourse(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
+              >
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <label className="block text-sm">
-          <span className="text-ink-muted">Учебная группа</span>
-          <select
-            value={groupRuzId}
-            onChange={(e) => onGroupChange(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
-          >
-            <option value="">Не выбрана</option>
-            {groups.map((g) => (
-              <option key={g.groupRuzId} value={g.groupRuzId}>
-                {g.groupLabel}
-              </option>
-            ))}
-          </select>
-          <span className="mt-1 block text-xs text-ink-muted">
-            {groups.length === 0
-              ? "Список групп пока пуст — обновите страницу чуть позже."
-              : "После выбора в «Расписании» появятся пары из RUZ."}
-          </span>
-        </label>
+            <label className="block text-sm">
+              <span className="text-ink-muted">Учебная группа</span>
+              <select
+                value={groupRuzId}
+                onChange={(e) => onStudentGroupChange(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
+              >
+                <option value="">Не выбрана</option>
+                {groups.map((g) => (
+                  <option key={g.groupRuzId} value={g.groupRuzId}>
+                    {g.groupLabel}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs text-ink-muted">
+                {groups.length === 0
+                  ? "Список групп пока пуст — обновите страницу чуть позже."
+                  : "После выбора в «Расписании» появятся пары из RUZ."}
+              </span>
+            </label>
 
-        {groupRuzId ? (
-          <fieldset className="block text-sm">
-            <legend className="text-ink-muted">Подгруппы / языки</legend>
-            {subGroupsLoading ? (
-              <p className="mt-2 text-xs text-ink-muted">Загружаем варианты…</p>
-            ) : subGroups.length === 0 ? (
-              <p className="mt-2 text-xs text-ink-muted">
-                Пока нет подгрупп в синхронизированном расписании — после sync
-                появятся здесь. Без выбора календарь показывает все параллели.
-              </p>
-            ) : (
-              <ul className="mt-2 space-y-1.5">
-                {subGroups.map((sg) => {
-                  const checked = preferredSubGroupOids.includes(sg.subGroupOid);
-                  return (
-                    <li key={sg.subGroupOid}>
-                      <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-cream-deep bg-cream/30 px-3 py-2">
-                        <input
-                          type="checkbox"
-                          className="mt-0.5"
-                          checked={checked}
-                          onChange={() => toggleSubGroup(sg.subGroupOid)}
-                        />
-                        <span className="text-sm text-ink">{sg.subGroup}</span>
-                      </label>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            <span className="mt-1 block text-xs text-ink-muted">
-              Отметьте свои языковые / потоковые подгруппы — лишние параллели
-              скроются в расписании.
-            </span>
-          </fieldset>
+            {groupRuzId ? (
+              <fieldset className="block text-sm">
+                <legend className="text-ink-muted">Подгруппы / языки</legend>
+                {subGroupsLoading ? (
+                  <p className="mt-2 text-xs text-ink-muted">Загружаем варианты…</p>
+                ) : subGroups.length === 0 ? (
+                  <p className="mt-2 text-xs text-ink-muted">
+                    Пока нет подгрупп в синхронизированном расписании — после sync
+                    появятся здесь. Без выбора календарь показывает все параллели.
+                  </p>
+                ) : (
+                  <ul className="mt-2 space-y-1.5">
+                    {subGroups.map((sg) => {
+                      const checked = preferredSubGroupOids.includes(sg.subGroupOid);
+                      return (
+                        <li key={sg.subGroupOid}>
+                          <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-cream-deep bg-cream/30 px-3 py-2">
+                            <input
+                              type="checkbox"
+                              className="mt-0.5"
+                              checked={checked}
+                              onChange={() => toggleSubGroup(sg.subGroupOid)}
+                            />
+                            <span className="text-sm text-ink">{sg.subGroup}</span>
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                <span className="mt-1 block text-xs text-ink-muted">
+                  Отметьте свои языковые / потоковые подгруппы — лишние параллели
+                  скроются в расписании.
+                </span>
+              </fieldset>
+            ) : null}
+          </>
+        ) : null}
+
+        {isStaffView ? (
+          <>
+            <label className="block text-sm">
+              <span className="text-ink-muted">Подразделение</span>
+              <input
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
+                placeholder="Учебный отдел"
+              />
+            </label>
+
+            <label className="block text-sm">
+              <span className="text-ink-muted">Группа для просмотра</span>
+              <select
+                value={groupRuzId}
+                onChange={(e) => setGroupRuzId(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
+              >
+                <option value="">Не выбрана</option>
+                {groups.map((g) => (
+                  <option key={g.groupRuzId} value={g.groupRuzId}>
+                    {g.groupLabel}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs text-ink-muted">
+                {groups.length === 0
+                  ? "Каталог групп пуст — дождитесь синхронизации RUZ."
+                  : "Любая группа из каталога — для просмотра расписания, не зачисление."}
+              </span>
+            </label>
+          </>
+        ) : null}
+
+        {isTeacher ? (
+          <label className="block text-sm">
+            <span className="text-ink-muted">Кафедра / подразделение</span>
+            <input
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
+              placeholder="Кафедра"
+            />
+          </label>
         ) : null}
 
         <label className="block text-sm">

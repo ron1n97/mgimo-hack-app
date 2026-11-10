@@ -19,25 +19,46 @@ export class ScheduleService {
     groupRuzId?: string,
     showAll = false,
   ) {
-    const profile = await this.prisma.studentProfile.findUnique({
+    const student = await this.prisma.studentProfile.findUnique({
       where: { userId },
     });
-    if (!profile) {
-      throw new NotFoundException('Student profile not found');
+    if (student) {
+      const ruzId = groupRuzId ?? student.groupRuzId;
+      const preferred = student.preferredSubGroupOids ?? [];
+      if (!ruzId) {
+        return this.findByGroupLabel(
+          student.groupLabel,
+          from,
+          to,
+          preferred,
+          showAll,
+        );
+      }
+      return this.findByGroupRuzId(ruzId, from, to, preferred, showAll);
     }
 
-    const ruzId = groupRuzId ?? profile.groupRuzId;
-    const preferred = profile.preferredSubGroupOids ?? [];
-    if (!ruzId) {
-      return this.findByGroupLabel(
-        profile.groupLabel,
-        from,
-        to,
-        preferred,
-        showAll,
-      );
+    // STAFF / ADMIN: schedule oversight via selected catalog group
+    const staff = await this.prisma.staffProfile.findUnique({
+      where: { userId },
+    });
+    if (!staff) {
+      throw new NotFoundException('Profile not found');
     }
-    return this.findByGroupRuzId(ruzId, from, to, preferred, showAll);
+    const ruzId = groupRuzId ?? staff.scheduleGroupRuzId;
+    if (!ruzId) {
+      if (staff.scheduleGroupLabel) {
+        return this.findByGroupLabel(
+          staff.scheduleGroupLabel,
+          from,
+          to,
+          [],
+          true,
+        );
+      }
+      return [];
+    }
+    // Staff view: always full group (no personal subgroup enrollment filter)
+    return this.findByGroupRuzId(ruzId, from, to, [], true);
   }
 
   async forGroup(ruzId: string, from?: string, to?: string) {

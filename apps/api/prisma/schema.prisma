@@ -37,6 +37,14 @@ model User {
   tickets        RequestTicket[] @relation("StudentTickets")
   requestEvents  RequestEvent[]  @relation("RequestActor")
   notifications  Notification[]
+
+  clubsCreated           Club[]                   @relation("ClubCreatedBy")
+  clubsConfirmed         Club[]                   @relation("ClubConfirmedBy")
+  clubMemberships        ClubMembership[]
+  clubSubscriptions      ClubSubscription[]
+  tagSubscriptions       StudentTagSubscription[]
+  digestSourcesCreated   ClubSource[]             @relation("ClubSourceCreatedBy")
+  eventsModerated        EventCandidate[]         @relation("EventModeratedBy")
 }
 
 model StudentProfile {
@@ -140,4 +148,157 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+enum ClubStatus {
+  DRAFT
+  CONFIRMED
+}
+
+enum ClubSourceKind {
+  TELEGRAM
+  VK
+  WEBSITE
+}
+
+enum ClubMembershipRole {
+  OWNER
+  MEMBER
+}
+
+enum EventModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Student organization / club in the registry.
+model Club {
+  id                String     @id @default(cuid())
+  name              String
+  description       String?
+  status            ClubStatus @default(DRAFT)
+  digestEnabled     Boolean    @default(false)
+  websiteUrl        String?
+  structureNote     String?
+  createdByUserId   String?
+  confirmedAt       DateTime?
+  confirmedByUserId String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  createdBy   User?             @relation("ClubCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  confirmedBy User?             @relation("ClubConfirmedBy", fields: [confirmedByUserId], references: [id], onDelete: SetNull)
+  tags        ClubTag[]
+  sources     ClubSource[]
+  memberships ClubMembership[]
+  subscribers ClubSubscription[]
+  events      EventCandidate[]
+
+  @@index([status])
+  @@index([digestEnabled])
+  @@index([name])
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+
+  clubs         ClubTag[]
+  subscriptions StudentTagSubscription[]
+}
+
+model ClubTag {
+  clubId String
+  tagId  String
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([clubId, tagId])
+  @@index([tagId])
+}
+
+/// TG/VK/website source for digest ingest (may exist without a club).
+model ClubSource {
+  id              String         @id @default(cuid())
+  clubId          String?
+  kind            ClubSourceKind
+  url             String
+  title           String?
+  enabled         Boolean        @default(true)
+  createdByUserId String?
+  createdAt       DateTime       @default(now())
+
+  club      Club?             @relation(fields: [clubId], references: [id], onDelete: SetNull)
+  createdBy User?             @relation("ClubSourceCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  events    EventCandidate[]
+
+  @@index([clubId])
+  @@index([kind, enabled])
+  @@unique([url])
+}
+
+model ClubMembership {
+  id        String              @id @default(cuid())
+  clubId    String
+  userId    String
+  role      ClubMembershipRole  @default(OWNER)
+  createdAt DateTime            @default(now())
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, userId])
+  @@index([userId])
+}
+
+model StudentTagSubscription {
+  userId    String
+  tagId     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([userId, tagId])
+  @@index([tagId])
+}
+
+model ClubSubscription {
+  userId    String
+  clubId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@id([userId, clubId])
+  @@index([clubId])
+}
+
+/// Candidate post/event from a digest source; staff moderation before afisha publish.
+model EventCandidate {
+  id               String                @id @default(cuid())
+  clubId           String?
+  sourceId         String?
+  title            String
+  body             String?
+  url              String?
+  startsAt         DateTime?
+  moderationStatus EventModerationStatus @default(PENDING)
+  moderatedAt      DateTime?
+  moderatedByUserId String?
+  publishedAt      DateTime?
+  createdAt        DateTime              @default(now())
+
+  club        Club?       @relation(fields: [clubId], references: [id], onDelete: SetNull)
+  source      ClubSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  moderatedBy User?       @relation("EventModeratedBy", fields: [moderatedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([moderationStatus, createdAt])
+  @@index([clubId])
+  @@index([sourceId])
 }

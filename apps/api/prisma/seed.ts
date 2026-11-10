@@ -4,6 +4,7 @@
  */
 import { PrismaClient, Role, TicketStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { seedClubsRegistry, seedDemoClubEvents } from './seed-clubs';
 
 const prisma = new PrismaClient();
 const DEMO_PASSWORD = 'Demo123!';
@@ -18,6 +19,14 @@ async function main() {
   // Idempotent wipe — keep ScheduleLesson so RUZ worker data survives reseeds
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
+      "EventCandidate",
+      "ClubSubscription",
+      "StudentTagSubscription",
+      "ClubMembership",
+      "ClubTag",
+      "ClubSource",
+      "Club",
+      "Tag",
       "RequestEvent",
       "RequestTicket",
       "Notification",
@@ -359,6 +368,17 @@ async function main() {
       },
     ],
   });
+
+  const clubsSeed = await seedClubsRegistry(prisma, {
+    confirmAsUserId: staff.id,
+  });
+  await seedDemoClubEvents(prisma, {
+    studentUserId: anna.id,
+    staffUserId: staff.id,
+  });
+  console.log(
+    `Clubs registry: ${clubsSeed.total} rows (${clubsSeed.created} created).`,
+  );
 
   console.log('Seed OK.');
   console.log('Accounts (password Demo123!):');

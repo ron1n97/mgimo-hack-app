@@ -1,0 +1,848 @@
+[
+  {
+    "name": "Студенческий союз МГИМО",
+    "category": "Головная организация",
+    "structure": "Самостоятельная (РОО)",
+    "vk": "https://vk.com/studsouz_mgimo",
+    "telegram": "https://t.me/studsouzmgimo",
+    "website": "https://studsouz.mgimo.ru",
+    "note": "Крупнейшая студенческая организация; при ней Юридический клуб, Клуб блогеров"
+  },
+  {
+    "name": "Научное студенческое общество (НСО)",
+    "category": "Головная организация",
+    "structure": "НСО",
+    "vk": "https://vk.com/nso.mgimo",
+    "telegram": "https://t.me/nsomgimo",
+    "website": "https://nso.mgimo.ru",
+    "note": "Объединяет 40+ научных клубов; полный список — на nso.mgimo.ru"
+  },
+  {
+    "name": "Студенческий спортивный клуб (ССК)",
+    "category": "Спорт",
+    "structure": "Самостоятельная (РОО)",
+    "vk": null,
+    "telegram": "https://t.me/sskmgimo",
+    "website": "https://sportclub.mgimo.ru",
+    "note": "Координирует 20+ спортивных секций"
+  },
+  {
+    "name": "Культурный центр МГИМО",
+    "category": "Творчество",
+    "structure": "Подразделение МГИМО",
+    "vk": null,
+    "telegram": "https://t.me/mgimoculturecentre",
+    "website": null,
+    "note": "Через канал КЦ анонсируются хор, театр, MGIMO Symphony, танцевальные студии, MIDWAY"
+  },
+  {
+    "name": "Совет землячеств МГИМО",
+    "category": "Землячества и нац. клубы",
+    "structure": "Самостоятельная",
+    "vk": null,
+    "telegram": "https://t.me/sovzem",
+    "website": null,
+    "note": "19 землячеств"
+  },
+  {
+    "name": "Московская международная модель ООН им. В.И. Чуркина (C-MIMUN)",
+    "category": "Дебаты и модели",
+    "structure": "Самостоятельная",
+    "vk": null,
+    "telegram": null,
+    "website": null,
+    "note": "Найден только канал ташкентского отделения: t.me/cmimunuz"
+  },
+  {
+    "name": "Дипломатический клуб им. А.Г. Карлова",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": "https://vk.com/club132979311",
+    "telegram": "https://t.me/MGIMO_Diplomatic_club",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Ближневосточный клуб",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": "https://vk.com/club43022446",
+    "telegram": "https://t.me/bvkmgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Ибероамериканский клуб",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": "https://vk.com/club88113907",
+    "telegram": "https://t.me/elclubiberoamericanomgimo",
+    "website": null,
+    "note": "Старый адрес VK: vk.com/mgimo_iberoamerica"
+  },
+  {
+    "name": "Индоиранский клуб",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": "https://vk.com/club24350928",
+    "telegram": "https://t.me/indo_iranian_club",
+    "website": null,
+    "note": "Короткий адрес VK: vk.com/indoiranskiy.mgimo"
+  },
+  {
+    "name": "Китайский клуб",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": "https://t.me/ccmgimo",
+    "website": null,
+    "note": "Проводит «Неделю Китая»"
+  },
+  {
+    "name": "Японский клуб",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": "https://vk.com/club62575051",
+    "telegram": "https://t.me/japanclubmgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Корейский клуб",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": "https://vk.com/club13179376",
+    "telegram": null,
+    "website": null,
+    "note": "Telegram не найден"
+  },
+  {
+    "name": "Клуб германских исследований (КГИ)",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": "https://t.me/dskmgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Французский клуб",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": "https://t.me/francemgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Итальянский клуб им. Т.В. Зоновой",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": "https://t.me/italclub_mgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Англосаксонский клуб (АСК)",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": "https://t.me/anglosaxon_club",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Скандинавский клуб Nordlys",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": "https://t.me/nordlysmgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Балканский клуб",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": "https://t.me/rosbalkanclub",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Африканский клуб",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": "https://vk.com/africanclub",
+    "telegram": null,
+    "website": null,
+    "note": "Мероприятия идут через канал форума «Россия–Африка: что дальше?»"
+  },
+  {
+    "name": "Форум «Россия–Африка: что дальше?»",
+    "category": "Регионы и МО (НСО)",
+    "structure": "Проект",
+    "vk": null,
+    "telegram": "https://t.me/forumrussiaafricawhatisnextMGIMO",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб внешней политики России",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб исследований постсоветского пространства (КИПП / Клуб СНГ)",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": null,
+    "website": "https://russiancouncil.ru/blogs/CIS-NSO-MGIMO/",
+    "note": "Соцсети не найдены, есть блог на РСМД"
+  },
+  {
+    "name": "Клуб Юго-Восточной Азии",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Турецкий клуб",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб международной безопасности",
+    "category": "Регионы и МО (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Исторический клуб «Кассиодор»",
+    "category": "Наука и тематические (НСО)",
+    "structure": "НСО",
+    "vk": "https://vk.com/cassiodor",
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Военно-исторический клуб",
+    "category": "Наука и тематические (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": "https://t.me/vikmgimo",
+    "website": null,
+    "note": "Канал определён по ссылке на анонс лекции"
+  },
+  {
+    "name": "Клуб когнитивных исследований",
+    "category": "Наука и тематические (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": "https://t.me/cognitive_club_mgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб космической дипломатии",
+    "category": "Наука и тематические (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": "https://t.me/Space_Diplomacy_Club_MGIMO",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб «Мировая энергетическая политика» (МЭП)",
+    "category": "Наука и тематические (НСО)",
+    "structure": "НСО / МИЭП",
+    "vk": "https://vk.com/club13175316",
+    "telegram": null,
+    "website": "https://miep.mgimo.ru/page/view/id/81",
+    "note": null
+  },
+  {
+    "name": "Молодёжный клуб РГО Terra Politica",
+    "category": "Наука и тематические (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": "https://t.me/terra_politica",
+    "website": null,
+    "note": "Политическая география"
+  },
+  {
+    "name": "RussInnovation",
+    "category": "Наука и тематические (НСО)",
+    "structure": "НСО / ФУП",
+    "vk": null,
+    "telegram": "https://t.me/russinnovationmgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб урбанистики",
+    "category": "Наука и тематические (НСО)",
+    "structure": "НСО / ФУП",
+    "vk": "https://vk.com/usc_mgimo",
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб этикета (Etiquette Club)",
+    "category": "Наука и тематические (НСО)",
+    "structure": "НСО / ФУП",
+    "vk": "https://vk.com/etiquettemgimo",
+    "telegram": "https://t.me/etiquettemgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "PR-клуб",
+    "category": "Наука и тематические (НСО)",
+    "structure": "НСО",
+    "vk": "https://vk.com/club144145130",
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "«Женщины в науке» (Women in Science)",
+    "category": "Наука и тематические (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": null,
+    "website": null,
+    "note": "Почта клуба: women@inno.mgimo.ru"
+  },
+  {
+    "name": "Клуб интеллектуальных игр",
+    "category": "Наука и тематические (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": null,
+    "website": null,
+    "note": "Есть группа VK и Telegram, но адреса найти не удалось"
+  },
+  {
+    "name": "Клуб мирного атома",
+    "category": "Наука и тематические (НСО)",
+    "structure": "НСО",
+    "vk": null,
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб «Арктика»",
+    "category": "Наука и тематические (НСО)",
+    "structure": "МИЭП",
+    "vk": null,
+    "telegram": null,
+    "website": "https://miep.mgimo.ru/page/view/id/81",
+    "note": "Есть только страница на сайте МИЭП"
+  },
+  {
+    "name": "Инновационный клуб",
+    "category": "Наука и тематические (НСО)",
+    "structure": "МИЭП",
+    "vk": null,
+    "telegram": null,
+    "website": "https://miep.mgimo.ru/page/view/id/81",
+    "note": "Есть только страница на сайте МИЭП"
+  },
+  {
+    "name": "Клуб энергетического права",
+    "category": "Наука и тематические (НСО)",
+    "structure": "МИЭП",
+    "vk": null,
+    "telegram": null,
+    "website": "https://miep.mgimo.ru/page/view/id/81",
+    "note": "Есть только страница на сайте МИЭП"
+  },
+  {
+    "name": "Юридический клуб",
+    "category": "Право",
+    "structure": "Студсоюз",
+    "vk": "https://vk.com/law_club_mgimo",
+    "telegram": "https://t.me/law_club_mgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб сравнительного правоведения",
+    "category": "Право",
+    "structure": "—",
+    "vk": "https://vk.com/ksp_mgimo",
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Экономический клуб Oeconomicus им. А.В. Макаренко",
+    "category": "Экономика и бизнес",
+    "structure": "—",
+    "vk": "https://vk.com/club11759810",
+    "telegram": "https://t.me/oeconomicus",
+    "website": null,
+    "note": "Короткий адрес VK: vk.com/oeconomicus"
+  },
+  {
+    "name": "Бизнес-клуб МГИМО",
+    "category": "Экономика и бизнес",
+    "structure": "—",
+    "vk": null,
+    "telegram": "https://t.me/bcmgimo",
+    "website": "https://mgimobc.timepad.ru",
+    "note": "При клубе: закрытый MGIMO Private Business Club"
+  },
+  {
+    "name": "Investment Club",
+    "category": "Экономика и бизнес",
+    "structure": "—",
+    "vk": "https://vk.com/investmgimo",
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Mgimo Crypto Club (MCC)",
+    "category": "Экономика и бизнес",
+    "structure": "ФУП",
+    "vk": null,
+    "telegram": "https://t.me/mgimocrypto",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб анализа рисков и страхования",
+    "category": "Экономика и бизнес",
+    "structure": "—",
+    "vk": null,
+    "telegram": "https://t.me/mgimo_risk_insurance",
+    "website": null,
+    "note": "Название выведено из анонсов"
+  },
+  {
+    "name": "World Trade Club",
+    "category": "Экономика и бизнес",
+    "structure": "—",
+    "vk": null,
+    "telegram": "https://t.me/worldtradeclubmgimo",
+    "website": null,
+    "note": "Название выведено из адреса канала"
+  },
+  {
+    "name": "Модель ВТО",
+    "category": "Дебаты и модели",
+    "structure": "—",
+    "vk": null,
+    "telegram": "https://t.me/wtomodel",
+    "website": null,
+    "note": "Проводится в т.ч. в МГИМО-Ташкент"
+  },
+  {
+    "name": "Азиатская экономическая модель / Doing Business in Asia",
+    "category": "Экономика и бизнес",
+    "structure": "Oeconomicus",
+    "vk": null,
+    "telegram": "https://t.me/aem_mgimo",
+    "website": null,
+    "note": "Проект Oeconomicus"
+  },
+  {
+    "name": "Политический клуб (Политклуб)",
+    "category": "Политика и управление",
+    "structure": "ФУП",
+    "vk": "https://vk.com/politclub",
+    "telegram": "https://t.me/politclubmg",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "World Politics Club (WPC)",
+    "category": "Политика и управление",
+    "structure": "НСО / ФУП",
+    "vk": "https://vk.com/wpc_mgimo",
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Negotiation Club",
+    "category": "Политика и управление",
+    "structure": "НСО / ФУП",
+    "vk": "https://vk.com/club89928414",
+    "telegram": "https://t.me/NC_mgimo_tg",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Международный парламентский клуб",
+    "category": "Политика и управление",
+    "structure": "НСО / ФУП",
+    "vk": "https://vk.com/iparliamentclub",
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "GR-клуб",
+    "category": "Политика и управление",
+    "structure": "ФУП",
+    "vk": "https://vk.com/club69671465",
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб политического консалтинга",
+    "category": "Политика и управление",
+    "structure": "ФУП",
+    "vk": "https://vk.com/cpcmgimo",
+    "telegram": "https://t.me/cpcmgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб политической компаративистики",
+    "category": "Политика и управление",
+    "structure": "ФУП",
+    "vk": "https://vk.com/mgimospclub",
+    "telegram": "https://t.me/mgimospclub",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб ТМО «Школа смыслов»",
+    "category": "Политика и управление",
+    "structure": "ФУП",
+    "vk": "https://vk.com/ir_theory_club",
+    "telegram": null,
+    "website": null,
+    "note": "Теория международных отношений"
+  },
+  {
+    "name": "AIM — Управленческий клуб",
+    "category": "Политика и управление",
+    "structure": "ФУП",
+    "vk": null,
+    "telegram": "https://t.me/aimclubmgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб корпоративного управления",
+    "category": "Политика и управление",
+    "structure": "ФУП",
+    "vk": "https://vk.com/scgclubmgimo",
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб государственного управления (КГУ)",
+    "category": "Политика и управление",
+    "structure": "ФУП",
+    "vk": null,
+    "telegram": "https://t.me/kgumgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб «Управление 4.0»",
+    "category": "Политика и управление",
+    "structure": "ФУП",
+    "vk": null,
+    "telegram": "https://t.me/Governance4",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Форум «Дело Первых»",
+    "category": "Политика и управление",
+    "structure": "ФУП",
+    "vk": null,
+    "telegram": "https://t.me/delopervyh",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Клуб культурной дипломатии",
+    "category": "Политика и управление",
+    "structure": "ФУП",
+    "vk": null,
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Public speaking club The Bridge",
+    "category": "Дебаты и модели",
+    "structure": "ФУП",
+    "vk": null,
+    "telegram": "https://t.me/bridge_mgimo",
+    "website": null,
+    "note": "Канал может принадлежать другому проекту — проверить"
+  },
+  {
+    "name": "Клуб «Дебаты» МГИМО",
+    "category": "Дебаты и модели",
+    "structure": "—",
+    "vk": null,
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Let's Talk MGIMO",
+    "category": "Медиа и спикерские проекты",
+    "structure": "—",
+    "vk": null,
+    "telegram": "https://t.me/letstalkmgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Медиаклуб МГИМО",
+    "category": "Медиа и спикерские проекты",
+    "structure": "—",
+    "vk": null,
+    "telegram": "https://t.me/mediaclubmgimo",
+    "website": null,
+    "note": "Через канал анонсировался клуб SOCIUM"
+  },
+  {
+    "name": "Клуб блогеров МГИМО",
+    "category": "Медиа и спикерские проекты",
+    "structure": "Студсоюз",
+    "vk": null,
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Газета МГИМО (студенческое медиа)",
+    "category": "Медиа и спикерские проекты",
+    "structure": "—",
+    "vk": "https://vk.com/gazetamgimo",
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "ART LAB MGIMO",
+    "category": "Творчество",
+    "structure": "—",
+    "vk": "https://vk.com/artlab_mgimo",
+    "telegram": "https://t.me/artlab_mgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Литературный клуб «Вдохновение»",
+    "category": "Творчество",
+    "structure": "—",
+    "vk": null,
+    "telegram": "https://t.me/literatureclub_mgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Поэтический клуб",
+    "category": "Творчество",
+    "structure": "—",
+    "vk": null,
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Киноклуб",
+    "category": "Творчество",
+    "structure": "—",
+    "vk": null,
+    "telegram": "https://t.me/kkmgimo",
+    "website": null,
+    "note": "Название выведено из анонсов кинопоказов"
+  },
+  {
+    "name": "Live Music Club",
+    "category": "Творчество",
+    "structure": "—",
+    "vk": null,
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Хор PRÓXENOS",
+    "category": "Творчество",
+    "structure": "Культурный центр",
+    "vk": null,
+    "telegram": "https://t.me/mgimochorus",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Театр-студия МГИМО",
+    "category": "Творчество",
+    "structure": "Культурный центр",
+    "vk": null,
+    "telegram": "https://t.me/MGIMOtheatre",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Драматический театр ФУП",
+    "category": "Творчество",
+    "structure": "ФУП",
+    "vk": "https://vk.com/sgptheatre",
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Испаноязычный театр",
+    "category": "Творчество",
+    "structure": "—",
+    "vk": null,
+    "telegram": "https://t.me/teatroesp",
+    "website": null,
+    "note": "Спектакли на испанском"
+  },
+  {
+    "name": "Инструментальный ансамбль MGIMO Symphony",
+    "category": "Творчество",
+    "structure": "Культурный центр",
+    "vk": null,
+    "telegram": "https://t.me/mgimoculturecentre",
+    "website": null,
+    "note": "Отдельного канала нет, анонсы — через Культурный центр"
+  },
+  {
+    "name": "Студия бальных танцев / хореографическая студия",
+    "category": "Творчество",
+    "structure": "Культурный центр",
+    "vk": null,
+    "telegram": "https://t.me/mgimoculturecentre",
+    "website": null,
+    "note": "Анонсы — через Культурный центр"
+  },
+  {
+    "name": "MGIMO Goes Green",
+    "category": "Экология и социальные проекты",
+    "structure": "—",
+    "vk": "https://vk.com/club33734192",
+    "telegram": null,
+    "website": null,
+    "note": "Экологический клуб"
+  },
+  {
+    "name": "Студенческий проектный офис «Единство народов России»",
+    "category": "Экология и социальные проекты",
+    "structure": "—",
+    "vk": null,
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Сборная МГИМО по хоккею «Дипломаты»",
+    "category": "Спорт",
+    "structure": "ССК",
+    "vk": "https://vk.com/club58176259",
+    "telegram": null,
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Сборная по чирлидингу MIDWAY",
+    "category": "Спорт",
+    "structure": "Культурный центр",
+    "vk": null,
+    "telegram": "https://t.me/mgimoculturecentre",
+    "website": null,
+    "note": "Анонсы — через Культурный центр"
+  },
+  {
+    "name": "Padel Club MGIMO (Padel Relations)",
+    "category": "Спорт",
+    "structure": "—",
+    "vk": null,
+    "telegram": null,
+    "website": null,
+    "note": "Канал есть («Padel Relations MGIMO»), адрес не найден"
+  },
+  {
+    "name": "Татарский клуб им. А.А. Ахтамзяна",
+    "category": "Землячества и нац. клубы",
+    "structure": "Совет землячеств",
+    "vk": null,
+    "telegram": "https://t.me/tatarclub_mgimo",
+    "website": "https://tatclubmgimo.github.io/tatclubmgimo/",
+    "note": null
+  },
+  {
+    "name": "Азербайджанский клуб",
+    "category": "Землячества и нац. клубы",
+    "structure": "Совет землячеств",
+    "vk": null,
+    "telegram": "https://t.me/AzClubMGIMO",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Армянское землячество",
+    "category": "Землячества и нац. клубы",
+    "structure": "Совет землячеств",
+    "vk": null,
+    "telegram": "https://t.me/arm_community_mgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Абхазское землячество",
+    "category": "Землячества и нац. клубы",
+    "structure": "Совет землячеств",
+    "vk": null,
+    "telegram": "https://t.me/abkhazia_mgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Таджикское землячество",
+    "category": "Землячества и нац. клубы",
+    "structure": "Совет землячеств",
+    "vk": null,
+    "telegram": "https://t.me/tajmgimo",
+    "website": null,
+    "note": null
+  },
+  {
+    "name": "Узбекские студенты МГИМО",
+    "category": "Землячества и нац. клубы",
+    "structure": "Совет землячеств",
+    "vk": null,
+    "telegram": "https://t.me/uzmgimo",
+    "website": null,
+    "note": null
+  }
+]

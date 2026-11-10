@@ -23,7 +23,8 @@ async function main(): Promise<void> {
   console.log('[fetch-to-json] starting dry-run sync…');
   const result = await syncRuz({
     dryRun: true,
-    maxGroups: Number.isFinite(maxGroups) ? maxGroups : 20,
+    // Smoke default is uncapped unless --max-groups is passed (full discovery).
+    maxGroups: Number.isFinite(maxGroups) ? maxGroups : undefined,
     requestDelayMs: 200,
   });
 

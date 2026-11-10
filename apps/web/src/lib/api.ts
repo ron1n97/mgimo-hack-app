@@ -109,12 +109,16 @@ type ApiUser = {
     fullName?: string;
     groupLabel?: string;
     groupRuzId?: string | null;
+    preferredSubGroupOids?: string[];
     faculty?: string;
     program?: string;
     course?: number;
   } | null;
   staffProfile?: {
     fullName?: string;
+    department?: string;
+    scheduleGroupRuzId?: string | null;
+    scheduleGroupLabel?: string | null;
   } | null;
 };
 
@@ -130,17 +134,27 @@ export function mapUser(raw: ApiUser): User {
     raw.studentProfile?.fullName ??
     raw.staffProfile?.fullName ??
     raw.email;
+  const role = mapRole(raw.role);
+  const isStudent = role === "student";
   return {
     id: raw.id,
     email: raw.email,
     fullName,
-    role: mapRole(raw.role),
-    groupName: raw.studentProfile?.groupLabel,
-    groupRuzId: raw.studentProfile?.groupRuzId ?? undefined,
+    role,
+    groupName: isStudent
+      ? raw.studentProfile?.groupLabel
+      : (raw.staffProfile?.scheduleGroupLabel ?? undefined),
+    groupRuzId: isStudent
+      ? (raw.studentProfile?.groupRuzId ?? undefined)
+      : (raw.staffProfile?.scheduleGroupRuzId ?? undefined),
+    preferredSubGroupOids: isStudent
+      ? (raw.studentProfile?.preferredSubGroupOids ?? [])
+      : [],
     phone: raw.phoneE164 ?? undefined,
-    faculty: raw.studentProfile?.faculty,
-    program: raw.studentProfile?.program,
-    course: raw.studentProfile?.course,
+    faculty: isStudent ? raw.studentProfile?.faculty : undefined,
+    program: isStudent ? raw.studentProfile?.program : undefined,
+    course: isStudent ? raw.studentProfile?.course : undefined,
+    department: raw.staffProfile?.department,
   };
 }
 
@@ -196,6 +210,9 @@ function mapLesson(raw: Record<string, unknown>): ScheduleItem {
     teacher: (raw.lecturer as string | undefined) ?? (raw.teacher as string | undefined),
     kind: (raw.kindOfWork as string | undefined) ?? (raw.type as string | undefined),
     building: raw.building as string | undefined,
+    subGroup: (raw.subGroup as string | undefined) ?? undefined,
+    subGroupOid: raw.subGroupOid != null ? String(raw.subGroupOid) : undefined,
+    stream: (raw.stream as string | undefined) ?? undefined,
   };
 }
 
@@ -277,8 +294,23 @@ export type ScheduleGroup = {
   groupLabel: string;
 };
 
+export type ScheduleSubGroup = {
+  subGroupOid: string;
+  subGroup: string;
+};
+
 export async function fetchScheduleGroups(): Promise<ScheduleGroup[]> {
   const data = await request<ScheduleGroup[]>("/schedule/groups");
+  return Array.isArray(data) ? data : [];
+}
+
+export async function fetchScheduleSubGroups(
+  groupRuzId: string,
+): Promise<ScheduleSubGroup[]> {
+  if (!groupRuzId) return [];
+  const data = await request<ScheduleSubGroup[]>(
+    `/schedule/groups/${encodeURIComponent(groupRuzId)}/subgroups`,
+  );
   return Array.isArray(data) ? data : [];
 }
 
@@ -289,6 +321,7 @@ export async function updateProfile(payload: {
   course?: number;
   groupLabel?: string;
   groupRuzId?: string;
+  preferredSubGroupOids?: string[];
   phone?: string;
   department?: string;
 }): Promise<User> {
@@ -368,12 +401,17 @@ export async function fetchAdminOverview(): Promise<{
   return request("/admin/overview");
 }
 
-export async function fetchSchedule(from?: string, to?: string): Promise<ScheduleItem[]> {
+export async function fetchSchedule(
+  from?: string,
+  to?: string,
+  opts?: { showAll?: boolean },
+): Promise<ScheduleItem[]> {
   const bounds = weekBounds();
   const params = new URLSearchParams({
     from: from ?? bounds.from,
     to: to ?? bounds.to,
   });
+  if (opts?.showAll) params.set("showAll", "1");
   const data = await request<Record<string, unknown>[] | { lessons: Record<string, unknown>[] }>(
     `/schedule/me?${params.toString()}`,
   );

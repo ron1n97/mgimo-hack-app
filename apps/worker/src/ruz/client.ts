@@ -1,3 +1,5 @@
+import { parseRuzArrayResponse } from './parse-response';
+
 export type RuzGroupHit = {
   id: number | string;
   label?: string;
@@ -7,6 +9,8 @@ export type RuzGroupHit = {
 
 export type RuzLesson = {
   id?: number | string;
+  /** Stable lesson id from RUZ (preferred over missing `id`). */
+  lessonOid?: number | string;
   date?: string;
   beginLesson?: string;
   endLesson?: string;
@@ -21,6 +25,9 @@ export type RuzLesson = {
   kindOfWork?: string;
   group?: string;
   stream?: string;
+  streamOid?: number | string;
+  subGroup?: string;
+  subGroupOid?: number | string;
   [key: string]: unknown;
 };
 
@@ -36,8 +43,7 @@ export class RuzClient {
     if (!res.ok) {
       throw new Error(`RUZ search failed ${res.status} for term=${term}`);
     }
-    const data = (await res.json()) as unknown;
-    if (!Array.isArray(data)) return [];
+    const data = parseRuzArrayResponse(await res.json(), 'search', `term=${term}`);
     const hits: RuzGroupHit[] = [];
     for (const item of data) {
       const row = item as Record<string, unknown>;
@@ -69,8 +75,11 @@ export class RuzClient {
         `RUZ schedule failed ${res.status} for group=${groupId} ${start}..${finish}`,
       );
     }
-    const data = (await res.json()) as unknown;
-    if (!Array.isArray(data)) return [];
+    const data = parseRuzArrayResponse(
+      await res.json(),
+      'schedule',
+      `group=${groupId}`,
+    );
     return data as RuzLesson[];
   }
 }

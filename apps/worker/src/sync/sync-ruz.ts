@@ -2,7 +2,8 @@ import { RuzClient, sleep, type RuzGroupHit } from '../ruz/client';
 import { currentAndNextWeekRange } from '../ruz/dates';
 import { buildSearchTerms } from '../ruz/search-terms';
 import { getPrisma, disconnectPrisma } from '../db';
-import { upsertLessonsBatch } from './upsert';
+import { shouldSkipGroupRuzSync } from './schedule-sot';
+import { countLessonsInRange, upsertLessonsBatch } from './upsert';
 
 export type SyncOptions = {
   baseUrl?: string;
@@ -14,11 +15,17 @@ export type SyncOptions = {
   extraTerms?: string[];
   /** Cap groups for smoke tests */
   maxGroups?: number;
+  /**
+   * Force RUZ pull even when local coverage exists.
+   * Still create-only per row (never overwrites existing lessons).
+   */
+  forcePull?: boolean;
 };
 
 export type SyncResult = {
   groupsFound: number;
   groupsSynced: number;
+  groupsSkipped: number;
   lessonsUpserted: number;
   errors: string[];
   dryRunPayload?: {
@@ -30,16 +37,14 @@ export type SyncResult = {
 /**
  * Full RUZ → Postgres sync:
  * 1) search groups by prefixes / short terms
- * 2) pull schedule for current + next week
- * 3) upsert ScheduleLesson rows
- *
- * TODO: when Prisma client is not generated yet, use dryRun / scripts/fetch-to-json.ts
- * and keep upsertLessonsBatch as the DB path once `pnpm db:generate` succeeds.
+ * 2) for each group: if DB already has lessons in the sync window → skip (SoT)
+ * 3) otherwise pull schedule and create-only upsert
  */
 export async function syncRuz(options: SyncOptions = {}): Promise<SyncResult> {
   const baseUrl = options.baseUrl ?? process.env.RUZ_BASE_URL ?? 'https://ruz.mgimo.ru';
   const delay = options.requestDelayMs ?? 150;
   const dryRun = options.dryRun ?? process.env.RUZ_SYNC_DRY_RUN === '1';
+  const forcePull = options.forcePull ?? process.env.RUZ_SYNC_FORCE === '1';
   const client = new RuzClient(baseUrl);
   const terms = buildSearchTerms(options.extraTerms);
   const range = currentAndNextWeekRange();
@@ -67,6 +72,7 @@ export async function syncRuz(options: SyncOptions = {}): Promise<SyncResult> {
   const schedules: Record<string, unknown[]> = {};
   let lessonsUpserted = 0;
   let groupsSynced = 0;
+  let groupsSkipped = 0;
 
   let prisma: ReturnType<typeof getPrisma> | null = null;
   if (!dryRun) {
@@ -86,6 +92,19 @@ export async function syncRuz(options: SyncOptions = {}): Promise<SyncResult> {
     const groupId = String(group.id);
     const label = group.label ?? groupId;
     try {
+      if (prisma && !forcePull) {
+        const localCount = await countLessonsInRange(
+          prisma,
+          groupId,
+          range.start,
+          range.finish,
+        );
+        if (shouldSkipGroupRuzSync(localCount)) {
+          groupsSkipped += 1;
+          continue;
+        }
+      }
+
       const lessons = await client.scheduleForGroup(
         groupId,
         range.startStr,
@@ -115,6 +134,7 @@ export async function syncRuz(options: SyncOptions = {}): Promise<SyncResult> {
   return {
     groupsFound: groupMap.size,
     groupsSynced,
+    groupsSkipped,
     lessonsUpserted,
     errors,
     dryRunPayload:

@@ -13,6 +13,10 @@ import { RegisterDto } from './dto/register.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { hashPassword, verifyPassword } from './password';
 import { normalizePhone } from './phone';
+import {
+  assertProfileFieldsForRole,
+  isStaffLike,
+} from './profile-fields';
 
 @Injectable()
 export class AuthService {
@@ -137,6 +141,8 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
+    assertProfileFieldsForRole(user.role, dto);
+
     if (dto.phone !== undefined) {
       const raw = dto.phone.trim();
       if (!raw) {
@@ -176,20 +182,34 @@ export class AuthService {
           ...(dto.groupRuzId !== undefined
             ? { groupRuzId: dto.groupRuzId.trim() || null }
             : {}),
+          ...(dto.preferredSubGroupOids !== undefined
+            ? {
+                preferredSubGroupOids: [
+                  ...new Set(
+                    dto.preferredSubGroupOids
+                      .map((x) => String(x).trim())
+                      .filter(Boolean),
+                  ),
+                ],
+              }
+            : {}),
         },
       });
     }
 
-    if (
-      (user.role === Role.STAFF || user.role === Role.ADMIN) &&
-      user.staffProfile
-    ) {
+    if (isStaffLike(user.role) && user.staffProfile) {
       await this.prisma.staffProfile.update({
         where: { userId },
         data: {
           ...(dto.fullName !== undefined ? { fullName: dto.fullName.trim() } : {}),
           ...(dto.department !== undefined
             ? { department: dto.department.trim() }
+            : {}),
+          ...(dto.groupRuzId !== undefined
+            ? { scheduleGroupRuzId: dto.groupRuzId.trim() || null }
+            : {}),
+          ...(dto.groupLabel !== undefined
+            ? { scheduleGroupLabel: dto.groupLabel.trim() || null }
             : {}),
         },
       });

@@ -6,9 +6,10 @@ Pulls MGIMO schedule from public RUZ API into Postgres `ScheduleLesson`.
 
 1. **Discover groups** — `GET /api/search?term=XXX&type=group` for faculty prefixes (`МО`, `МЭО`, `МП`, `ТЭО`, `МЖ`, …) and short Cyrillic letters.
 2. **Dedupe** by group id.
-3. **Fetch schedule** — for each group, `GET /api/schedule/group/{id}?start=YYYY.MM.DD&finish=YYYY.MM.DD` for **current week + next week** (Mon–Sun × 2).
-4. **Upsert** into Postgres via Prisma (`ScheduleLesson`, unique on `ruzExternalId + groupRuzId + date + begin`).
-5. **Schedule** — `node-cron` with `RUZ_SYNC_CRON` (default every 6 hours). Also runs once on process start.
+3. **SoT gate** — if DB already has any `ScheduleLesson` for that group in the sync window, **skip** RUZ (local DB is source of truth). See ADR 0009.
+4. **Fetch schedule** (on miss) — `GET /api/schedule/group/{id}?start=YYYY.MM.DD&finish=YYYY.MM.DD` for **current week + next week** (Mon–Sun × 2).
+5. **Create-only upsert** — never overwrite existing rows (`source` RUZ/LOCAL). Unique on `ruzExternalId + groupRuzId + date + begin`; `ruzExternalId` = `lessonOid`, plus `subGroup` / `stream` columns.
+6. **Schedule** — `node-cron` with `RUZ_SYNC_CRON` (default every 6 hours). Also runs once on process start.
 
 If Prisma / DB is unavailable, the worker falls back to writing a JSON dump under `/tmp` and logs a TODO.
 
@@ -20,6 +21,7 @@ If Prisma / DB is unavailable, the worker falls back to writing a JSON dump unde
 | `RUZ_BASE_URL` | `https://ruz.mgimo.ru` | RUZ host |
 | `RUZ_SYNC_CRON` | `0 */6 * * *` | Cron expression |
 | `RUZ_SYNC_DRY_RUN` | — | `1` = skip DB, collect JSON |
+| `RUZ_SYNC_FORCE` | — | `1` = pull even when coverage exists (still create-only) |
 
 ## Commands
 

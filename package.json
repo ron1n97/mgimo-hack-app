@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "pnpm -r --parallel --filter \"./apps/*\" run dev",
     "build": "pnpm -r --filter \"./apps/*\" --filter \"./packages/*\" run build",
-    "test": "pnpm -r --filter \"./apps/api\" run test",
+    "test": "pnpm -r --filter \"./apps/api\" --filter \"./apps/worker\" run test",
     "lint": "pnpm -r run lint --if-present",
     "db:generate": "pnpm --filter @dekanat/api exec prisma generate",
     "db:migrate": "pnpm --filter @dekanat/api exec prisma migrate deploy",

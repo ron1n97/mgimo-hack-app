@@ -12,6 +12,7 @@ const studentLinks = [
   { href: "/today", label: "Сегодня" },
   { href: "/schedule", label: "Расписание" },
   { href: "/grades", label: "Учёба" },
+  { href: "/clubs", label: "Клубы" },
   { href: "/requests", label: "Заявки" },
   { href: "/notifications", label: "Уведомления" },
 ];
@@ -73,16 +74,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               );
             })}
             {user?.role === "staff" || user?.role === "admin" ? (
-              <Link
-                href="/staff/requests"
-                className={`rounded-lg px-3 py-1.5 text-sm transition ${
-                  pathname.startsWith("/staff")
-                    ? "bg-copper text-cream"
-                    : "text-ink-muted hover:bg-cream-deep/60 hover:text-ink"
-                }`}
-              >
-                Очередь
-              </Link>
+              <>
+                <Link
+                  href="/staff/requests"
+                  className={`rounded-lg px-3 py-1.5 text-sm transition ${
+                    pathname.startsWith("/staff/requests")
+                      ? "bg-copper text-cream"
+                      : "text-ink-muted hover:bg-cream-deep/60 hover:text-ink"
+                  }`}
+                >
+                  Очередь
+                </Link>
+                <Link
+                  href="/staff/clubs"
+                  className={`rounded-lg px-3 py-1.5 text-sm transition ${
+                    pathname.startsWith("/staff/clubs")
+                      ? "bg-copper text-cream"
+                      : "text-ink-muted hover:bg-cream-deep/60 hover:text-ink"
+                  }`}
+                >
+                  Клубы
+                </Link>
+              </>
             ) : null}
             {user?.role === "admin" ? (
               <Link

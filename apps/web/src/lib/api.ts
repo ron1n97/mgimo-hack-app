@@ -1,11 +1,15 @@
 import { getToken, clearSession } from "./auth";
 import type {
   AuthResponse,
+  Club,
+  ClubTag,
+  DigestFeedItem,
   GradeItem,
   NotificationItem,
   RequestStatus,
   ScheduleItem,
   ServiceRequest,
+  StudentInterests,
   TodayHub,
   User,
   UserRole,
@@ -538,4 +542,185 @@ export async function updateRequestStatus(
     body: { status: toApiStatus(status) },
   });
   return mapRequest(raw);
+}
+
+function mapClubTag(raw: Record<string, unknown>): ClubTag {
+  return {
+    id: String(raw.id),
+    slug: String(raw.slug ?? ""),
+    name: String(raw.name ?? ""),
+  };
+}
+
+function mapClub(raw: Record<string, unknown>): Club {
+  const tagsRaw = Array.isArray(raw.tags) ? raw.tags : [];
+  const tags = tagsRaw.map((t) => {
+    const row = t as Record<string, unknown>;
+    const nested = row.tag as Record<string, unknown> | undefined;
+    return mapClubTag(nested ?? row);
+  });
+  const sourcesRaw = Array.isArray(raw.sources) ? raw.sources : [];
+  return {
+    id: String(raw.id),
+    name: String(raw.name ?? ""),
+    description: (raw.description as string | null | undefined) ?? null,
+    status: String(raw.status ?? "DRAFT"),
+    digestEnabled: Boolean(raw.digestEnabled),
+    websiteUrl: (raw.websiteUrl as string | null | undefined) ?? null,
+    structureNote: (raw.structureNote as string | null | undefined) ?? null,
+    tags,
+    sources: sourcesRaw.map((s) => {
+      const row = s as Record<string, unknown>;
+      return {
+        id: String(row.id),
+        kind: String(row.kind ?? "WEBSITE"),
+        url: String(row.url ?? ""),
+        title: (row.title as string | null | undefined) ?? null,
+        enabled: Boolean(row.enabled ?? true),
+      };
+    }),
+  };
+}
+
+export async function fetchTags(): Promise<ClubTag[]> {
+  const data = await request<Record<string, unknown>[]>("/tags");
+  return Array.isArray(data) ? data.map(mapClubTag) : [];
+}
+
+export async function fetchClubs(params?: {
+  tag?: string;
+  q?: string;
+}): Promise<Club[]> {
+  const qs = new URLSearchParams();
+  if (params?.tag) qs.set("tag", params.tag);
+  if (params?.q) qs.set("q", params.q);
+  const suffix = qs.toString() ? `?${qs}` : "";
+  const data = await request<Record<string, unknown>[]>(`/clubs${suffix}`);
+  return Array.isArray(data) ? data.map(mapClub) : [];
+}
+
+export async function createClub(payload: {
+  name: string;
+  description?: string;
+  tags?: string[];
+  sourceUrls?: string[];
+}): Promise<Club> {
+  const raw = await request<Record<string, unknown>>("/clubs", {
+    method: "POST",
+    body: payload,
+  });
+  return mapClub(raw);
+}
+
+export async function fetchInterests(): Promise<StudentInterests> {
+  const raw = await request<{
+    tags?: Record<string, unknown>[];
+    clubs?: Record<string, unknown>[];
+  }>("/me/interests");
+  return {
+    tags: (raw.tags ?? []).map(mapClubTag),
+    clubs: (raw.clubs ?? []).map(mapClub),
+  };
+}
+
+export async function setInterestTags(tagIds: string[]): Promise<StudentInterests> {
+  const raw = await request<{
+    tags?: Record<string, unknown>[];
+    clubs?: Record<string, unknown>[];
+  }>("/me/interests/tags", {
+    method: "PUT",
+    body: { tagIds },
+  });
+  return {
+    tags: (raw.tags ?? []).map(mapClubTag),
+    clubs: (raw.clubs ?? []).map(mapClub),
+  };
+}
+
+export async function subscribeClub(id: string): Promise<StudentInterests> {
+  const raw = await request<{
+    tags?: Record<string, unknown>[];
+    clubs?: Record<string, unknown>[];
+  }>(`/me/subscriptions/clubs/${id}`, { method: "POST" });
+  return {
+    tags: (raw.tags ?? []).map(mapClubTag),
+    clubs: (raw.clubs ?? []).map(mapClub),
+  };
+}
+
+export async function unsubscribeClub(id: string): Promise<StudentInterests> {
+  const raw = await request<{
+    tags?: Record<string, unknown>[];
+    clubs?: Record<string, unknown>[];
+  }>(`/me/subscriptions/clubs/${id}`, { method: "DELETE" });
+  return {
+    tags: (raw.tags ?? []).map(mapClubTag),
+    clubs: (raw.clubs ?? []).map(mapClub),
+  };
+}
+
+export async function fetchDigestFeed(
+  filter?: "subscribed",
+): Promise<DigestFeedItem[]> {
+  const qs = filter ? `?filter=${filter}` : "";
+  const raw = await request<{ items?: Record<string, unknown>[] }>(
+    `/digest/feed${qs}`,
+  );
+  const items = Array.isArray(raw.items) ? raw.items : [];
+  return items.map((row) => {
+    const club = row.club as Record<string, unknown> | null | undefined;
+    return {
+      id: String(row.id),
+      title: String(row.title ?? ""),
+      body: (row.body as string | null | undefined) ?? null,
+      url: (row.url as string | null | undefined) ?? null,
+      startsAt: row.startsAt ? String(row.startsAt) : null,
+      club: club
+        ? { id: String(club.id), name: String(club.name ?? "") }
+        : null,
+    };
+  });
+}
+
+export async function fetchStaffClubs(): Promise<Club[]> {
+  return fetchClubs();
+}
+
+export async function confirmClub(
+  id: string,
+  digestEnabled?: boolean,
+): Promise<Club> {
+  const raw = await request<Record<string, unknown>>(
+    `/staff/clubs/${id}/confirm`,
+    {
+      method: "PATCH",
+      body: digestEnabled === undefined ? {} : { digestEnabled },
+    },
+  );
+  return mapClub(raw);
+}
+
+export async function setClubDigest(
+  id: string,
+  digestEnabled: boolean,
+): Promise<Club> {
+  const raw = await request<Record<string, unknown>>(
+    `/staff/clubs/${id}/digest`,
+    {
+      method: "PATCH",
+      body: { digestEnabled },
+    },
+  );
+  return mapClub(raw);
+}
+
+export async function addDigestSource(payload: {
+  url: string;
+  clubId?: string;
+  title?: string;
+}): Promise<unknown> {
+  return request("/staff/digest-sources", {
+    method: "POST",
+    body: payload,
+  });
 }

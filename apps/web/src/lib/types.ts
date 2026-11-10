@@ -73,3 +73,44 @@ export type TodayHub = {
   unreadNotifications: number;
   recentGrades: GradeItem[];
 };
+
+export type ClubTag = {
+  id: string;
+  slug: string;
+  name: string;
+};
+
+export type ClubSource = {
+  id: string;
+  kind: "TELEGRAM" | "VK" | "WEBSITE" | string;
+  url: string;
+  title?: string | null;
+  enabled: boolean;
+};
+
+export type Club = {
+  id: string;
+  name: string;
+  description?: string | null;
+  status: "DRAFT" | "CONFIRMED" | string;
+  digestEnabled: boolean;
+  websiteUrl?: string | null;
+  structureNote?: string | null;
+  tags: ClubTag[];
+  sources: ClubSource[];
+  subscribed?: boolean;
+};
+
+export type DigestFeedItem = {
+  id: string;
+  title: string;
+  body?: string | null;
+  url?: string | null;
+  startsAt?: string | null;
+  club?: { id: string; name: string } | null;
+};
+
+export type StudentInterests = {
+  tags: ClubTag[];
+  clubs: Club[];
+};

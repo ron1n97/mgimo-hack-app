@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AdminModule } from './admin/admin.module';
 import { AiModule } from './ai/ai.module';
 import { AuthModule } from './auth/auth.module';
+import { ClubsModule } from './clubs/clubs.module';
 import { GradesModule } from './grades/grades.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -22,6 +23,7 @@ import { TodayModule } from './today/today.module';
     TodayModule,
     AiModule,
     AdminModule,
+    ClubsModule,
   ],
 })
 export class AppModule {}

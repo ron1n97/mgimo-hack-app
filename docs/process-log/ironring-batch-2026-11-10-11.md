@@ -173,6 +173,12 @@ CI: push to `main` — CI green; Deploy workflow **failed** (expected without GH
 
 ## 7. Deploy to VPS
 
+### Concurrent agent race (critical)
+
+Observed on VPS during publish: **~11–15 SSH sessions**, scripts rewriting `IMAGE_TAG` among `demo-stable` / `subgroup` / `sot-1a0a073` / `cbc66742432c`, `stabilize.sh` + `keep-alive.sh`, `OWNERSHIP_DEMO_RECOVERY.txt` ordering ironring to stop, parallel `dd-*` containers, and `docker rmi` of tip tags. Compose often **OOM-killed (137)**. HTTPS intermittently **502**. Tip web image `cbc66742432c` (`7a4ce846d2cf`) was reloaded once; api tip tag pointed at `a245fa2c489b`. Full cut not stable while racers run.
+
+
+
 ### What landed locally → GitHub
 
 - `main` tip: **`cbc66742432cbb0ee04e5b04bf32c265d0bab218`**  

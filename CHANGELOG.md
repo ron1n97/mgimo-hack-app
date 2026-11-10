@@ -6,22 +6,26 @@
 ## [Unreleased]
 
 ### Added
+- Telegram egress proxy for RU VPS (undici `TELEGRAM_PROXY`, ADR 0007) + keepalive script
 - RUZ subgroup preference + lessonOid upsert + DB-first schedule SoT (ADR 0008/0009)
-- Staff/admin schedule view group vs student enrollment; teacher profile gates (ADR 0015)
-- Teacher lesson assignments / tasks cabinet (ADR 0010)
 - Clubs registry, digest sources, tags, interest subscriptions (ADR 0012)
-- PWA Web Push subscriptions + prompt UI (ADR 0013; needs VAPID on VPS)
+- PWA Web Push subscriptions + phone prompt (ADR 0013)
+- Teacher cabinet / lesson assignments + tasks (ADR 0010)
+- Timetable optimization research (md + GOST docx, OR-Tools note, ADR 0011)
 - Liquid-glass role-aware mobile bottom nav
-- Demo passwordless quick-login for contest personas
-- In-app AI assistant chat + widget DSL (ADR 0014)
-- Caddy HTTPS sslip.io fronts for web + API
-- Telegram egress via TELEGRAM_PROXY / undici on RU VPS (ADR 0007)
-- Timetable optimization research model (md + GOST docx, ADR 0011)
+- Profile role group picker: staff/admin any catalog group vs student own+subgroup (ADR 0015)
+- Demo quick-login personas (ADR docs/DEMO.md); in-app AI assistant + widget DSL (ADR 0014)
+- Caddy HTTPS fronts for sslip.io web/API hosts
 - Iron Ring project overlay (`.cursor/skills/ironring/`)
 - Process log: `docs/process-log/ironring-batch-2026-11-10-11.md`
 
+### Fixed
+- Web build after merge (`addDigestSource` cut, teacher AI suggestions)
+- Nest `dist/main.js` path; bot image deps; worker Prisma generate (earlier Nov 10)
+- AI draft honesty (no silent stub); GOST Word export; phone-login bot UX
+
 ### Notes
-- 2026-11-11: all feature branches merged to `main` (`cbc6674`); VPS tip publish paused after OOM / multi-agent image race — see process log.
+- 2026-11-11: feature branches merged to `main` (tip includes `cbc6674` + process-log commit). VPS tip publish paused after OOM / multi-agent image race — see `docs/process-log/ironring-batch-2026-11-10-11.md`.
 
 ## [0.1.0] — 2026-11-08
 

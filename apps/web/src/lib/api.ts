@@ -254,6 +254,38 @@ export async function login(email: string, password: string): Promise<AuthRespon
   return { accessToken: raw.accessToken, user: mapUser(raw.user) };
 }
 
+export type DemoPersonaPublic = {
+  id: string;
+  buttonLabel: string;
+  roleHint: "student" | "teacher" | "staff" | "admin" | string;
+};
+
+/** Returns null when the API has demo quick-login disabled. */
+export async function fetchDemoPersonas(): Promise<DemoPersonaPublic[] | null> {
+  try {
+    const raw = await request<{ items: DemoPersonaPublic[] }>(
+      "/auth/demo-personas",
+      { auth: false },
+    );
+    return Array.isArray(raw.items) ? raw.items : [];
+  } catch (err) {
+    if (err instanceof ApiError && (err.status === 403 || err.status === 404)) {
+      return null;
+    }
+    throw err;
+  }
+}
+
+/** Passwordless demo stand login — API gated by DEMO_QUICK_LOGIN. */
+export async function demoLogin(personaId: string): Promise<AuthResponse> {
+  const raw = await request<ApiAuth>("/auth/demo-login", {
+    method: "POST",
+    body: { personaId },
+    auth: false,
+  });
+  return { accessToken: raw.accessToken, user: mapUser(raw.user) };
+}
+
 export async function register(payload: {
   email: string;
   password: string;

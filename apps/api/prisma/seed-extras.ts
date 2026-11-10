@@ -222,6 +222,14 @@ async function main() {
     phone: '+79004444444',
   });
 
+  await upsertStaffish({
+    email: 'teacher@demo.local',
+    role: Role.STAFF,
+    fullName: 'Иванова Ирина Ивановна',
+    department: 'Кафедра международного права',
+    phone: '+79006666666',
+  });
+
   const anna = await prisma.user.findUnique({
     where: { email: 'anna.risk@demo.local' },
   });
@@ -255,7 +263,9 @@ async function main() {
     console.log('grades →', row.fullName);
   }
 
-  console.log('OK: staff@demo.local, admin@demo.local, roman.guskov@demo.local / Demo123!');
+  console.log(
+    'OK: staff@demo.local, admin@demo.local, teacher@demo.local, roman.guskov@demo.local / Demo123!',
+  );
 }
 
 main()

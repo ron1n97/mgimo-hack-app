@@ -1,12 +1,20 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  findDemoPersona,
+  isDemoQuickLoginEnabled,
+  publicDemoPersonas,
+} from './demo-quick-login';
+import { DemoLoginDto } from './dto/demo-login.dto';
 import { LoginDto } from './dto/login.dto';
 import { LoginPhoneDto } from './dto/login-phone.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -81,6 +89,34 @@ export class AuthService {
     const ok = await verifyPassword(dto.password, user.passwordHash);
     if (!ok) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+    return this.tokenResponse(user);
+  }
+
+  /** Contest stand: persona buttons without shipping passwords to the client. */
+  listDemoPersonas() {
+    if (!isDemoQuickLoginEnabled()) {
+      throw new ForbiddenException('Demo quick login is disabled');
+    }
+    return { items: publicDemoPersonas() };
+  }
+
+  async demoLogin(dto: DemoLoginDto) {
+    if (!isDemoQuickLoginEnabled()) {
+      throw new ForbiddenException('Demo quick login is disabled');
+    }
+    const persona = findDemoPersona(dto.personaId.trim());
+    if (!persona) {
+      throw new NotFoundException('Unknown demo persona');
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { email: persona.email.toLowerCase() },
+      include: { studentProfile: true, staffProfile: true },
+    });
+    if (!user) {
+      throw new UnauthorizedException(
+        'Demo account missing — run seed / seed:extras',
+      );
     }
     return this.tokenResponse(user);
   }

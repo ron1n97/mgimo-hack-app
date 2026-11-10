@@ -69,6 +69,7 @@ jobs:
           push: true
           build-args: |
             NEXT_PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }}
+            NEXT_PUBLIC_DEMO_LOGIN=1
           tags: |
             ${{ env.IMAGE_PREFIX }}/web:${{ steps.meta.outputs.tag }}
             ${{ env.IMAGE_PREFIX }}/web:latest

@@ -98,6 +98,22 @@ async function main() {
     },
   });
 
+  // Until Role.TEACHER lands: staff profile labelled as преподаватель for demo stand.
+  await prisma.user.create({
+    data: {
+      email: 'teacher@demo.local',
+      passwordHash,
+      role: Role.STAFF,
+      phoneE164: '+79006666666',
+      staffProfile: {
+        create: {
+          fullName: 'Иванова Ирина Ивановна',
+          department: 'Кафедра международного права',
+        },
+      },
+    },
+  });
+
   const roman = await prisma.user.create({
     data: {
       email: 'roman.guskov@demo.local',
@@ -362,9 +378,12 @@ async function main() {
 
   console.log('Seed OK.');
   console.log('Accounts (password Demo123!):');
-  console.log('  anna.risk@demo.local  — student, academic risk — phone +79001111111');
-  console.log('  boris.ok@demo.local   — student, calm — phone +79002222222');
-  console.log('  staff@demo.local      — staff — phone +79003333333');
+  console.log('  anna.risk@demo.local     — student Рискова (риск) — +79001111111');
+  console.log('  boris.ok@demo.local      — student Спокойный — +79002222222');
+  console.log('  roman.guskov@demo.local  — student Гуськов — +79005555555');
+  console.log('  teacher@demo.local       — преподаватель Иванова (staff) — +79006666666');
+  console.log('  staff@demo.local         — staff Деканатская — +79003333333');
+  console.log('  admin@demo.local         — admin — +79004444444');
   console.log('Telegram bot: share contact with matching demo phone to auth.');
   console.log('DISCLAIMER: contest fictional data, not official MGIMO.');
 }

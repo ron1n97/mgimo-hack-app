@@ -29,13 +29,18 @@ cd apps/web && NEXT_PUBLIC_API_URL=http://localhost:3001 pnpm dev  # :3000
 
 Или целиком: `pnpm docker:up` (после сборки образов).
 
-## Демо-аккаунты (пароль `Demo123!`)
+## Демо-аккаунты (пароль `Demo123!` — server-side)
+
+Кнопки «Войти как …» на логине, когда API включил `DEMO_QUICK_LOGIN` (см. `docs/DEMO.md`).
 
 | Email | Роль |
 |-------|------|
 | anna.risk@demo.local | студент (academic risk) |
 | boris.ok@demo.local | студент (спокойный) |
+| roman.guskov@demo.local | студент |
+| teacher@demo.local | преподаватель (STAFF-stub) |
 | staff@demo.local | сотрудник |
+| admin@demo.local | админ |
 
 ## Документы
 

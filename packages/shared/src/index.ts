@@ -139,6 +139,7 @@ export const RequestsListResponseSchema = z.object({
 });
 export type RequestsListResponse = z.infer<typeof RequestsListResponseSchema>;
 
+/** @deprecated Prefer DEMO_PERSONAS + POST /auth/demo-login (no password in clients). */
 export const DEMO_ACCOUNTS = [
   {
     email: 'anna.risk@demo.local',
@@ -159,6 +160,12 @@ export const DEMO_ACCOUNTS = [
     note: 'Студент — Гуськов Р.Д.',
   },
   {
+    email: 'teacher@demo.local',
+    password: 'Demo123!',
+    phone: '+79006666666',
+    note: 'Преподаватель — Иванова И.И.',
+  },
+  {
     email: 'staff@demo.local',
     password: 'Demo123!',
     phone: '+79003333333',
@@ -175,6 +182,40 @@ export const DEMO_ACCOUNTS = [
     password: 'Demo123!',
     phone: '+79006666666',
     note: 'Преподаватель — Иванова И.И.',
+  },
+] as const;
+
+/** Public demo personas for UI — no passwords; login via POST /auth/demo-login. */
+export const DEMO_PERSONAS = [
+  {
+    id: 'student-anna',
+    buttonLabel: 'Войти как студент Рискова',
+    roleHint: 'student',
+  },
+  {
+    id: 'student-boris',
+    buttonLabel: 'Войти как студент Спокойный',
+    roleHint: 'student',
+  },
+  {
+    id: 'student-roman',
+    buttonLabel: 'Войти как студент Гуськов',
+    roleHint: 'student',
+  },
+  {
+    id: 'teacher-ivanova',
+    buttonLabel: 'Войти как преподаватель Иванова',
+    roleHint: 'teacher',
+  },
+  {
+    id: 'staff-elena',
+    buttonLabel: 'Войти как сотрудник Деканатская',
+    roleHint: 'staff',
+  },
+  {
+    id: 'admin-platform',
+    buttonLabel: 'Войти как администратор',
+    roleHint: 'admin',
   },
 ] as const;
 

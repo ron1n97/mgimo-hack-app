@@ -20,12 +20,24 @@ You normally **don’t** paste secrets by hand — they were set with `gh secret
 Images go runner → VPS via `docker save | ssh docker load` (VPS does not need
 `read:packages` on a personal PAT).
 
-Live: web `http://SSH_HOST/` · API `http://SSH_HOST:3001`.
+Live: web `http://SSH_HOST/` · API `http://SSH_HOST:3001` · HTTPS mirror `https://dekanat.177.177.212.34.sslip.io`.
 
 ## Host layout
 - `/opt/mgimo-hack-app/docker-compose.yml` ← `docker-compose.prod.yml`
 - `/opt/mgimo-hack-app/.env`
 - Web: `http://HOST/` · API: `http://HOST:3001`
+
+## Demo quick-login on VPS
+Set in production `.env` / `PROD_ENV`:
+
+```bash
+DEMO_QUICK_LOGIN=true
+```
+
+Then `docker compose up -d api` (and `seed:extras` if `teacher@demo.local` missing).
+See [`docs/DEMO.md`](DEMO.md). UI reads `GET /auth/demo-personas` — web rebuild
+not required just to show the buttons. Deploy workflow also bakes
+`NEXT_PUBLIC_DEMO_LOGIN=1` into web images for an explicit client hint.
 
 ## Manual re-deploy
 Actions → Deploy → Run workflow

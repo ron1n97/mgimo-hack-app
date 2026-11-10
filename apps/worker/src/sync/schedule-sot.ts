@@ -2,27 +2,49 @@
  * Schedule source-of-truth vs RUZ.
  *
  * Rule:
- * - If our DB already has any ScheduleLesson for groupRuzId + date range →
- *   DB is SoT; do not pull/overwrite from RUZ for that coverage window.
- * - If count is 0 → lazy/cron pull from RUZ is allowed (create-only).
- * - Per-row: never update an existing row from RUZ (LOCAL self-planned or
- *   previously synced RUZ). New ruzExternalId keys may still be created when
- *   a miss-pull runs (empty coverage only).
+ * - If our DB already has ScheduleLesson rows for groupRuzId + date range and
+ *   they look "owned/complete" → DB is SoT; do not casually re-pull/overwrite.
+ * - If count is 0 → miss: pull from RUZ (create).
+ * - If rows exist but none have subGroupOid yet (legacy import before parallel
+ *   discriminators) → allow enrichment pull; still never touch LOCAL rows.
+ * - Per-row: never update LOCAL; allow create; allow RUZ enrichment when the
+ *   stored row still has null subGroupOid.
  */
 
 export type ScheduleLessonSource = 'RUZ' | 'LOCAL';
 
-/** Group+range: any local row means skip RUZ sync for that window. */
-export function shouldSkipGroupRuzSync(localLessonCountInRange: number): boolean {
-  return localLessonCountInRange > 0;
+export type ExistingLessonGate = {
+  source: ScheduleLessonSource;
+  subGroupOid?: string | null;
+};
+
+/** Group+range: skip when coverage exists and discriminators are already present (or N/A). */
+export function shouldSkipGroupRuzSync(
+  localLessonCountInRange: number,
+  lessonsWithSubGroupOid = 0,
+): boolean {
+  if (localLessonCountInRange <= 0) return false;
+  // Legacy rows without any subgroup oid → allow one enrichment pass.
+  if (lessonsWithSubGroupOid <= 0) return false;
+  return true;
 }
 
 /**
- * Per-row upsert gate. Existing rows of any source stay untouched.
- * Only create when there is no matching local lesson.
+ * Per-row upsert gate.
+ * - no row → create
+ * - LOCAL → never overwrite
+ * - RUZ with null subGroupOid → allow update (fill discriminators)
+ * - otherwise → skip (DB SoT)
  */
 export function shouldApplyRuzLessonUpsert(
-  existingSource: ScheduleLessonSource | null | undefined,
-): boolean {
-  return existingSource == null;
+  existing: ExistingLessonGate | ScheduleLessonSource | null | undefined,
+): 'create' | 'update' | 'skip' {
+  if (existing == null) return 'create';
+  const gate: ExistingLessonGate =
+    typeof existing === 'string' ? { source: existing } : existing;
+  if (gate.source === 'LOCAL') return 'skip';
+  if (gate.source === 'RUZ' && (gate.subGroupOid == null || gate.subGroupOid === '')) {
+    return 'update';
+  }
+  return 'skip';
 }

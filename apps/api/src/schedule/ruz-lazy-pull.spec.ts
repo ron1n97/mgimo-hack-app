@@ -23,16 +23,20 @@ describe('ruz lazy pull helpers', () => {
 });
 
 describe('ensureGroupScheduleFromRuz', () => {
-  it('skips RUZ fetch when local coverage already exists', async () => {
+  it('skips RUZ fetch when coverage exists with subgroup discriminators', async () => {
     const fetchImpl = jest.fn();
     const prisma = {
       scheduleLesson: {
-        count: jest.fn().mockResolvedValue(3),
+        count: jest
+          .fn()
+          .mockResolvedValueOnce(3) // total
+          .mockResolvedValueOnce(2), // withSubGroupOid
         findUnique: jest.fn(),
         create: jest.fn(),
+        update: jest.fn(),
       },
     };
-    expect(shouldSkipGroupRuzSync(3)).toBe(true);
+    expect(shouldSkipGroupRuzSync(3, 2)).toBe(true);
     const result = await ensureGroupScheduleFromRuz(prisma as never, {
       groupRuzId: '8033',
       groupLabel: '2МЭО-01',
@@ -42,7 +46,7 @@ describe('ensureGroupScheduleFromRuz', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('pulls and creates on miss without overwriting existing keys', async () => {
+  it('pulls and creates on miss without overwriting LOCAL keys', async () => {
     const payload = [
       {
         lessonOid: 10001,
@@ -74,8 +78,9 @@ describe('ensureGroupScheduleFromRuz', () => {
         findUnique: jest
           .fn()
           .mockResolvedValueOnce(null)
-          .mockResolvedValueOnce({ source: 'LOCAL' }),
+          .mockResolvedValueOnce({ source: 'LOCAL', subGroupOid: null }),
         create,
+        update: jest.fn(),
       },
     };
 

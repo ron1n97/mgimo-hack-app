@@ -111,10 +111,11 @@ export function mapRuzLessonFields(
   };
 }
 
-export type UpsertScheduleLessonResult = 'created' | 'skipped';
+export type UpsertScheduleLessonResult = 'created' | 'updated' | 'skipped';
 
 /**
- * Create-only RUZ import. Existing DB rows (any source) are never overwritten.
+ * RUZ import with SoT gates: create on miss, enrich legacy RUZ rows lacking
+ * subGroupOid, never overwrite LOCAL / complete rows.
  */
 export async function upsertScheduleLesson(
   prisma: PrismaClient,
@@ -134,19 +135,36 @@ export async function upsertScheduleLesson(
         begin: data.begin,
       },
     },
-    select: { source: true },
+    select: { source: true, subGroupOid: true },
   });
 
-  if (
-    !shouldApplyRuzLessonUpsert(
-      existing?.source as ScheduleLessonSource | undefined,
-    )
-  ) {
-    return 'skipped';
+  const action = shouldApplyRuzLessonUpsert(
+    existing
+      ? {
+          source: existing.source as ScheduleLessonSource,
+          subGroupOid: existing.subGroupOid,
+        }
+      : null,
+  );
+
+  if (action === 'skip') return 'skipped';
+  if (action === 'create') {
+    await prisma.scheduleLesson.create({ data });
+    return 'created';
   }
 
-  await prisma.scheduleLesson.create({ data });
-  return 'created';
+  await prisma.scheduleLesson.update({
+    where: {
+      ruzExternalId_groupRuzId_date_begin: {
+        ruzExternalId: data.ruzExternalId,
+        groupRuzId: data.groupRuzId,
+        date: data.date,
+        begin: data.begin,
+      },
+    },
+    data,
+  });
+  return 'updated';
 }
 
 export async function upsertLessonsBatch(
@@ -162,7 +180,7 @@ export async function upsertLessonsBatch(
       groupLabel,
       lesson,
     });
-    if (result === 'created') count += 1;
+    if (result === 'created' || result === 'updated') count += 1;
   }
   return count;
 }
@@ -173,11 +191,21 @@ export async function countLessonsInRange(
   groupRuzId: string,
   from: Date,
   to: Date,
-): Promise<number> {
-  return prisma.scheduleLesson.count({
-    where: {
-      groupRuzId,
-      date: { gte: from, lte: to },
-    },
-  });
+): Promise<{ total: number; withSubGroupOid: number }> {
+  const [total, withSubGroupOid] = await Promise.all([
+    prisma.scheduleLesson.count({
+      where: {
+        groupRuzId,
+        date: { gte: from, lte: to },
+      },
+    }),
+    prisma.scheduleLesson.count({
+      where: {
+        groupRuzId,
+        date: { gte: from, lte: to },
+        subGroupOid: { not: null },
+      },
+    }),
+  ]);
+  return { total, withSubGroupOid };
 }

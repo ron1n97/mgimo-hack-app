@@ -11,6 +11,7 @@ const DEMO = [
   { email: "anna.risk@demo.local", password: "Demo123!", note: "студент (риск)" },
   { email: "boris.ok@demo.local", password: "Demo123!", note: "студент" },
   { email: "roman.guskov@demo.local", password: "Demo123!", note: "студент (Роман)" },
+  { email: "teacher@demo.local", password: "Demo123!", note: "преподаватель" },
   { email: "staff@demo.local", password: "Demo123!", note: "сотрудник деканата" },
   { email: "admin@demo.local", password: "Demo123!", note: "админ" },
 ] as const;
@@ -49,7 +50,9 @@ export default function AuthPage() {
           ? "/admin"
           : result.user.role === "staff"
             ? "/staff/requests"
-            : "/today";
+            : result.user.role === "teacher"
+              ? "/teacher"
+              : "/today";
       router.replace(home);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Неизвестная ошибка");

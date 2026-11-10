@@ -12,10 +12,22 @@ import { PushPrompt } from "./PushPrompt";
 const studentLinks = [
   { href: "/today", label: "Сегодня" },
   { href: "/schedule", label: "Расписание" },
+  { href: "/tasks", label: "Задания" },
   { href: "/grades", label: "Учёба" },
   { href: "/clubs", label: "Клубы" },
   { href: "/requests", label: "Заявки" },
   { href: "/notifications", label: "Уведомления" },
+];
+
+const teacherLinks = [
+  { href: "/teacher", label: "Мои пары" },
+  { href: "/profile", label: "Профиль" },
+];
+
+const staffLinks = [
+  { href: "/staff/requests", label: "Очередь" },
+  { href: "/staff/teachers", label: "Преподаватели" },
+  { href: "/profile", label: "Профиль" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -54,13 +66,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <DisclaimerBanner />
       <header className="border-b border-cream-deep/80 bg-cream/90 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-          <Link href="/today" className="group">
+          <Link
+            href={
+              user?.role === "teacher"
+                ? "/teacher"
+                : user?.role === "staff" || user?.role === "admin"
+                  ? "/staff/requests"
+                  : "/today"
+            }
+            className="group"
+          >
             <span className="font-serif text-xl tracking-tight text-ink sm:text-2xl">
               Деканат<span className="text-copper">+</span>
             </span>
           </Link>
           <nav className="hidden items-center gap-1 md:flex" aria-label="Десктоп">
-            {studentLinks.map((link) => {
+            {(user?.role === "teacher"
+              ? teacherLinks
+              : user?.role === "staff" || user?.role === "admin"
+                ? staffLinks
+                : studentLinks
+            ).map((link) => {
               const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
               return (
                 <Link

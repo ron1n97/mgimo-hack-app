@@ -49,7 +49,12 @@ export class RegisterDto {
   @IsString()
   groupRuzId?: string;
 
-  @ValidateIf((o: RegisterDto) => o.role === Role.STAFF || o.role === Role.ADMIN)
+  @ValidateIf(
+    (o: RegisterDto) =>
+      o.role === Role.STAFF ||
+      o.role === Role.ADMIN ||
+      o.role === Role.TEACHER,
+  )
   @IsOptional()
   @IsString()
   department?: string;

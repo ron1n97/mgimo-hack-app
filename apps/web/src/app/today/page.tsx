@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ApiError, fetchToday } from "@/lib/api";
+import { ApiError, fetchStudentTasksToday, fetchToday } from "@/lib/api";
 import { getUser } from "@/lib/auth";
-import type { TodayHub, User } from "@/lib/types";
+import type { LessonTaskItem, TodayHub, User } from "@/lib/types";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
@@ -12,6 +12,7 @@ import { LoadingState } from "@/components/LoadingState";
 export default function TodayPage() {
   const [user, setUser] = useState<User | null>(null);
   const [data, setData] = useState<TodayHub | null>(null);
+  const [tasks, setTasks] = useState<LessonTaskItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -21,9 +22,16 @@ export default function TodayPage() {
     try {
       const hub = await fetchToday();
       setData(hub);
+      try {
+        const todayTasks = await fetchStudentTasksToday();
+        setTasks(Array.isArray(todayTasks) ? todayTasks : []);
+      } catch {
+        setTasks([]);
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Ошибка загрузки");
       setData(null);
+      setTasks([]);
     } finally {
       setLoading(false);
     }
@@ -157,6 +165,29 @@ export default function TodayPage() {
               </ul>
             </section>
           ) : null}
+          <section>
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <h2 className="font-serif text-xl text-ink">Задания</h2>
+              <Link href="/tasks" className="text-sm text-copper">
+                Все →
+              </Link>
+            </div>
+            {tasks.length === 0 ? (
+              <p className="text-sm text-ink-muted">На сегодня срочных заданий нет.</p>
+            ) : (
+              <ul className="space-y-2">
+                {tasks.slice(0, 3).map((task) => (
+                  <li
+                    key={task.id}
+                    className="rounded-xl border border-cream-deep bg-white/40 px-4 py-3"
+                  >
+                    <p className="font-medium text-ink">{task.title}</p>
+                    <p className="mt-1 line-clamp-2 text-sm text-ink-muted">{task.body}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Link

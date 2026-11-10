@@ -5,11 +5,15 @@ import type {
   ClubTag,
   DigestFeedItem,
   GradeItem,
+  LessonTaskItem,
   NotificationItem,
   RequestStatus,
   ScheduleItem,
   ServiceRequest,
   StudentInterests,
+  TeacherAssignmentRow,
+  TeacherListItem,
+  TeacherSlot,
   TodayHub,
   User,
   UserRole,
@@ -124,18 +128,24 @@ type ApiUser = {
     scheduleGroupRuzId?: string | null;
     scheduleGroupLabel?: string | null;
   } | null;
+  teacherProfile?: {
+    fullName?: string;
+    department?: string | null;
+  } | null;
 };
 
 function mapRole(role: string): UserRole {
   const r = role.toUpperCase();
   if (r === "ADMIN") return "admin";
   if (r === "STAFF") return "staff";
+  if (r === "TEACHER") return "teacher";
   return "student";
 }
 
 export function mapUser(raw: ApiUser): User {
   const fullName =
     raw.studentProfile?.fullName ??
+    raw.teacherProfile?.fullName ??
     raw.staffProfile?.fullName ??
     raw.email;
   const role = mapRole(raw.role);
@@ -158,7 +168,10 @@ export function mapUser(raw: ApiUser): User {
     faculty: isStudent ? raw.studentProfile?.faculty : undefined,
     program: isStudent ? raw.studentProfile?.program : undefined,
     course: isStudent ? raw.studentProfile?.course : undefined,
-    department: raw.staffProfile?.department,
+    department:
+      raw.teacherProfile?.department ??
+      raw.staffProfile?.department ??
+      undefined,
   };
 }
 
@@ -405,6 +418,7 @@ export async function fetchAdminOverview(): Promise<{
     students: number;
     staff: number;
     admins: number;
+    teachers?: number;
     openTickets: number;
     debts: number;
     lessons: number;
@@ -775,7 +789,77 @@ export async function addDigestSource(payload: {
   title?: string;
 }): Promise<unknown> {
   return request("/staff/digest-sources", {
+export async function fetchTeacherSlots(params?: {
+  from?: string;
+  to?: string;
+}): Promise<{ slots: TeacherSlot[] }> {
+  const q = new URLSearchParams();
+  if (params?.from) q.set("from", params.from);
+  if (params?.to) q.set("to", params.to);
+  const qs = q.toString();
+  return request<{ slots: TeacherSlot[] }>(
+    `/teacher/slots${qs ? `?${qs}` : ""}`,
+  );
+}
+
+export async function fetchTeacherTasks(): Promise<LessonTaskItem[]> {
+  const data = await request<LessonTaskItem[]>("/teacher/tasks");
+  return Array.isArray(data) ? data : [];
+}
+
+export async function createTeacherTask(payload: {
+  assignmentId: string;
+  title: string;
+  body: string;
+  dueAt?: string;
+}): Promise<LessonTaskItem> {
+  return request<LessonTaskItem>("/teacher/tasks", {
     method: "POST",
     body: payload,
   });
+}
+
+export async function deleteTeacherTask(id: string): Promise<void> {
+  await request(`/teacher/tasks/${id}`, { method: "DELETE" });
+}
+
+export async function fetchStudentTasks(): Promise<LessonTaskItem[]> {
+  const data = await request<LessonTaskItem[]>("/tasks/me");
+  return Array.isArray(data) ? data : [];
+}
+
+export async function fetchStudentTasksToday(): Promise<LessonTaskItem[]> {
+  const data = await request<LessonTaskItem[]>("/tasks/today");
+  return Array.isArray(data) ? data : [];
+}
+
+export async function fetchStaffTeachers(): Promise<TeacherListItem[]> {
+  const data = await request<TeacherListItem[]>("/staff/teachers");
+  return Array.isArray(data) ? data : [];
+}
+
+export async function fetchStaffTeacherAssignments(): Promise<
+  TeacherAssignmentRow[]
+> {
+  const data = await request<TeacherAssignmentRow[]>(
+    "/staff/teacher-assignments",
+  );
+  return Array.isArray(data) ? data : [];
+}
+
+export async function assignTeacherToLesson(payload: {
+  teacherUserId: string;
+  scheduleLessonId?: string;
+  groupRuzId?: string;
+  groupLabel?: string;
+  discipline?: string;
+}): Promise<TeacherAssignmentRow> {
+  return request<TeacherAssignmentRow>("/staff/teacher-assignments", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export async function removeTeacherAssignment(id: string): Promise<void> {
+  await request(`/staff/teacher-assignments/${id}`, { method: "DELETE" });
 }

@@ -6,11 +6,22 @@ import { useEffect, useState } from "react";
 import { fetchUnreadNotificationCount } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
-const items = [
+const studentItems = [
   { href: "/today", label: "Сегодня" },
   { href: "/schedule", label: "Пары" },
   { href: "/clubs", label: "Клубы" },
   { href: "/notifications", label: "Лента", badge: true },
+  { href: "/profile", label: "Профиль" },
+] as const;
+
+const teacherItems = [
+  { href: "/teacher", label: "Пары" },
+  { href: "/profile", label: "Профиль" },
+] as const;
+
+const staffItems = [
+  { href: "/staff/requests", label: "Очередь" },
+  { href: "/staff/teachers", label: "Преп." },
   { href: "/profile", label: "Профиль" },
 ] as const;
 

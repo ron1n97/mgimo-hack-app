@@ -64,6 +64,7 @@ export default function AdminPage() {
               [
                 ["Студенты", data.counts.students],
                 ["Сотрудники", data.counts.staff],
+                ["Преподаватели", data.counts.teachers ?? 0],
                 ["Админы", data.counts.admins],
                 ["Открытые заявки", data.counts.openTickets],
                 ["Долги (оценки)", data.counts.debts],

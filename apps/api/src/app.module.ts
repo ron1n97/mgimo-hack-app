@@ -9,6 +9,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RequestsModule } from './requests/requests.module';
 import { ScheduleModule } from './schedule/schedule.module';
+import { TeacherAssignmentsModule } from './teacher-assignments/teacher-assignments.module';
 import { TodayModule } from './today/today.module';
 
 @Module({
@@ -24,6 +25,7 @@ import { TodayModule } from './today/today.module';
     AiModule,
     AdminModule,
     ClubsModule,
+    TeacherAssignmentsModule,
   ],
 })
 export class AppModule {}

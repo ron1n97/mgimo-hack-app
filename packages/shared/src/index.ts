@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const RoleSchema = z.enum(['STUDENT', 'STAFF', 'ADMIN']);
+export const RoleSchema = z.enum(['STUDENT', 'STAFF', 'ADMIN', 'TEACHER']);
 export type Role = z.infer<typeof RoleSchema>;
 
 export const LoginSchema = z.object({
@@ -169,6 +169,12 @@ export const DEMO_ACCOUNTS = [
     password: 'Demo123!',
     phone: '+79004444444',
     note: 'Админ платформы',
+  },
+  {
+    email: 'teacher@demo.local',
+    password: 'Demo123!',
+    phone: '+79006666666',
+    note: 'Преподаватель — Иванова И.И.',
   },
 ] as const;
 

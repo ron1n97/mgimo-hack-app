@@ -27,6 +27,8 @@ async function main() {
       "ClubSource",
       "Club",
       "Tag",
+      "LessonTask",
+      "LessonTeacherAssignment",
       "RequestEvent",
       "RequestTicket",
       "Notification",
@@ -34,6 +36,7 @@ async function main() {
       "Grade",
       "StudentProfile",
       "StaffProfile",
+      "TeacherProfile",
       "User"
     RESTART IDENTITY CASCADE;
   `);
@@ -103,6 +106,22 @@ async function main() {
         create: {
           fullName: 'Админ Платформы',
           department: 'Цифровой деканат',
+        },
+      },
+    },
+  });
+
+  const teacher = await prisma.user.create({
+    data: {
+      email: 'teacher@demo.local',
+      passwordHash,
+      role: Role.TEACHER,
+      phoneE164: '+79006666666',
+      teacherProfile: {
+        create: {
+          fullName: 'Иванова Ирина Ивановна',
+          department: 'Кафедра международного права',
+          constraintNotes: 'stub: no evening slots preferred (solver later)',
         },
       },
     },
@@ -185,6 +204,38 @@ async function main() {
       },
     ],
   });
+
+  const demoLesson = await prisma.scheduleLesson.findFirst({
+    where: { ruzExternalId: 'demo-l1', groupRuzId: '8033' },
+  });
+
+  if (demoLesson) {
+    const assignment = await prisma.lessonTeacherAssignment.create({
+      data: {
+        teacherUserId: teacher.id,
+        scheduleLessonId: demoLesson.id,
+        groupRuzId: demoLesson.groupRuzId,
+        groupLabel: demoLesson.groupLabel,
+        discipline: demoLesson.discipline,
+        assignedByUserId: staff.id,
+      },
+    });
+
+    const due = new Date();
+    due.setUTCDate(due.getUTCDate() + 3);
+
+    await prisma.lessonTask.create({
+      data: {
+        assignmentId: assignment.id,
+        title: 'Конспект по Венской конвенции',
+        body: 'Подготовить краткий конспект статей 26–31 Венской конвенции о праве международных договоров (1–2 стр.).',
+        dueAt: due,
+        groupRuzId: '8033',
+        scheduleLessonId: demoLesson.id,
+        createdByUserId: teacher.id,
+      },
+    });
+  }
 
   // Anna — academic risk (debts)
   await prisma.grade.createMany({
@@ -404,6 +455,7 @@ async function main() {
   console.log('  anna.risk@demo.local  — student, academic risk — phone +79001111111');
   console.log('  boris.ok@demo.local   — student, calm — phone +79002222222');
   console.log('  staff@demo.local      — staff — phone +79003333333');
+  console.log('  teacher@demo.local    — teacher — phone +79006666666');
   console.log('Telegram bot: share contact with matching demo phone to auth.');
   console.log('DISCLAIMER: contest fictional data, not official MGIMO.');
 }

@@ -6,9 +6,22 @@
 ## [Unreleased]
 
 ### Added
-- Clubs registry + digest sources + tags + student interest subscriptions (schema, API, minimal web UI, xlsx seed fixture) — ADR 0012
-- In-app AI assistant chat (`POST /ai/chat`) + widget DSL cards in web FAB/sheet — ADR 0014
-- Research pack + ideal backlog (2026-11-08)
+- RUZ subgroup preference + lessonOid upsert + DB-first schedule SoT (ADR 0008/0009)
+- Staff/admin schedule view group vs student enrollment; teacher profile gates (ADR 0015)
+- Teacher lesson assignments / tasks cabinet (ADR 0010)
+- Clubs registry, digest sources, tags, interest subscriptions (ADR 0012)
+- PWA Web Push subscriptions + prompt UI (ADR 0013; needs VAPID on VPS)
+- Liquid-glass role-aware mobile bottom nav
+- Demo passwordless quick-login for contest personas
+- In-app AI assistant chat + widget DSL (ADR 0014)
+- Caddy HTTPS sslip.io fronts for web + API
+- Telegram egress via TELEGRAM_PROXY / undici on RU VPS (ADR 0007)
+- Timetable optimization research model (md + GOST docx, ADR 0011)
+- Iron Ring project overlay (`.cursor/skills/ironring/`)
+- Process log: `docs/process-log/ironring-batch-2026-11-10-11.md`
+
+### Notes
+- 2026-11-11: all feature branches merged to `main` (`cbc6674`); VPS tip publish paused after OOM / multi-agent image race — see process log.
 
 ## [0.1.0] — 2026-11-08
 

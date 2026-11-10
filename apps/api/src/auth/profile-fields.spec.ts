@@ -69,4 +69,19 @@ describe('profile fields by role', () => {
     expect(isStaffLike(Role.STAFF)).toBe(true);
     expect(isStaffLike(Role.STUDENT)).toBe(false);
   });
+
+  it('rejects enrollment and view-group fields for teacher-like role string', () => {
+    expect(() =>
+      assertProfileFieldsForRole('TEACHER' as Role, { groupRuzId: '8033' }),
+    ).toThrow(BadRequestException);
+    expect(() =>
+      assertProfileFieldsForRole('TEACHER' as Role, { course: 1 }),
+    ).toThrow(BadRequestException);
+    expect(() =>
+      assertProfileFieldsForRole('TEACHER' as Role, {
+        fullName: 'Иван Препод',
+        department: 'Кафедра',
+      }),
+    ).not.toThrow();
+  });
 });

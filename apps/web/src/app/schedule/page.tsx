@@ -55,7 +55,9 @@ export default function SchedulePage() {
       setRole(me.role);
       setGroupName(me.groupName);
       setGroupRuzId(me.groupRuzId);
-      setHasSubPreference((me.preferredSubGroupOids?.length ?? 0) > 0);
+      setHasSubPreference(
+        me.role === "student" && (me.preferredSubGroupOids?.length ?? 0) > 0,
+      );
       const data = await fetchSchedule(from, to, { showAll });
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {

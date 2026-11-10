@@ -38,8 +38,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-dekanat}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dekanat}?schema=public
       REDIS_URL: redis://redis:6379
       API_PORT: 3001
-    ports:
-      - "3001:3001"
+    # Public HTTPS via Caddy (api.dekanat.…sslip.io). No host publish — avoids mixed content.
+    expose:
+      - "3001"
     depends_on:
       postgres:
         condition: service_healthy
@@ -68,11 +69,27 @@ services:
     environment:
       PORT: 3000
       HOSTNAME: 0.0.0.0
-    ports:
-      - "80:3000"
+    # Public HTTPS via Caddy (dekanat.…sslip.io). Bake NEXT_PUBLIC_API_URL to API host.
+    expose:
+      - "3000"
     depends_on:
       - api
     mem_limit: 256m
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+      - api
+    mem_limit: 64m
 
   # NOTE: many RU VPS block api.telegram.org — bot will look "up" but stay mute.
   # Prefer running bot on a host with Telegram access (or set HTTPS_PROXY / ALL_PROXY).
@@ -92,3 +109,5 @@ services:
 
 volumes:
   pgdata:
+  caddy_data:
+  caddy_config:

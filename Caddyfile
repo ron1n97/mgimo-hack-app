@@ -1,0 +1,13 @@
+# Public HTTPS fronts (Let's Encrypt via sslip.io).
+# Web:  https://dekanat.177.177.212.34.sslip.io
+# API:  https://api.dekanat.177.177.212.34.sslip.io
+
+dekanat.177.177.212.34.sslip.io {
+	encode gzip
+	reverse_proxy web:3000
+}
+
+api.dekanat.177.177.212.34.sslip.io {
+	encode gzip
+	reverse_proxy api:3001
+}

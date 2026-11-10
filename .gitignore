@@ -35,3 +35,6 @@ pnpm-lock.yaml.bak
 # telegram egress local binaries/logs
 scripts/bin/
 scripts/logs/
+
+# agent worktrees / local Claude
+.claude/

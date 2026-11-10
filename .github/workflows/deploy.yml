@@ -129,7 +129,7 @@ jobs:
             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
             'bash /tmp/server-bootstrap.sh'
 
-      - name: Upload compose + env
+      - name: Upload compose + Caddyfile + env
         env:
           PROD_ENV: ${{ secrets.PROD_ENV }}
           TAG: ${{ needs.build-and-push.outputs.image_tag }}
@@ -139,6 +139,8 @@ jobs:
             'mkdir -p /opt/mgimo-hack-app'
           scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
             docker-compose.prod.yml "$HOST:/opt/mgimo-hack-app/docker-compose.yml"
+          scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
+            Caddyfile "$HOST:/opt/mgimo-hack-app/Caddyfile"
           umask 077
           {
             printf '%s\n' "$PROD_ENV"

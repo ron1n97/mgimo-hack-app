@@ -19,12 +19,18 @@ import {
   ExplainNotificationDto,
   NextActionsDto,
 } from './dto/ai.dto';
+import { ChatDto } from './dto/chat.dto';
 import { ExportDocxDto } from './dto/export-docx.dto';
 
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
 export class AiController {
   constructor(private readonly ai: AiService) {}
+
+  @Post('chat')
+  chat(@CurrentUser() user: JwtPayloadUser, @Body() dto: ChatDto) {
+    return this.ai.chat(user.userId, user.role, dto);
+  }
 
   @Post('draft-request')
   draftRequest(

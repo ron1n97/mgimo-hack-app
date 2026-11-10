@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { clearSession, getUser } from "@/lib/auth";
 import type { User } from "@/lib/types";
+import { AssistantChat } from "./assistant/AssistantChat";
 import { BottomNav } from "./BottomNav";
 import { DisclaimerBanner } from "./DisclaimerBanner";
 
@@ -132,6 +133,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
       <main className="mx-auto max-w-5xl px-4 pb-24 pt-6 md:pb-10">{children}</main>
       <BottomNav />
+      {user ? <AssistantChat /> : null}
     </div>
   );
 }

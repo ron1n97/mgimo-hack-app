@@ -407,6 +407,44 @@ export async function createRequest(payload: {
   return mapRequest(raw);
 }
 
+export type AiChatPart =
+  | { type: "text"; text: string }
+  | {
+      type: "widget";
+      widget: {
+        kind: string;
+        id?: string;
+        title?: string;
+        subtitle?: string;
+        time?: string;
+        status?: string;
+        href: string;
+        attrs?: Record<string, string>;
+      };
+    };
+
+export type AiChatResponse = {
+  role: "assistant";
+  content: string;
+  parts: AiChatPart[];
+  widgets: Array<Extract<AiChatPart, { type: "widget" }>["widget"]>;
+  source: "zcode" | "stub";
+  disclaimer?: string;
+};
+
+export async function postAiChat(payload: {
+  message: string;
+  history?: Array<{ role: "user" | "assistant"; content: string }>;
+}): Promise<AiChatResponse> {
+  return request<AiChatResponse>("/ai/chat", {
+    method: "POST",
+    body: {
+      message: payload.message,
+      history: payload.history,
+    },
+  });
+}
+
 export async function draftRequestWithAi(payload: {
   type: string;
   subject: string;

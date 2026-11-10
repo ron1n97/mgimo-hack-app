@@ -6,6 +6,7 @@
 ## [Unreleased]
 
 ### Added
+- In-app AI assistant chat (`POST /ai/chat`) + widget DSL cards in web FAB/sheet (ADR 0007)
 - Research pack + ideal backlog (2026-11-08)
 
 ## [0.1.0] — 2026-11-08

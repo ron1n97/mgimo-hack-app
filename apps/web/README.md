@@ -44,6 +44,7 @@ pnpm --filter @dekanat/web start
 | GET | `/requests` | array |
 | POST | `/requests` | create |
 | POST | `/ai/draft-request` | `{ type, subject, notes? }` → `{ draft }` |
+| POST | `/ai/chat` | `{ message, history? }` → assistant + widget parts |
 | GET | `/notifications` | array |
 | GET | `/staff/requests` | staff queue |
 | PATCH | `/staff/requests/:id` | `{ status }` |

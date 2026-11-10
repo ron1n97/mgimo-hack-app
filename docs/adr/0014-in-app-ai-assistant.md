@@ -1,4 +1,4 @@
-# 0007. In-app AI assistant + widget DSL
+# 0014. In-app AI assistant + widget DSL
 
 ## Статус
 Принято

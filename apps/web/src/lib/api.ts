@@ -235,9 +235,21 @@ function mapNotification(raw: Record<string, unknown>): NotificationItem {
     id: String(raw.id),
     title: String(raw.title ?? ""),
     body: String(raw.body ?? ""),
+    kind: raw.kind != null ? String(raw.kind) : undefined,
     createdAt: String(raw.createdAt ?? ""),
     read: Boolean(raw.readAt ?? raw.read),
   };
+}
+
+function isImportantUnread(item: NotificationItem): boolean {
+  if (item.read) return false;
+  const kind = item.kind ?? "";
+  return (
+    kind.startsWith("grade_") ||
+    kind.startsWith("digest_") ||
+    kind === "academic_debt" ||
+    kind === "schedule_moved"
+  );
 }
 
 type ApiAuth = {
@@ -315,15 +327,19 @@ export async function fetchToday(): Promise<TodayHub> {
   const recent =
     raw.recentGrades?.map(mapGrade) ??
     (raw.academicRisk?.debts ?? []).map(mapGrade);
+  const unreadItems = Array.isArray(raw.unreadNotifications)
+    ? raw.unreadNotifications
+        .filter((n): n is Record<string, unknown> => typeof n === "object" && n !== null)
+        .map(mapNotification)
+    : [];
 
   return {
     date: raw.date,
     lessons,
     nextLesson: raw.nextLesson ? mapLesson(raw.nextLesson) : lessons[0] ?? null,
     openRequests: Array.isArray(raw.openRequests) ? raw.openRequests.length : 0,
-    unreadNotifications: Array.isArray(raw.unreadNotifications)
-      ? raw.unreadNotifications.length
-      : 0,
+    unreadNotifications: unreadItems.length,
+    importantUnread: unreadItems.filter(isImportantUnread).slice(0, 5),
     recentGrades: recent.slice(0, 8),
   };
 }
@@ -484,6 +500,45 @@ export async function downloadRequestDocx(payload: {
 export async function fetchNotifications(): Promise<NotificationItem[]> {
   const data = await request<Record<string, unknown>[]>("/notifications/me");
   return Array.isArray(data) ? data.map(mapNotification) : [];
+}
+
+export async function fetchUnreadNotificationCount(): Promise<number> {
+  const data = await request<{ count?: number }>("/notifications/me/unread-count");
+  return typeof data.count === "number" ? data.count : 0;
+}
+
+export async function fetchVapidPublicKey(): Promise<{ publicKey: string }> {
+  const data = await request<{ publicKey?: string }>("/notifications/push/vapid-public-key");
+  return { publicKey: data.publicKey ?? "" };
+}
+
+export async function subscribePush(payload: {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  userAgent?: string;
+}): Promise<void> {
+  await request("/notifications/push/subscribe", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export async function unsubscribePush(endpoint: string): Promise<void> {
+  await request("/notifications/push/subscribe", {
+    method: "DELETE",
+    body: { endpoint },
+  });
+}
+
+export async function createDemoNotification(payload: {
+  title: string;
+  body: string;
+  kind: string;
+}): Promise<void> {
+  await request("/notifications", {
+    method: "POST",
+    body: payload,
+  });
 }
 
 export async function fetchStaffRequests(): Promise<ServiceRequest[]> {

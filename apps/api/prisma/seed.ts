@@ -21,6 +21,7 @@ async function main() {
       "RequestEvent",
       "RequestTicket",
       "Notification",
+      "PushSubscription",
       "Grade",
       "StudentProfile",
       "StaffProfile",
@@ -340,6 +341,18 @@ async function main() {
       },
       {
         userId: anna.id,
+        title: 'Новая оценка',
+        body: 'Международное право — неявка (демо). Откройте раздел «Учёба».',
+        kind: 'grade_posted',
+      },
+      {
+        userId: anna.id,
+        title: 'Утренний дайджест',
+        body: 'Сегодня 2 пары, 1 открытая заявка, есть непрочитанные уведомления.',
+        kind: 'digest_morning',
+      },
+      {
+        userId: anna.id,
         title: 'Заявка в работе',
         body: `Ваша заявка «${annaTicket.title}» переведена в статус IN_PROGRESS.`,
         kind: 'request_status',
@@ -350,6 +363,12 @@ async function main() {
         body: 'Справка об обучении готова к выдаче (демо-статус).',
         kind: 'request_status',
         readAt: new Date(),
+      },
+      {
+        userId: boris.id,
+        title: 'Оценка выставлена',
+        body: 'История дипломатии — отлично (демо).',
+        kind: 'grade_posted',
       },
       {
         userId: staff.id,

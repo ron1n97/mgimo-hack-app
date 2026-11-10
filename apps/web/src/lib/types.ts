@@ -56,6 +56,7 @@ export type NotificationItem = {
   id: string;
   title: string;
   body: string;
+  kind?: string;
   createdAt: string;
   read: boolean;
 };
@@ -66,5 +67,6 @@ export type TodayHub = {
   nextLesson?: ScheduleItem | null;
   openRequests: number;
   unreadNotifications: number;
+  importantUnread: NotificationItem[];
   recentGrades: GradeItem[];
 };

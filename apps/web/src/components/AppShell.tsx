@@ -7,6 +7,7 @@ import { clearSession, getUser } from "@/lib/auth";
 import type { User } from "@/lib/types";
 import { BottomNav } from "./BottomNav";
 import { DisclaimerBanner } from "./DisclaimerBanner";
+import { PushPrompt } from "./PushPrompt";
 
 const studentLinks = [
   { href: "/today", label: "Сегодня" },
@@ -98,13 +99,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ) : null}
           </nav>
           <div className="flex items-center gap-3">
-            <Link
-              href="/notifications"
-              className="text-sm text-ink-muted hover:text-ink md:hidden"
-              aria-label="Уведомления"
-            >
-              ●
-            </Link>
             {user ? (
               <Link
                 href="/profile"
@@ -131,6 +125,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 pb-24 pt-6 md:pb-10">{children}</main>
+      <PushPrompt />
       <BottomNav />
     </div>
   );

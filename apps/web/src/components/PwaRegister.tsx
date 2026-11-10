@@ -1,15 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { ensureServiceWorker } from "@/lib/push";
 
 export function PwaRegister() {
   useEffect(() => {
-    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
-    if (process.env.NODE_ENV !== "production") return;
-
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-      // PWA is best-effort for contest scaffold
-    });
+    void ensureServiceWorker();
   }, []);
 
   return null;

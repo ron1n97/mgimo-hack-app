@@ -1,4 +1,4 @@
-# 0009. Clubs registry, digest sources, tags & subscriptions
+# 0012. Clubs registry, digest sources, tags & subscriptions
 
 ## Статус
 Принято

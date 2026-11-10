@@ -11,6 +11,7 @@ enum Role {
   STUDENT
   STAFF
   ADMIN
+  TEACHER
 }
 
 enum TicketStatus {
@@ -33,10 +34,13 @@ model User {
 
   studentProfile StudentProfile?
   staffProfile   StaffProfile?
+  teacherProfile TeacherProfile?
   grades         Grade[]         @relation("StudentGrades")
   tickets        RequestTicket[] @relation("StudentTickets")
   requestEvents  RequestEvent[]  @relation("RequestActor")
   notifications  Notification[]
+  teacherAssignmentsMade LessonTeacherAssignment[] @relation("AssignmentAssigner")
+  lessonTasksCreated     LessonTask[]              @relation("TaskAuthor")
 }
 
 model StudentProfile {
@@ -59,6 +63,63 @@ model StaffProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+/// Teacher cabinet profile (Role.TEACHER). RUZ lecturer string is not SoT for auth.
+model TeacherProfile {
+  userId          String  @id
+  fullName        String
+  department      String?
+  /// Optional free-text constraints stub (solver out of scope for this slice)
+  constraintNotes String?
+
+  user        User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignments LessonTeacherAssignment[]
+}
+
+/// Dean/staff overlay: which teacher owns which RUZ slot or group+discipline.
+model LessonTeacherAssignment {
+  id               String   @id @default(cuid())
+  teacherUserId    String
+  /// Concrete RUZ-mirrored lesson when assigning a specific slot
+  scheduleLessonId String?
+  /// Soft key when assigning by group + discipline (series)
+  groupRuzId       String?
+  groupLabel       String?
+  discipline       String?
+  assignedByUserId String
+  createdAt        DateTime @default(now())
+
+  teacher        TeacherProfile  @relation(fields: [teacherUserId], references: [userId], onDelete: Cascade)
+  scheduleLesson ScheduleLesson? @relation(fields: [scheduleLessonId], references: [id], onDelete: Cascade)
+  assignedBy     User            @relation("AssignmentAssigner", fields: [assignedByUserId], references: [id], onDelete: Cascade)
+  tasks          LessonTask[]
+
+  @@index([teacherUserId])
+  @@index([groupRuzId, discipline])
+  @@index([scheduleLessonId])
+}
+
+/// Homework / task attached by a teacher to an assigned slot; visible to students of groupRuzId.
+model LessonTask {
+  id               String    @id @default(cuid())
+  assignmentId     String
+  title            String
+  body             String
+  dueAt            DateTime?
+  /// Denormalized for student list queries / IDOR scope
+  groupRuzId       String
+  scheduleLessonId String?
+  createdByUserId  String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  assignment LessonTeacherAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  createdBy  User                    @relation("TaskAuthor", fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([groupRuzId, dueAt])
+  @@index([createdByUserId])
+  @@index([assignmentId])
+}
+
 model ScheduleLesson {
   id            String   @id @default(cuid())
   ruzExternalId String
@@ -75,6 +136,8 @@ model ScheduleLesson {
   isCancelled   Boolean  @default(false)
   isMoved       Boolean  @default(false)
   rawJson       Json?
+
+  teacherAssignments LessonTeacherAssignment[]
 
   @@unique([ruzExternalId, groupRuzId, date, begin])
   @@index([groupRuzId, date])

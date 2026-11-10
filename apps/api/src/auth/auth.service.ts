@@ -30,8 +30,9 @@ export class AuthService {
     }
 
     const role = dto.role ?? Role.STUDENT;
-    // Contest demo: do not allow open ADMIN registration
-    const safeRole = role === Role.ADMIN ? Role.STAFF : role;
+    // Contest demo: do not allow open ADMIN / TEACHER registration (seed only)
+    const safeRole =
+      role === Role.ADMIN || role === Role.TEACHER ? Role.STAFF : role;
     const passwordHash = await hashPassword(dto.password);
 
     const user = await this.prisma.user.create({
@@ -64,6 +65,7 @@ export class AuthService {
       include: {
         studentProfile: true,
         staffProfile: true,
+        teacherProfile: true,
       },
     });
 
@@ -73,7 +75,11 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email.toLowerCase() },
-      include: { studentProfile: true, staffProfile: true },
+      include: {
+        studentProfile: true,
+        staffProfile: true,
+        teacherProfile: true,
+      },
     });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -93,7 +99,11 @@ export class AuthService {
     }
     const user = await this.prisma.user.findUnique({
       where: { phoneE164: phone },
-      include: { studentProfile: true, staffProfile: true },
+      include: {
+        studentProfile: true,
+        staffProfile: true,
+        teacherProfile: true,
+      },
     });
     if (!user) {
       throw new UnauthorizedException('Phone not linked to any account');
@@ -120,7 +130,11 @@ export class AuthService {
   async me(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { studentProfile: true, staffProfile: true },
+      include: {
+        studentProfile: true,
+        staffProfile: true,
+        teacherProfile: true,
+      },
     });
     if (!user) {
       throw new UnauthorizedException();
@@ -131,7 +145,11 @@ export class AuthService {
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { studentProfile: true, staffProfile: true },
+      include: {
+        studentProfile: true,
+        staffProfile: true,
+        teacherProfile: true,
+      },
     });
     if (!user) {
       throw new UnauthorizedException();
@@ -195,6 +213,18 @@ export class AuthService {
       });
     }
 
+    if (user.role === Role.TEACHER && user.teacherProfile) {
+      await this.prisma.teacherProfile.update({
+        where: { userId },
+        data: {
+          ...(dto.fullName !== undefined ? { fullName: dto.fullName.trim() } : {}),
+          ...(dto.department !== undefined
+            ? { department: dto.department.trim() }
+            : {}),
+        },
+      });
+    }
+
     return this.me(userId);
   }
 
@@ -206,6 +236,7 @@ export class AuthService {
     telegramId?: string | null;
     studentProfile?: unknown;
     staffProfile?: unknown;
+    teacherProfile?: unknown;
   }) {
     const accessToken = this.jwt.sign({
       sub: user.id,
@@ -226,6 +257,7 @@ export class AuthService {
     telegramId?: string | null;
     studentProfile?: unknown;
     staffProfile?: unknown;
+    teacherProfile?: unknown;
   }) {
     return {
       id: user.id,
@@ -235,6 +267,7 @@ export class AuthService {
       telegramId: user.telegramId ?? null,
       studentProfile: user.studentProfile ?? null,
       staffProfile: user.staffProfile ?? null,
+      teacherProfile: user.teacherProfile ?? null,
       disclaimer:
         'Неофициальный кабинет. Расписание — из открытого RUZ МГИМО.',
     };

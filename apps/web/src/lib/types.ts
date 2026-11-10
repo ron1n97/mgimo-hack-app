@@ -1,4 +1,4 @@
-export type UserRole = "student" | "staff" | "admin";
+export type UserRole = "student" | "staff" | "admin" | "teacher";
 
 export type User = {
   id: string;
@@ -11,6 +11,74 @@ export type User = {
   faculty?: string;
   program?: string;
   course?: number;
+  department?: string;
+};
+
+export type TeacherSlot = {
+  assignmentId: string;
+  lesson: {
+    id: string;
+    date: string;
+    begin: string;
+    end: string;
+    discipline: string;
+    groupRuzId: string;
+    groupLabel: string;
+    lecturer?: string | null;
+    auditorium?: string | null;
+    building?: string | null;
+    kindOfWork?: string | null;
+  };
+  taskCount: number;
+};
+
+export type LessonTaskItem = {
+  id: string;
+  title: string;
+  body: string;
+  dueAt?: string | null;
+  groupRuzId: string;
+  scheduleLessonId?: string | null;
+  createdAt: string;
+  assignment?: {
+    discipline?: string | null;
+    groupLabel?: string | null;
+    scheduleLesson?: {
+      date?: string;
+      begin?: string;
+      end?: string;
+      discipline?: string;
+    } | null;
+  };
+  createdBy?: {
+    id: string;
+    teacherProfile?: { fullName?: string } | null;
+  };
+};
+
+export type TeacherAssignmentRow = {
+  id: string;
+  teacherUserId: string;
+  scheduleLessonId?: string | null;
+  groupRuzId?: string | null;
+  groupLabel?: string | null;
+  discipline?: string | null;
+  teacher?: { fullName: string };
+  scheduleLesson?: {
+    id: string;
+    date: string;
+    begin: string;
+    end: string;
+    discipline: string;
+    groupLabel: string;
+  } | null;
+  _count?: { tasks: number };
+};
+
+export type TeacherListItem = {
+  id: string;
+  email: string;
+  teacherProfile?: { fullName: string; department?: string | null } | null;
 };
 
 export type AuthResponse = {

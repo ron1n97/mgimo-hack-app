@@ -2,17 +2,42 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getUser } from "@/lib/auth";
 
-const items = [
+const studentItems = [
   { href: "/today", label: "Сегодня" },
   { href: "/schedule", label: "Пары" },
-  { href: "/grades", label: "Учёба" },
+  { href: "/tasks", label: "Задания" },
   { href: "/requests", label: "Заявки" },
+  { href: "/profile", label: "Профиль" },
+] as const;
+
+const teacherItems = [
+  { href: "/teacher", label: "Пары" },
+  { href: "/profile", label: "Профиль" },
+] as const;
+
+const staffItems = [
+  { href: "/staff/requests", label: "Очередь" },
+  { href: "/staff/teachers", label: "Преп." },
   { href: "/profile", label: "Профиль" },
 ] as const;
 
 export function BottomNav() {
   const pathname = usePathname();
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRole(getUser()?.role ?? null);
+  }, [pathname]);
+
+  const items =
+    role === "teacher"
+      ? teacherItems
+      : role === "staff" || role === "admin"
+        ? staffItems
+        : studentItems;
 
   return (
     <nav

@@ -222,6 +222,48 @@ async function main() {
     phone: '+79004444444',
   });
 
+  // Demo teacher (TeacherProfile, not staff)
+  {
+    const email = 'teacher@demo.local';
+    const phone = '+79006666666';
+    const fullName = 'Иванова Ирина Ивановна';
+    const department = 'Кафедра международного права';
+    const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: { role: Role.TEACHER, passwordHash, phoneE164: phone },
+      });
+      await prisma.teacherProfile.upsert({
+        where: { userId: existing.id },
+        create: {
+          userId: existing.id,
+          fullName,
+          department,
+          constraintNotes: 'stub: no evening slots preferred (solver later)',
+        },
+        update: { fullName, department },
+      });
+    } else {
+      await prisma.user.create({
+        data: {
+          email,
+          passwordHash,
+          role: Role.TEACHER,
+          phoneE164: phone,
+          teacherProfile: {
+            create: {
+              fullName,
+              department,
+              constraintNotes: 'stub: no evening slots preferred (solver later)',
+            },
+          },
+        },
+      });
+    }
+  }
+
   const anna = await prisma.user.findUnique({
     where: { email: 'anna.risk@demo.local' },
   });
@@ -255,7 +297,9 @@ async function main() {
     console.log('grades →', row.fullName);
   }
 
-  console.log('OK: staff@demo.local, admin@demo.local, roman.guskov@demo.local / Demo123!');
+  console.log(
+    'OK: staff@demo.local, admin@demo.local, teacher@demo.local, roman.guskov@demo.local / Demo123!',
+  );
 }
 
 main()

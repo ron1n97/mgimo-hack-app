@@ -11,6 +11,7 @@ export class AdminService {
       students,
       staff,
       admins,
+      teachers,
       openTickets,
       debts,
       lessons,
@@ -19,6 +20,7 @@ export class AdminService {
       this.prisma.user.count({ where: { role: Role.STUDENT } }),
       this.prisma.user.count({ where: { role: Role.STAFF } }),
       this.prisma.user.count({ where: { role: Role.ADMIN } }),
+      this.prisma.user.count({ where: { role: Role.TEACHER } }),
       this.prisma.requestTicket.count({
         where: {
           status: { in: [TicketStatus.SUBMITTED, TicketStatus.IN_PROGRESS] },
@@ -45,6 +47,7 @@ export class AdminService {
         students,
         staff,
         admins,
+        teachers,
         openTickets,
         debts,
         lessons,

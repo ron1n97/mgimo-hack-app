@@ -58,7 +58,48 @@ if (!token) {
   process.exit(0);
 }
 
-const bot = new Bot(token);
+/** RU VPS block api.telegram.org — route via HTTP CONNECT proxy (undici ProxyAgent). */
+function buildFetch() {
+  const proxy =
+    process.env.TELEGRAM_PROXY?.trim() ||
+    process.env.HTTPS_PROXY?.trim() ||
+    process.env.HTTP_PROXY?.trim();
+  if (!proxy) return fetch;
+  try {
+    // Explicit undici dep — ProxyAgent is HTTP CONNECT only (not raw SOCKS).
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { ProxyAgent, fetch: undiciFetch } = require('undici') as {
+      ProxyAgent: new (url: string) => unknown;
+      fetch: (
+        input: RequestInfo | URL,
+        init?: RequestInit & { dispatcher?: unknown },
+      ) => Promise<Response>;
+    };
+    const dispatcher = new ProxyAgent(proxy);
+    console.log(`[bot] telegram via proxy ${proxy.replace(/\/\/.*@/, '//***@')}`);
+    // Grammy's node shim passes node-fetch fields (`agent`, foreign AbortSignal)
+    // that undici rejects — strip them and attach dispatcher instead.
+    return ((url: RequestInfo | URL, init?: RequestInit) => {
+      const raw = { ...(init as Record<string, unknown>) };
+      delete raw.agent;
+      delete raw.compress;
+      delete raw.duplex;
+      delete raw.signal;
+      return undiciFetch(url, { ...raw, dispatcher } as RequestInit & {
+        dispatcher?: unknown;
+      });
+    }) as typeof fetch;
+  } catch (err) {
+    console.warn('[bot] proxy setup failed, direct fetch', err);
+    return fetch;
+  }
+}
+
+const bot = new Bot(token, {
+  client: {
+    fetch: buildFetch(),
+  },
+});
 
 const contactKeyboard = new Keyboard()
   .requestContact('📱 Войти по номеру телефона')

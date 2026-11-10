@@ -31,3 +31,7 @@ apps/api/prisma/*.db
 *.local
 pnpm-lock.yaml.bak
 .secrets/
+
+# telegram egress local binaries/logs
+scripts/bin/
+scripts/logs/

@@ -10,7 +10,8 @@
   "dependencies": {
     "@dekanat/cabinet-tools": "workspace:*",
     "@dekanat/shared": "workspace:*",
-    "grammy": "^1.35.0"
+    "grammy": "^1.35.0",
+    "undici": "^7"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

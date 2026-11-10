@@ -29,3 +29,13 @@ Live: web `http://SSH_HOST/` · API `http://SSH_HOST:3001`.
 
 ## Manual re-deploy
 Actions → Deploy → Run workflow
+
+## Telegram bot on RU VPS
+`api.telegram.org` is blocked from the VPS. Bot uses `TELEGRAM_PROXY=http://127.0.0.1:40000`
+(`network_mode: host`). Port `40000` is an HTTP CONNECT reverse tunnel from a Mac
+that can reach Telegram:
+
+- LaunchAgent: `com.dekanat.tg-egress` → `scripts/tg-egress-keepalive.sh`
+- See ADR `docs/adr/0007-telegram-egress-proxy.md`
+
+If the Mac sleeps / agent stops — bot cannot poll until the tunnel is back.

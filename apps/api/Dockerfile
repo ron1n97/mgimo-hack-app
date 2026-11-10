@@ -34,3 +34,4 @@ WORKDIR /app/apps/api
 EXPOSE 3001
 # migrate then start
 CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node dist/main.js"]
+# Note: nest emits dist/main.js when tsconfig.build includes only src/**

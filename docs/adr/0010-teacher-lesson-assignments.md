@@ -1,4 +1,4 @@
-# 0007. Teacher cabinet: lesson assignments without solver
+# 0010. Teacher cabinet: lesson assignments without solver
 
 ## Статус
 Принято

@@ -127,6 +127,37 @@ export default function TodayPage() {
             )}
           </section>
 
+          {data.importantUnread.length > 0 ? (
+            <section aria-label="Важные непрочитанные">
+              <div className="mb-2 flex items-end justify-between gap-3">
+                <h2 className="font-serif text-xl text-ink">Важно сейчас</h2>
+                <Link href="/notifications" className="text-sm text-copper">
+                  Вся лента →
+                </Link>
+              </div>
+              <ul className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                {data.importantUnread.map((n) => (
+                  <li key={n.id} className="min-w-[14rem] max-w-[18rem] shrink-0">
+                    <Link
+                      href="/notifications"
+                      className="block rounded-2xl border border-copper/25 bg-white/70 px-3 py-3 transition hover:border-copper/50"
+                    >
+                      <p className="text-[10px] uppercase tracking-wide text-copper">
+                        {n.kind?.startsWith("grade_")
+                          ? "Оценка"
+                          : n.kind?.startsWith("digest_")
+                            ? "Дайджест"
+                            : "Событие"}
+                      </p>
+                      <p className="mt-1 line-clamp-2 font-medium text-ink">{n.title}</p>
+                      <p className="mt-1 line-clamp-2 text-xs text-ink-muted">{n.body}</p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
           <div className="grid gap-3 sm:grid-cols-2">
             <Link
               href="/requests"

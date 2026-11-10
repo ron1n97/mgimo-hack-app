@@ -1,6 +1,6 @@
-/* Minimal offline shell for PWA basics — contest scaffold */
-const CACHE = "dekanat-web-v1";
-const PRECACHE = ["/", "/today", "/manifest.webmanifest"];
+/* PWA shell + Web Push (ADR 0009) */
+const CACHE = "dekanat-web-v2";
+const PRECACHE = ["/", "/today", "/notifications", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -28,6 +28,64 @@ self.addEventListener("fetch", (event) => {
         })
         .catch(() => cached);
       return cached || network;
+    }),
+  );
+});
+
+self.addEventListener("push", (event) => {
+  let data = {
+    title: "Деканат+",
+    body: "Новое уведомление",
+    url: "/notifications",
+  };
+  try {
+    if (event.data) {
+      const parsed = event.data.json();
+      data = {
+        title: parsed.title || data.title,
+        body: parsed.body || data.body,
+        url: parsed.url || data.url,
+        kind: parsed.kind,
+        notificationId: parsed.notificationId,
+      };
+    }
+  } catch {
+    try {
+      const text = event.data && event.data.text();
+      if (text) data.body = text;
+    } catch {
+      /* ignore */
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: data.url, kind: data.kind, notificationId: data.notificationId },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target =
+    (event.notification.data && event.notification.data.url) || "/notifications";
+  const path = typeof target === "string" ? target : "/notifications";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ("focus" in client) {
+          client.navigate(path);
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(path);
+      }
+      return undefined;
     }),
   );
 });

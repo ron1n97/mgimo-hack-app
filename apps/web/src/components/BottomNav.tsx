@@ -5,47 +5,13 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getUser } from "@/lib/auth";
 import type { UserRole } from "@/lib/types";
+import {
+  isNavItemActive,
+  navItemsForRole,
+  type NavIconName,
+} from "./nav-items";
 
-type NavIcon = "today" | "schedule" | "grades" | "profile" | "queue" | "admin" | "bell";
-
-type NavItem = {
-  href: string;
-  label: string;
-  icon: NavIcon;
-};
-
-const studentItems: NavItem[] = [
-  { href: "/today", label: "Сегодня", icon: "today" },
-  { href: "/schedule", label: "Пары", icon: "schedule" },
-  { href: "/grades", label: "Учёба", icon: "grades" },
-  { href: "/profile", label: "Профиль", icon: "profile" },
-];
-
-const staffItems: NavItem[] = [
-  { href: "/staff/requests", label: "Очередь", icon: "queue" },
-  { href: "/today", label: "Сегодня", icon: "today" },
-  { href: "/notifications", label: "Лента", icon: "bell" },
-  { href: "/profile", label: "Профиль", icon: "profile" },
-];
-
-const adminItems: NavItem[] = [
-  { href: "/staff/requests", label: "Очередь", icon: "queue" },
-  { href: "/admin", label: "Админ", icon: "admin" },
-  { href: "/notifications", label: "Лента", icon: "bell" },
-  { href: "/profile", label: "Профиль", icon: "profile" },
-];
-
-function itemsForRole(role: UserRole | null): NavItem[] {
-  if (role === "admin") return adminItems;
-  if (role === "staff") return staffItems;
-  return studentItems;
-}
-
-function isActive(pathname: string, href: string): boolean {
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function TabIcon({ name, active }: { name: NavIcon; active: boolean }) {
+function TabIcon({ name, active }: { name: NavIconName; active: boolean }) {
   const common = {
     width: 20,
     height: 20,
@@ -122,18 +88,18 @@ export function BottomNav() {
     setRole(getUser()?.role ?? null);
   }, [pathname]);
 
-  const items = itemsForRole(role);
+  const items = navItemsForRole(role);
 
   return (
     <nav
       className="pointer-events-none fixed inset-x-0 bottom-0 z-40 md:hidden"
       aria-label="Основная навигация"
-      style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+      style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
     >
       <div className="pointer-events-auto mx-auto w-[min(100%-1.5rem,28rem)]">
         <ul className="liquid-glass-nav flex items-stretch gap-0.5 rounded-[1.35rem] px-1.5 py-1.5">
           {items.map((item) => {
-            const active = isActive(pathname, item.href);
+            const active = isNavItemActive(pathname, item.href);
             return (
               <li key={item.href} className="min-w-0 flex-1">
                 <Link

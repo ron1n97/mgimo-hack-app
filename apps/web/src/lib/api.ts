@@ -150,6 +150,7 @@ export function mapUser(raw: ApiUser): User {
     raw.email;
   const role = mapRole(raw.role);
   const isStudent = role === "student";
+  const isStaffLike = role === "staff" || role === "admin";
   return {
     id: raw.id,
     email: raw.email,
@@ -157,10 +158,14 @@ export function mapUser(raw: ApiUser): User {
     role,
     groupName: isStudent
       ? raw.studentProfile?.groupLabel
-      : (raw.staffProfile?.scheduleGroupLabel ?? undefined),
+      : isStaffLike
+        ? (raw.staffProfile?.scheduleGroupLabel ?? undefined)
+        : undefined,
     groupRuzId: isStudent
       ? (raw.studentProfile?.groupRuzId ?? undefined)
-      : (raw.staffProfile?.scheduleGroupRuzId ?? undefined),
+      : isStaffLike
+        ? (raw.staffProfile?.scheduleGroupRuzId ?? undefined)
+        : undefined,
     preferredSubGroupOids: isStudent
       ? (raw.studentProfile?.preferredSubGroupOids ?? [])
       : [],

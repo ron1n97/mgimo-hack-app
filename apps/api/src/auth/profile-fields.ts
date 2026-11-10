@@ -48,7 +48,22 @@ export function assertProfileFieldsForRole(
     return;
   }
 
-  // STAFF / ADMIN (and any future non-student roles): oversight, not enrollment
+  // TEACHER: contacts only — no student enrollment and no schedule view-group.
+  if ((role as string) === 'TEACHER') {
+    const forbidden = listedPresentFields(dto, [
+      ...STUDENT_ENROLLMENT_FIELDS,
+      'groupRuzId',
+      'groupLabel',
+    ]);
+    if (forbidden.length > 0) {
+      throw new BadRequestException(
+        `Поля студента / группы недоступны для роли TEACHER: ${forbidden.join(', ')}`,
+      );
+    }
+    return;
+  }
+
+  // STAFF / ADMIN: oversight view group, not enrollment
   const forbidden = listedPresentFields(dto, STUDENT_ENROLLMENT_FIELDS);
   if (forbidden.length > 0) {
     throw new BadRequestException(

@@ -44,12 +44,20 @@ export class TodayService {
 
   async forUser(userId: string) {
     const day = moscowDateString();
-    const profile = await this.prisma.studentProfile.findUnique({
-      where: { userId },
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { studentProfile: true, staffProfile: true },
     });
+    const profile = user?.studentProfile ?? null;
+    const hasScheduleTarget = Boolean(
+      profile?.groupRuzId ||
+        (profile?.groupLabel && profile.groupLabel !== 'Без группы') ||
+        user?.staffProfile?.scheduleGroupRuzId ||
+        user?.staffProfile?.scheduleGroupLabel,
+    );
 
     const [lessons, allGrades, tickets, notifs] = await Promise.all([
-      profile
+      hasScheduleTarget
         ? this.schedule.forUser(userId, day, day)
         : Promise.resolve([]),
       this.grades.forUser(userId),

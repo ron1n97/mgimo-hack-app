@@ -20,10 +20,10 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
-  const [role, setRole] = useState<UserRole>("student");
   const [groups, setGroups] = useState<ScheduleGroup[]>([]);
   const [subGroups, setSubGroups] = useState<ScheduleSubGroup[]>([]);
   const [subGroupsLoading, setSubGroupsLoading] = useState(false);
+  const [role, setRole] = useState<UserRole>("student");
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -36,7 +36,8 @@ export default function ProfilePage() {
   const [department, setDepartment] = useState("");
 
   const isStudent = role === "student";
-  const isStaffLike = role === "staff" || role === "admin";
+  const isStaffView = role === "admin" || role === "staff";
+  const isTeacher = role === "teacher";
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -89,7 +90,7 @@ export default function ProfilePage() {
     };
   }, [groupRuzId, isStudent]);
 
-  function onGroupChange(next: string) {
+  function onStudentGroupChange(next: string) {
     setGroupRuzId(next);
     setPreferredSubGroupOids([]);
   }
@@ -107,35 +108,39 @@ export default function ProfilePage() {
     setOk(null);
     try {
       const selected = groups.find((g) => g.groupRuzId === groupRuzId);
-      const payload =
+      const courseNum = Number(course);
+      const updated = await updateProfile(
         isStudent
-          ? (() => {
-              const courseNum = Number(course);
-              return {
-                fullName: fullName.trim(),
-                phone: phone.trim(),
-                faculty: faculty.trim() || "Не указан",
-                program: program.trim() || "Не указана",
-                course: Number.isFinite(courseNum) ? courseNum : 1,
-                groupRuzId: groupRuzId || undefined,
-                groupLabel: selected?.groupLabel,
-                preferredSubGroupOids,
-              };
-            })()
-          : {
+          ? {
               fullName: fullName.trim(),
               phone: phone.trim(),
-              department: department.trim() || "Деканат",
-              groupRuzId: groupRuzId || "",
-              groupLabel: selected?.groupLabel ?? "",
-            };
-      const updated = await updateProfile(payload);
+              faculty: faculty.trim() || "Не указан",
+              program: program.trim() || "Не указана",
+              course: Number.isFinite(courseNum) ? courseNum : 1,
+              groupRuzId: groupRuzId || undefined,
+              groupLabel: selected?.groupLabel,
+              preferredSubGroupOids,
+            }
+          : isStaffView
+            ? {
+                fullName: fullName.trim(),
+                phone: phone.trim(),
+                department: department.trim() || undefined,
+                groupRuzId: groupRuzId || "",
+                groupLabel: selected?.groupLabel ?? "",
+              }
+            : {
+                fullName: fullName.trim(),
+                phone: phone.trim(),
+                department: department.trim() || undefined,
+              },
+      );
       const token = getToken();
       if (token) setSession(token, updated);
       setOk(
-        isStudent
-          ? "Сохранено. Расписание, бот и шапка заявлений обновятся сразу."
-          : "Сохранено. Группа для просмотра расписания обновлена.",
+        isStaffView
+          ? "Сохранено. Расписание обновится для выбранной группы просмотра."
+          : "Сохранено. Расписание, бот и шапка заявлений обновятся сразу.",
       );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось сохранить");
@@ -152,9 +157,11 @@ export default function ProfilePage() {
       <header>
         <h1 className="font-serif text-3xl text-ink">Профиль</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          {isStudent
-            ? "Данные для расписания, Telegram-бота и шапки заявлений."
-            : "Данные сотрудника и группа для просмотра расписания."}
+          {isStaffView
+            ? "Контакты сотрудника и группа для просмотра расписания."
+            : isTeacher
+              ? "Данные преподавателя и телефон для Telegram-бота."
+              : "Данные для расписания, Telegram-бота и шапки заявлений."}
         </p>
       </header>
 
@@ -182,18 +189,6 @@ export default function ProfilePage() {
             className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/20 px-3 py-2.5 text-ink-muted"
           />
         </label>
-
-        {isStaffLike ? (
-          <label className="block text-sm">
-            <span className="text-ink-muted">Подразделение</span>
-            <input
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
-              placeholder="Учебный отдел"
-            />
-          </label>
-        ) : null}
 
         {isStudent ? (
           <>
@@ -236,7 +231,7 @@ export default function ProfilePage() {
               <span className="text-ink-muted">Учебная группа</span>
               <select
                 value={groupRuzId}
-                onChange={(e) => onGroupChange(e.target.value)}
+                onChange={(e) => onStudentGroupChange(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
               >
                 <option value="">Не выбрана</option>
@@ -249,7 +244,7 @@ export default function ProfilePage() {
               <span className="mt-1 block text-xs text-ink-muted">
                 {groups.length === 0
                   ? "Список групп пока пуст — обновите страницу чуть позже."
-                  : "Ваша группа для личного расписания и заявлений."}
+                  : "После выбора в «Расписании» появятся пары из RUZ."}
               </span>
             </label>
 
@@ -292,26 +287,50 @@ export default function ProfilePage() {
           </>
         ) : null}
 
-        {isStaffLike ? (
+        {isStaffView ? (
+          <>
+            <label className="block text-sm">
+              <span className="text-ink-muted">Подразделение</span>
+              <input
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
+                placeholder="Учебный отдел"
+              />
+            </label>
+
+            <label className="block text-sm">
+              <span className="text-ink-muted">Группа для просмотра</span>
+              <select
+                value={groupRuzId}
+                onChange={(e) => setGroupRuzId(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
+              >
+                <option value="">Не выбрана</option>
+                {groups.map((g) => (
+                  <option key={g.groupRuzId} value={g.groupRuzId}>
+                    {g.groupLabel}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs text-ink-muted">
+                {groups.length === 0
+                  ? "Каталог групп пуст — дождитесь синхронизации RUZ."
+                  : "Любая группа из каталога — для просмотра расписания, не зачисление."}
+              </span>
+            </label>
+          </>
+        ) : null}
+
+        {isTeacher ? (
           <label className="block text-sm">
-            <span className="text-ink-muted">Группа для просмотра расписания</span>
-            <select
-              value={groupRuzId}
-              onChange={(e) => onGroupChange(e.target.value)}
+            <span className="text-ink-muted">Кафедра / подразделение</span>
+            <input
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
               className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
-            >
-              <option value="">Не выбрана</option>
-              {groups.map((g) => (
-                <option key={g.groupRuzId} value={g.groupRuzId}>
-                  {g.groupLabel}
-                </option>
-              ))}
-            </select>
-            <span className="mt-1 block text-xs text-ink-muted">
-              {groups.length === 0
-                ? "Список групп пока пуст — обновите страницу чуть позже."
-                : "Можно выбрать любую группу из каталога — для просмотра, не как «моя учебная»."}
-            </span>
+              placeholder="Кафедра"
+            />
           </label>
         ) : null}
 

@@ -1,4 +1,4 @@
-# 0009. Notification delivery (in-app SoT + Web Push)
+# 0013. Notification delivery (in-app SoT + Web Push)
 
 ## Статус
 Принято

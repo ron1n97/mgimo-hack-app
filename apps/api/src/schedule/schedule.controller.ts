@@ -6,6 +6,11 @@ import {
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { ScheduleService } from './schedule.service';
 
+function parseShowAll(raw?: string): boolean {
+  if (raw == null || raw === '') return false;
+  return raw === '1' || raw.toLowerCase() === 'true' || raw === 'yes';
+}
+
 @Controller('schedule')
 @UseGuards(JwtAuthGuard)
 export class ScheduleController {
@@ -16,14 +21,26 @@ export class ScheduleController {
     return this.schedule.listGroups();
   }
 
+  @Get('groups/:ruzId/subgroups')
+  subGroups(@Param('ruzId') ruzId: string) {
+    return this.schedule.listSubGroups(ruzId);
+  }
+
   @Get('me')
   me(
     @CurrentUser() user: JwtPayloadUser,
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('groupRuzId') groupRuzId?: string,
+    @Query('showAll') showAll?: string,
   ) {
-    return this.schedule.forUser(user.userId, from, to, groupRuzId);
+    return this.schedule.forUser(
+      user.userId,
+      from,
+      to,
+      groupRuzId,
+      parseShowAll(showAll),
+    );
   }
 
   @Get('groups/:ruzId')

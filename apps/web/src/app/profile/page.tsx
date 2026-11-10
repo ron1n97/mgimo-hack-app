@@ -5,8 +5,10 @@ import {
   ApiError,
   fetchMe,
   fetchScheduleGroups,
+  fetchScheduleSubGroups,
   updateProfile,
   type ScheduleGroup,
+  type ScheduleSubGroup,
 } from "@/lib/api";
 import { setSession, getToken } from "@/lib/auth";
 import { ErrorState } from "@/components/ErrorState";
@@ -18,11 +20,14 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
   const [groups, setGroups] = useState<ScheduleGroup[]>([]);
+  const [subGroups, setSubGroups] = useState<ScheduleSubGroup[]>([]);
+  const [subGroupsLoading, setSubGroupsLoading] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [groupRuzId, setGroupRuzId] = useState("");
+  const [preferredSubGroupOids, setPreferredSubGroupOids] = useState<string[]>([]);
   const [faculty, setFaculty] = useState("");
   const [program, setProgram] = useState("");
   const [course, setCourse] = useState("1");
@@ -36,6 +41,7 @@ export default function ProfilePage() {
       setEmail(me.email);
       setPhone(me.phone ?? "");
       setGroupRuzId(me.groupRuzId ?? "");
+      setPreferredSubGroupOids(me.preferredSubGroupOids ?? []);
       setFaculty(me.faculty && me.faculty !== "Не указан" ? me.faculty : "");
       setProgram(me.program && me.program !== "Не указана" ? me.program : "");
       setCourse(String(me.course && me.course > 0 ? me.course : 1));
@@ -53,6 +59,39 @@ export default function ProfilePage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (!groupRuzId) {
+      setSubGroups([]);
+      return;
+    }
+    let cancelled = false;
+    setSubGroupsLoading(true);
+    void fetchScheduleSubGroups(groupRuzId)
+      .then((rows) => {
+        if (!cancelled) setSubGroups(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setSubGroups([]);
+      })
+      .finally(() => {
+        if (!cancelled) setSubGroupsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [groupRuzId]);
+
+  function onGroupChange(next: string) {
+    setGroupRuzId(next);
+    setPreferredSubGroupOids([]);
+  }
+
+  function toggleSubGroup(oid: string) {
+    setPreferredSubGroupOids((prev) =>
+      prev.includes(oid) ? prev.filter((x) => x !== oid) : [...prev, oid],
+    );
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -69,6 +108,7 @@ export default function ProfilePage() {
         course: Number.isFinite(courseNum) ? courseNum : 1,
         groupRuzId: groupRuzId || undefined,
         groupLabel: selected?.groupLabel,
+        preferredSubGroupOids,
       });
       const token = getToken();
       if (token) setSession(token, updated);
@@ -156,7 +196,7 @@ export default function ProfilePage() {
           <span className="text-ink-muted">Учебная группа</span>
           <select
             value={groupRuzId}
-            onChange={(e) => setGroupRuzId(e.target.value)}
+            onChange={(e) => onGroupChange(e.target.value)}
             className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
           >
             <option value="">Не выбрана</option>
@@ -172,6 +212,43 @@ export default function ProfilePage() {
               : "После выбора в «Расписании» появятся пары из RUZ."}
           </span>
         </label>
+
+        {groupRuzId ? (
+          <fieldset className="block text-sm">
+            <legend className="text-ink-muted">Подгруппы / языки</legend>
+            {subGroupsLoading ? (
+              <p className="mt-2 text-xs text-ink-muted">Загружаем варианты…</p>
+            ) : subGroups.length === 0 ? (
+              <p className="mt-2 text-xs text-ink-muted">
+                Пока нет подгрупп в синхронизированном расписании — после sync
+                появятся здесь. Без выбора календарь показывает все параллели.
+              </p>
+            ) : (
+              <ul className="mt-2 space-y-1.5">
+                {subGroups.map((sg) => {
+                  const checked = preferredSubGroupOids.includes(sg.subGroupOid);
+                  return (
+                    <li key={sg.subGroupOid}>
+                      <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-cream-deep bg-cream/30 px-3 py-2">
+                        <input
+                          type="checkbox"
+                          className="mt-0.5"
+                          checked={checked}
+                          onChange={() => toggleSubGroup(sg.subGroupOid)}
+                        />
+                        <span className="text-sm text-ink">{sg.subGroup}</span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <span className="mt-1 block text-xs text-ink-muted">
+              Отметьте свои языковые / потоковые подгруппы — лишние параллели
+              скроются в расписании.
+            </span>
+          </fieldset>
+        ) : null}
 
         <label className="block text-sm">
           <span className="text-ink-muted">Телефон для бота</span>

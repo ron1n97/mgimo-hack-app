@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsInt,
   IsOptional,
   IsString,
@@ -36,6 +37,12 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   groupRuzId?: string;
+
+  /** Preferred RUZ language/stream subgroup oids within the academic group */
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  preferredSubGroupOids?: string[];
 
   /** Phone for Telegram bot login — E.164 or RU local */
   @IsOptional()

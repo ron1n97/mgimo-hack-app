@@ -47,6 +47,8 @@ model StudentProfile {
   course     Int
   groupLabel String
   groupRuzId String?
+  /// Preferred RUZ subGroupOid values (language/stream parallels within academic group)
+  preferredSubGroupOids String[] @default([])
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -72,12 +74,17 @@ model ScheduleLesson {
   auditorium    String?
   building      String?
   kindOfWork    String?
+  subGroup      String?
+  subGroupOid   String?
+  stream        String?
+  streamOid     String?
   isCancelled   Boolean  @default(false)
   isMoved       Boolean  @default(false)
   rawJson       Json?
 
   @@unique([ruzExternalId, groupRuzId, date, begin])
   @@index([groupRuzId, date])
+  @@index([groupRuzId, subGroupOid])
   @@index([date])
 }
 

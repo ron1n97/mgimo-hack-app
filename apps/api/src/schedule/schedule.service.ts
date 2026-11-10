@@ -6,12 +6,19 @@ import {
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { buildScheduleDateFilter } from './schedule-date-filter';
+import { buildSubGroupFilter } from './subgroup-filter';
 
 @Injectable()
 export class ScheduleService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async forUser(userId: string, from?: string, to?: string, groupRuzId?: string) {
+  async forUser(
+    userId: string,
+    from?: string,
+    to?: string,
+    groupRuzId?: string,
+    showAll = false,
+  ) {
     const profile = await this.prisma.studentProfile.findUnique({
       where: { userId },
     });
@@ -20,15 +27,21 @@ export class ScheduleService {
     }
 
     const ruzId = groupRuzId ?? profile.groupRuzId;
+    const preferred = profile.preferredSubGroupOids ?? [];
     if (!ruzId) {
-      // Fall back to groupLabel match when RUZ id unknown
-      return this.findByGroupLabel(profile.groupLabel, from, to);
+      return this.findByGroupLabel(
+        profile.groupLabel,
+        from,
+        to,
+        preferred,
+        showAll,
+      );
     }
-    return this.findByGroupRuzId(ruzId, from, to);
+    return this.findByGroupRuzId(ruzId, from, to, preferred, showAll);
   }
 
   async forGroup(ruzId: string, from?: string, to?: string) {
-    return this.findByGroupRuzId(ruzId, from, to);
+    return this.findByGroupRuzId(ruzId, from, to, [], true);
   }
 
   /** Distinct academic groups present in synced RUZ lessons. */
@@ -46,11 +59,38 @@ export class ScheduleService {
       }));
   }
 
-  private async findByGroupRuzId(groupRuzId: string, from?: string, to?: string) {
+  /** Distinct subGroups for an academic group (for profile picker). */
+  async listSubGroups(groupRuzId: string) {
+    const rows = await this.prisma.scheduleLesson.findMany({
+      where: {
+        groupRuzId,
+        subGroupOid: { not: null },
+      },
+      distinct: ['subGroupOid'],
+      select: { subGroupOid: true, subGroup: true },
+      orderBy: { subGroup: 'asc' },
+    });
+    return rows
+      .filter((r) => r.subGroupOid)
+      .map((r) => ({
+        subGroupOid: r.subGroupOid as string,
+        subGroup: r.subGroup ?? r.subGroupOid,
+      }));
+  }
+
+  private async findByGroupRuzId(
+    groupRuzId: string,
+    from?: string,
+    to?: string,
+    preferredOids: string[] = [],
+    showAll = false,
+  ) {
     const dateFilter = this.safeDateFilter(from, to);
+    const subFilter = buildSubGroupFilter(preferredOids, showAll);
     const where: Prisma.ScheduleLessonWhereInput = {
       groupRuzId,
       ...(dateFilter ? { date: dateFilter } : {}),
+      ...(subFilter ?? {}),
     };
     return this.prisma.scheduleLesson.findMany({
       where,
@@ -62,12 +102,16 @@ export class ScheduleService {
     groupLabel: string,
     from?: string,
     to?: string,
+    preferredOids: string[] = [],
+    showAll = false,
   ) {
     const dateFilter = this.safeDateFilter(from, to);
+    const subFilter = buildSubGroupFilter(preferredOids, showAll);
     return this.prisma.scheduleLesson.findMany({
       where: {
         groupLabel,
         ...(dateFilter ? { date: dateFilter } : {}),
+        ...(subFilter ?? {}),
       },
       orderBy: [{ date: 'asc' }, { begin: 'asc' }],
     });

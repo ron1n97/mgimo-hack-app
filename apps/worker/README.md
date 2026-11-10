@@ -7,7 +7,7 @@ Pulls MGIMO schedule from public RUZ API into Postgres `ScheduleLesson`.
 1. **Discover groups** — `GET /api/search?term=XXX&type=group` for faculty prefixes (`МО`, `МЭО`, `МП`, `ТЭО`, `МЖ`, …) and short Cyrillic letters.
 2. **Dedupe** by group id.
 3. **Fetch schedule** — for each group, `GET /api/schedule/group/{id}?start=YYYY.MM.DD&finish=YYYY.MM.DD` for **current week + next week** (Mon–Sun × 2).
-4. **Upsert** into Postgres via Prisma (`ScheduleLesson`, unique on `ruzExternalId + groupRuzId + date + begin`).
+4. **Upsert** into Postgres via Prisma (`ScheduleLesson`, unique on `ruzExternalId + groupRuzId + date + begin`; `ruzExternalId` = `lessonOid`, plus `subGroup` / `stream` columns).
 5. **Schedule** — `node-cron` with `RUZ_SYNC_CRON` (default every 6 hours). Also runs once on process start.
 
 If Prisma / DB is unavailable, the worker falls back to writing a JSON dump under `/tmp` and logs a TODO.

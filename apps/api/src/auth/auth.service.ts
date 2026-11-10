@@ -176,6 +176,17 @@ export class AuthService {
           ...(dto.groupRuzId !== undefined
             ? { groupRuzId: dto.groupRuzId.trim() || null }
             : {}),
+          ...(dto.preferredSubGroupOids !== undefined
+            ? {
+                preferredSubGroupOids: [
+                  ...new Set(
+                    dto.preferredSubGroupOids
+                      .map((x) => String(x).trim())
+                      .filter(Boolean),
+                  ),
+                ],
+              }
+            : {}),
         },
       });
     }

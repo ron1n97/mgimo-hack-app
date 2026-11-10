@@ -76,6 +76,10 @@ export const ScheduleLessonSchema = z.object({
   building: z.string().nullable().optional(),
   kindOfWork: z.string().nullable().optional(),
   groupLabel: z.string().optional(),
+  subGroup: z.string().nullable().optional(),
+  subGroupOid: z.string().nullable().optional(),
+  stream: z.string().nullable().optional(),
+  streamOid: z.string().nullable().optional(),
   isCancelled: z.boolean().optional(),
   isMoved: z.boolean().optional(),
 });

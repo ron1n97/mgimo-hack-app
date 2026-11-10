@@ -7,6 +7,7 @@ export type User = {
   role: UserRole;
   groupName?: string;
   groupRuzId?: string;
+  preferredSubGroupOids?: string[];
   phone?: string;
   faculty?: string;
   program?: string;
@@ -28,6 +29,9 @@ export type ScheduleItem = {
   teacher?: string;
   kind?: string;
   building?: string;
+  subGroup?: string;
+  subGroupOid?: string;
+  stream?: string;
 };
 
 export type GradeItem = {

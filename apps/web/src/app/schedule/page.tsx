@@ -37,6 +37,8 @@ export default function SchedulePage() {
   const [items, setItems] = useState<ScheduleItem[]>([]);
   const [groupName, setGroupName] = useState<string | undefined>();
   const [groupRuzId, setGroupRuzId] = useState<string | undefined>();
+  const [hasSubPreference, setHasSubPreference] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -51,7 +53,8 @@ export default function SchedulePage() {
       const me = await fetchMe();
       setGroupName(me.groupName);
       setGroupRuzId(me.groupRuzId);
-      const data = await fetchSchedule(from, to);
+      setHasSubPreference((me.preferredSubGroupOids?.length ?? 0) > 0);
+      const data = await fetchSchedule(from, to, { showAll });
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось загрузить расписание");
@@ -59,7 +62,7 @@ export default function SchedulePage() {
     } finally {
       setLoading(false);
     }
-  }, [from, to]);
+  }, [from, to, showAll]);
 
   useEffect(() => {
     void load();
@@ -89,7 +92,17 @@ export default function SchedulePage() {
               : `Группа ${groupName} · неделя ${from.slice(5)} — ${to.slice(5)}`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {hasSubPreference ? (
+            <label className="flex items-center gap-2 rounded-lg border border-ink/15 px-3 py-1.5 text-sm text-ink-muted">
+              <input
+                type="checkbox"
+                checked={showAll}
+                onChange={(e) => setShowAll(e.target.checked)}
+              />
+              Все подгруппы
+            </label>
+          ) : null}
           <button
             type="button"
             onClick={() => setWeekStart((w) => addDays(w, -7))}
@@ -176,6 +189,11 @@ export default function SchedulePage() {
                             <p className="mt-0.5 text-[11px] font-medium leading-snug text-ink">
                               {item.title}
                             </p>
+                            {item.subGroup ? (
+                              <p className="mt-0.5 text-[10px] font-medium text-copper-dark">
+                                {item.subGroup}
+                              </p>
+                            ) : null}
                             <p className="mt-0.5 text-[10px] leading-snug text-ink-muted">
                               {[item.room, item.teacher].filter(Boolean).join(" · ")}
                             </p>

@@ -52,6 +52,7 @@ const SUGGESTIONS: Record<UserRole, string[]> = {
   student: ["Что сегодня?", "Мои долги", "Открытые заявки"],
   staff: ["Очередь заявок", "Что срочного сегодня?"],
   admin: ["Очередь заявок", "Сводка на сегодня"],
+  teacher: ["Мои пары", "Задания на сегодня"],
 };
 
 export function AssistantChat() {

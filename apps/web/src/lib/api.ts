@@ -864,6 +864,11 @@ export async function addDigestSource(payload: {
   title?: string;
 }): Promise<unknown> {
   return request("/staff/digest-sources", {
+    method: "POST",
+    body: payload,
+  });
+}
+
 export async function fetchTeacherSlots(params?: {
   from?: string;
   to?: string;

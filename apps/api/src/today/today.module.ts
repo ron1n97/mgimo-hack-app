@@ -10,5 +10,6 @@ import { TodayService } from './today.service';
   imports: [ScheduleModule, GradesModule, RequestsModule, NotificationsModule],
   controllers: [TodayController],
   providers: [TodayService],
+  exports: [TodayService],
 })
 export class TodayModule {}

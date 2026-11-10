@@ -48,7 +48,7 @@ Password for all: `Demo123!`
 - `GET /staff/requests`, `PATCH /staff/requests/:id` (staff/admin)
 - `GET /notifications/me`
 - `GET /today/me`
-- `POST /ai/draft-request`, `/ai/next-actions`, `/ai/explain-notification`
+- `POST /ai/draft-request`, `/ai/next-actions`, `/ai/explain-notification`, `/ai/chat`
 
 Auth: `Authorization: Bearer <JWT>`.
 

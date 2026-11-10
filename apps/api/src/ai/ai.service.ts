@@ -1,6 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { GradesService } from '../grades/grades.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { RequestsService } from '../requests/requests.service';
+import { ScheduleService } from '../schedule/schedule.service';
+import { TodayService } from '../today/today.service';
+import { completeChatTurn } from './ai-chat';
 import { buildApplicationDocx } from './application-docx';
 import {
   ApplicationProfile,
@@ -14,6 +20,7 @@ import {
   ExplainNotificationDto,
   NextActionsDto,
 } from './dto/ai.dto';
+import { ChatDto } from './dto/chat.dto';
 import { ExportDocxDto } from './dto/export-docx.dto';
 import { sanitizeDraftText } from './sanitize-draft';
 
@@ -24,6 +31,11 @@ export class AiService {
   constructor(
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly today: TodayService,
+    private readonly schedule: ScheduleService,
+    private readonly grades: GradesService,
+    private readonly requests: RequestsService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   private get apiKey(): string | undefined {
@@ -62,6 +74,112 @@ export class AiService {
       bits.groupLabel ? `группа: ${bits.groupLabel}` : null,
     ].filter(Boolean);
     return `Данные студента (только для смысла текста, шапку документа соберёт система): ${parts.join('; ')}`;
+  }
+
+  async chat(userId: string, role: string, dto: ChatDto) {
+    const profileHint = await this.profileHintFor(userId, role);
+    const result = await completeChatTurn({
+      apiKey: this.apiKey,
+      baseUrl: this.baseUrl,
+      model: this.model,
+      role,
+      profileHint,
+      userMessage: dto.message,
+      history: dto.history,
+      runTool: (name, args) => this.runChatTool(userId, role, name, args),
+      stubReply: () => this.stubChatReply(role),
+      logger: (msg) => this.logger.warn(msg),
+    });
+
+    return {
+      role: 'assistant' as const,
+      content: result.content,
+      parts: result.parts,
+      widgets: result.widgets,
+      source: result.source,
+      disclaimer: result.disclaimer,
+    };
+  }
+
+  private async profileHintFor(userId: string, role: string): Promise<string> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { studentProfile: true, staffProfile: true },
+    });
+    if (!user) return `role=${role}`;
+    if (user.studentProfile) {
+      const p = user.studentProfile;
+      return `${p.fullName}, группа ${p.groupLabel}, курс ${p.course}, role=${user.role}`;
+    }
+    if (user.staffProfile) {
+      return `${user.staffProfile.fullName}, ${user.staffProfile.department}, role=${user.role}`;
+    }
+    return `role=${user.role}`;
+  }
+
+  private async runChatTool(
+    userId: string,
+    role: string,
+    name: string,
+    args: Record<string, unknown>,
+  ): Promise<unknown> {
+    const r = role.toUpperCase();
+    switch (name) {
+      case 'get_today':
+        return this.today.forUser(userId);
+      case 'get_schedule': {
+        try {
+          return await this.schedule.forUser(
+            userId,
+            typeof args.from === 'string' ? args.from : undefined,
+            typeof args.to === 'string' ? args.to : undefined,
+          );
+        } catch {
+          return { lessons: [], note: 'Расписание доступно для студенческого профиля' };
+        }
+      }
+      case 'get_grades':
+        if (r === 'STAFF' || r === 'ADMIN') {
+          return { error: 'grades_not_available_for_role' };
+        }
+        return this.grades.forUser(userId);
+      case 'get_requests':
+        return this.requests.listOwn(userId);
+      case 'get_staff_requests':
+        if (r !== 'STAFF' && r !== 'ADMIN') {
+          return { error: 'forbidden' };
+        }
+        return this.requests.listStaff();
+      case 'get_notifications':
+        return this.notifications.forUser(userId);
+      default:
+        return { error: `Unknown tool: ${name}` };
+    }
+  }
+
+  private stubChatReply(role: string): string {
+    const r = role.toUpperCase();
+    if (r === 'STAFF' || r === 'ADMIN') {
+      return [
+        'ИИ сейчас недоступен. Откройте очередь заявок и сводку дня:',
+        '[[today]]',
+        '{{widget:request|title=Очередь заявок|href=/staff/requests}}',
+      ].join('\n');
+    }
+    if (r === 'TEACHER') {
+      return [
+        'ИИ сейчас недоступен. Откройте расписание на сегодня:',
+        '[[today]]',
+        '[[schedule]]',
+      ].join('\n');
+    }
+    return [
+      'ИИ сейчас недоступен — вот быстрые экраны кабинета:',
+      '[[today]]',
+      '[[schedule]]',
+      '{{widget:task|title=Учёба и долги|href=/grades}}',
+      '{{widget:request|title=Мои заявки|href=/requests}}',
+    ].join('\n');
   }
 
   async draftRequest(userId: string, dto: DraftRequestDto) {

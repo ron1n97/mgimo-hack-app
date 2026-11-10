@@ -6,8 +6,8 @@
 ## [Unreleased]
 
 ### Added
-- Clubs registry + digest sources + tags + student interest subscriptions (schema, API, minimal web UI, xlsx seed fixture) — branch `feat/clubs-digest-tags`
-- ADR 0009 clubs/digest/tags; EventCandidate moderation stub for afisha
+- Clubs registry + digest sources + tags + student interest subscriptions (schema, API, minimal web UI, xlsx seed fixture) — ADR 0012
+- In-app AI assistant chat (`POST /ai/chat`) + widget DSL cards in web FAB/sheet — ADR 0014
 - Research pack + ideal backlog (2026-11-08)
 
 ## [0.1.0] — 2026-11-08

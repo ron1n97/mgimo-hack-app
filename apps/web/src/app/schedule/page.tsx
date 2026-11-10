@@ -88,7 +88,7 @@ export default function SchedulePage() {
           <h1 className="font-serif text-3xl text-ink">Расписание</h1>
           <p className="mt-1 text-sm text-ink-muted">
             {noGroup
-              ? "Выберите учебную группу в профиле — появится календарь."
+              ? "Выберите группу в профиле — появится календарь."
               : `Группа ${groupName} · неделя ${from.slice(5)} — ${to.slice(5)}`}
           </p>
         </div>

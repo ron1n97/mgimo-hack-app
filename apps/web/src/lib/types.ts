@@ -12,6 +12,7 @@ export type User = {
   faculty?: string;
   program?: string;
   course?: number;
+  department?: string;
 };
 
 export type AuthResponse = {

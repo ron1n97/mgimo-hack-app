@@ -3,6 +3,7 @@ import {
   buildRuzExternalId,
   lessonBegin,
   mapRuzLessonFields,
+  upsertScheduleLesson,
 } from './upsert';
 
 /** RUZ-shaped fixtures: same discipline/time, different subGroup — real parallel pattern. */
@@ -54,7 +55,7 @@ describe('RUZ upsert mapping', () => {
     );
   });
 
-  it('maps subGroup / stream discriminators from RUZ payload', () => {
+  it('maps subGroup / stream discriminators from RUZ payload with source RUZ', () => {
     const mapped = mapRuzLessonFields(parallelA, '8033', '2МЭО-01');
     expect(mapped.ruzExternalId).toBe('10001');
     expect(mapped.subGroup).toBe('01-нем/англ');
@@ -62,5 +63,60 @@ describe('RUZ upsert mapping', () => {
     expect(mapped.stream).toBe('поток А');
     expect(mapped.streamOid).toBe('701');
     expect(mapped.discipline).toBe('Английский язык (второй)');
+    expect(mapped.source).toBe('RUZ');
+  });
+});
+
+describe('RUZ upsert SoT create-only', () => {
+  it('creates when no local row exists', async () => {
+    const create = jest.fn().mockResolvedValue({});
+    const prisma = {
+      scheduleLesson: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create,
+      },
+    };
+    const result = await upsertScheduleLesson(prisma as never, {
+      groupRuzId: '8033',
+      groupLabel: '2МЭО-01',
+      lesson: parallelA,
+    });
+    expect(result).toBe('created');
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(create.mock.calls[0][0].data.source).toBe('RUZ');
+  });
+
+  it('skips when LOCAL row already owns the key', async () => {
+    const create = jest.fn();
+    const prisma = {
+      scheduleLesson: {
+        findUnique: jest.fn().mockResolvedValue({ source: 'LOCAL' }),
+        create,
+      },
+    };
+    const result = await upsertScheduleLesson(prisma as never, {
+      groupRuzId: '8033',
+      groupLabel: '2МЭО-01',
+      lesson: parallelA,
+    });
+    expect(result).toBe('skipped');
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('skips when RUZ row already present (no casual overwrite)', async () => {
+    const create = jest.fn();
+    const prisma = {
+      scheduleLesson: {
+        findUnique: jest.fn().mockResolvedValue({ source: 'RUZ' }),
+        create,
+      },
+    };
+    const result = await upsertScheduleLesson(prisma as never, {
+      groupRuzId: '8033',
+      groupLabel: '2МЭО-01',
+      lesson: parallelA,
+    });
+    expect(result).toBe('skipped');
+    expect(create).not.toHaveBeenCalled();
   });
 });

@@ -9,7 +9,7 @@ async function runSync(label: string): Promise<void> {
   console.log(`[worker] sync start (${label}) at ${new Date().toISOString()}`);
   const result = await syncRuz();
   console.log(
-    `[worker] sync done: groupsFound=${result.groupsFound} synced=${result.groupsSynced} lessons=${result.lessonsUpserted} errors=${result.errors.length}`,
+    `[worker] sync done: groupsFound=${result.groupsFound} synced=${result.groupsSynced} skipped=${result.groupsSkipped} lessons=${result.lessonsUpserted} errors=${result.errors.length}`,
   );
   if (result.errors.length) {
     console.warn('[worker] errors sample:', result.errors.slice(0, 5));

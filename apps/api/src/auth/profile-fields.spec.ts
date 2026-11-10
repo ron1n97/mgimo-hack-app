@@ -1,0 +1,72 @@
+import { BadRequestException } from '@nestjs/common';
+import { Role } from '@prisma/client';
+import {
+  assertProfileFieldsForRole,
+  isStaffLike,
+  listedPresentFields,
+  STUDENT_ENROLLMENT_FIELDS,
+} from './profile-fields';
+
+describe('profile fields by role', () => {
+  it('lists only defined enrollment keys', () => {
+    expect(
+      listedPresentFields(
+        { faculty: 'МО', course: 2, groupRuzId: '1' },
+        STUDENT_ENROLLMENT_FIELDS,
+      ),
+    ).toEqual(['faculty', 'course']);
+  });
+
+  it('allows student enrollment + group fields', () => {
+    expect(() =>
+      assertProfileFieldsForRole(Role.STUDENT, {
+        faculty: 'МО',
+        program: 'бак',
+        course: 3,
+        groupRuzId: '8035',
+        preferredSubGroupOids: ['501'],
+      }),
+    ).not.toThrow();
+  });
+
+  it('rejects department on student profile', () => {
+    expect(() =>
+      assertProfileFieldsForRole(Role.STUDENT, { department: 'Деканат' }),
+    ).toThrow(BadRequestException);
+  });
+
+  it('allows staff/admin schedule view group without course', () => {
+    expect(() =>
+      assertProfileFieldsForRole(Role.ADMIN, {
+        groupRuzId: '8035',
+        groupLabel: '2МЭО-02',
+        department: 'Цифровой деканат',
+        fullName: 'Админ',
+      }),
+    ).not.toThrow();
+    expect(() =>
+      assertProfileFieldsForRole(Role.STAFF, {
+        groupRuzId: '8033',
+        groupLabel: '1',
+      }),
+    ).not.toThrow();
+  });
+
+  it('rejects student enrollment fields for admin and staff', () => {
+    expect(() =>
+      assertProfileFieldsForRole(Role.ADMIN, { course: 2 }),
+    ).toThrow(BadRequestException);
+    expect(() =>
+      assertProfileFieldsForRole(Role.STAFF, {
+        faculty: 'МО',
+        preferredSubGroupOids: ['1'],
+      }),
+    ).toThrow(BadRequestException);
+  });
+
+  it('marks staff-like roles', () => {
+    expect(isStaffLike(Role.ADMIN)).toBe(true);
+    expect(isStaffLike(Role.STAFF)).toBe(true);
+    expect(isStaffLike(Role.STUDENT)).toBe(false);
+  });
+});

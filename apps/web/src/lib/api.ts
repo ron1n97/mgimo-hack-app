@@ -116,6 +116,9 @@ type ApiUser = {
   } | null;
   staffProfile?: {
     fullName?: string;
+    department?: string;
+    scheduleGroupRuzId?: string | null;
+    scheduleGroupLabel?: string | null;
   } | null;
 };
 
@@ -131,18 +134,27 @@ export function mapUser(raw: ApiUser): User {
     raw.studentProfile?.fullName ??
     raw.staffProfile?.fullName ??
     raw.email;
+  const role = mapRole(raw.role);
+  const isStudent = role === "student";
   return {
     id: raw.id,
     email: raw.email,
     fullName,
-    role: mapRole(raw.role),
-    groupName: raw.studentProfile?.groupLabel,
-    groupRuzId: raw.studentProfile?.groupRuzId ?? undefined,
-    preferredSubGroupOids: raw.studentProfile?.preferredSubGroupOids ?? [],
+    role,
+    groupName: isStudent
+      ? raw.studentProfile?.groupLabel
+      : (raw.staffProfile?.scheduleGroupLabel ?? undefined),
+    groupRuzId: isStudent
+      ? (raw.studentProfile?.groupRuzId ?? undefined)
+      : (raw.staffProfile?.scheduleGroupRuzId ?? undefined),
+    preferredSubGroupOids: isStudent
+      ? (raw.studentProfile?.preferredSubGroupOids ?? [])
+      : [],
     phone: raw.phoneE164 ?? undefined,
-    faculty: raw.studentProfile?.faculty,
-    program: raw.studentProfile?.program,
-    course: raw.studentProfile?.course,
+    faculty: isStudent ? raw.studentProfile?.faculty : undefined,
+    program: isStudent ? raw.studentProfile?.program : undefined,
+    course: isStudent ? raw.studentProfile?.course : undefined,
+    department: raw.staffProfile?.department,
   };
 }
 

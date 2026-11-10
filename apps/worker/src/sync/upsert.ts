@@ -1,6 +1,10 @@
 import type { PrismaClient, Prisma } from '@prisma/client';
 import type { RuzLesson } from '../ruz/client';
 import { parseRuzDate } from '../ruz/dates';
+import {
+  shouldApplyRuzLessonUpsert,
+  type ScheduleLessonSource,
+} from './schedule-sot';
 
 export type UpsertLessonInput = {
   groupRuzId: string;
@@ -62,6 +66,7 @@ export type MappedScheduleLesson = {
   subGroupOid: string | null;
   stream: string | null;
   streamOid: string | null;
+  source: ScheduleLessonSource;
   isCancelled: boolean;
   isMoved: boolean;
   rawJson: Prisma.InputJsonValue;
@@ -96,6 +101,7 @@ export function mapRuzLessonFields(
     subGroupOid: optionalString(lesson.subGroupOid),
     stream: optionalString(lesson.stream),
     streamOid: optionalString(lesson.streamOid),
+    source: 'RUZ',
     isCancelled: Boolean(
       (lesson as { canceled?: boolean }).canceled ??
         (lesson as { isCancelled?: boolean }).isCancelled,
@@ -105,19 +111,21 @@ export function mapRuzLessonFields(
   };
 }
 
+export type UpsertScheduleLessonResult = 'created' | 'skipped';
+
 /**
- * Upsert a single RUZ lesson into ScheduleLesson.
+ * Create-only RUZ import. Existing DB rows (any source) are never overwritten.
  */
 export async function upsertScheduleLesson(
   prisma: PrismaClient,
   input: UpsertLessonInput,
-): Promise<void> {
+): Promise<UpsertScheduleLessonResult> {
   const { groupRuzId, groupLabel, lesson } = input;
-  if (!lesson.date) return;
+  if (!lesson.date) return 'skipped';
 
   const data = mapRuzLessonFields(lesson, groupRuzId, groupLabel);
 
-  await prisma.scheduleLesson.upsert({
+  const existing = await prisma.scheduleLesson.findUnique({
     where: {
       ruzExternalId_groupRuzId_date_begin: {
         ruzExternalId: data.ruzExternalId,
@@ -126,9 +134,19 @@ export async function upsertScheduleLesson(
         begin: data.begin,
       },
     },
-    create: data,
-    update: data,
+    select: { source: true },
   });
+
+  if (
+    !shouldApplyRuzLessonUpsert(
+      existing?.source as ScheduleLessonSource | undefined,
+    )
+  ) {
+    return 'skipped';
+  }
+
+  await prisma.scheduleLesson.create({ data });
+  return 'created';
 }
 
 export async function upsertLessonsBatch(
@@ -139,8 +157,27 @@ export async function upsertLessonsBatch(
 ): Promise<number> {
   let count = 0;
   for (const lesson of lessons) {
-    await upsertScheduleLesson(prisma, { groupRuzId, groupLabel, lesson });
-    count += 1;
+    const result = await upsertScheduleLesson(prisma, {
+      groupRuzId,
+      groupLabel,
+      lesson,
+    });
+    if (result === 'created') count += 1;
   }
   return count;
+}
+
+/** Count lessons for group in [from, to] inclusive (UTC dates). */
+export async function countLessonsInRange(
+  prisma: PrismaClient,
+  groupRuzId: string,
+  from: Date,
+  to: Date,
+): Promise<number> {
+  return prisma.scheduleLesson.count({
+    where: {
+      groupRuzId,
+      date: { gte: from, lte: to },
+    },
+  });
 }

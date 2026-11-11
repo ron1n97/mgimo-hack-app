@@ -165,14 +165,23 @@ export async function ensureGroupScheduleFromRuz(
         }
       : defaultSyncRange();
 
-  const localCount = await prisma.scheduleLesson.count({
-    where: {
-      groupRuzId: opts.groupRuzId,
-      date: { gte: range.from, lte: range.to },
-    },
-  });
+  const [localCount, withSubGroupOid] = await Promise.all([
+    prisma.scheduleLesson.count({
+      where: {
+        groupRuzId: opts.groupRuzId,
+        date: { gte: range.from, lte: range.to },
+      },
+    }),
+    prisma.scheduleLesson.count({
+      where: {
+        groupRuzId: opts.groupRuzId,
+        date: { gte: range.from, lte: range.to },
+        subGroupOid: { not: null },
+      },
+    }),
+  ]);
 
-  if (shouldSkipGroupRuzSync(localCount)) {
+  if (shouldSkipGroupRuzSync(localCount, withSubGroupOid)) {
     return { pulled: false, created: 0 };
   }
 
@@ -202,16 +211,18 @@ export async function ensureGroupScheduleFromRuz(
           begin,
         },
       },
-      select: { source: true },
+      select: { source: true, subGroupOid: true },
     });
 
-    if (
-      !shouldApplyRuzLessonUpsert(
-        existing?.source as ScheduleLessonSource | undefined,
-      )
-    ) {
-      continue;
-    }
+    const action = shouldApplyRuzLessonUpsert(
+      existing
+        ? {
+            source: existing.source as ScheduleLessonSource,
+            subGroupOid: existing.subGroupOid,
+          }
+        : null,
+    );
+    if (action === 'skip') continue;
 
     const data: Prisma.ScheduleLessonCreateInput = {
       ruzExternalId,
@@ -240,7 +251,21 @@ export async function ensureGroupScheduleFromRuz(
       rawJson: lesson as Prisma.InputJsonValue,
     };
 
-    await prisma.scheduleLesson.create({ data });
+    if (action === 'create') {
+      await prisma.scheduleLesson.create({ data });
+    } else {
+      await prisma.scheduleLesson.update({
+        where: {
+          ruzExternalId_groupRuzId_date_begin: {
+            ruzExternalId,
+            groupRuzId: opts.groupRuzId,
+            date,
+            begin,
+          },
+        },
+        data,
+      });
+    }
     created += 1;
   }
 

@@ -4,22 +4,41 @@ import {
 } from './schedule-sot';
 
 describe('schedule source-of-truth policy', () => {
-  it('skips RUZ group sync when local rows already cover the range', () => {
+  it('pulls on miss (no local rows)', () => {
     expect(shouldSkipGroupRuzSync(0)).toBe(false);
-    expect(shouldSkipGroupRuzSync(1)).toBe(true);
-    expect(shouldSkipGroupRuzSync(12)).toBe(true);
+  });
+
+  it('allows enrichment when coverage exists but no subGroupOid yet', () => {
+    expect(shouldSkipGroupRuzSync(12, 0)).toBe(false);
+  });
+
+  it('skips RUZ when coverage exists and discriminators already present', () => {
+    expect(shouldSkipGroupRuzSync(12, 3)).toBe(true);
+    expect(shouldSkipGroupRuzSync(1, 1)).toBe(true);
   });
 
   it('creates when no local row exists', () => {
-    expect(shouldApplyRuzLessonUpsert(null)).toBe(true);
-    expect(shouldApplyRuzLessonUpsert(undefined)).toBe(true);
+    expect(shouldApplyRuzLessonUpsert(null)).toBe('create');
+    expect(shouldApplyRuzLessonUpsert(undefined)).toBe('create');
   });
 
   it('never overwrites LOCAL / owned rows from RUZ', () => {
-    expect(shouldApplyRuzLessonUpsert('LOCAL')).toBe(false);
+    expect(shouldApplyRuzLessonUpsert('LOCAL')).toBe('skip');
+    expect(
+      shouldApplyRuzLessonUpsert({ source: 'LOCAL', subGroupOid: null }),
+    ).toBe('skip');
   });
 
-  it('does not casually overwrite existing RUZ rows (DB is SoT once present)', () => {
-    expect(shouldApplyRuzLessonUpsert('RUZ')).toBe(false);
+  it('enriches legacy RUZ rows that still lack subGroupOid', () => {
+    expect(
+      shouldApplyRuzLessonUpsert({ source: 'RUZ', subGroupOid: null }),
+    ).toBe('update');
+  });
+
+  it('does not casually overwrite complete RUZ rows', () => {
+    expect(
+      shouldApplyRuzLessonUpsert({ source: 'RUZ', subGroupOid: '501' }),
+    ).toBe('skip');
+    expect(shouldApplyRuzLessonUpsert('RUZ')).toBe('update'); // string form has no oid → enrich
   });
 });

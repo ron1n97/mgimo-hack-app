@@ -67,13 +67,14 @@ describe('RUZ upsert mapping', () => {
   });
 });
 
-describe('RUZ upsert SoT create-only', () => {
+describe('RUZ upsert SoT create/enrich', () => {
   it('creates when no local row exists', async () => {
     const create = jest.fn().mockResolvedValue({});
     const prisma = {
       scheduleLesson: {
         findUnique: jest.fn().mockResolvedValue(null),
         create,
+        update: jest.fn(),
       },
     };
     const result = await upsertScheduleLesson(prisma as never, {
@@ -88,10 +89,14 @@ describe('RUZ upsert SoT create-only', () => {
 
   it('skips when LOCAL row already owns the key', async () => {
     const create = jest.fn();
+    const update = jest.fn();
     const prisma = {
       scheduleLesson: {
-        findUnique: jest.fn().mockResolvedValue({ source: 'LOCAL' }),
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ source: 'LOCAL', subGroupOid: null }),
         create,
+        update,
       },
     };
     const result = await upsertScheduleLesson(prisma as never, {
@@ -101,14 +106,40 @@ describe('RUZ upsert SoT create-only', () => {
     });
     expect(result).toBe('skipped');
     expect(create).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
   });
 
-  it('skips when RUZ row already present (no casual overwrite)', async () => {
-    const create = jest.fn();
+  it('enriches legacy RUZ row missing subGroupOid', async () => {
+    const update = jest.fn().mockResolvedValue({});
     const prisma = {
       scheduleLesson: {
-        findUnique: jest.fn().mockResolvedValue({ source: 'RUZ' }),
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ source: 'RUZ', subGroupOid: null }),
+        create: jest.fn(),
+        update,
+      },
+    };
+    const result = await upsertScheduleLesson(prisma as never, {
+      groupRuzId: '8033',
+      groupLabel: '2МЭО-01',
+      lesson: parallelA,
+    });
+    expect(result).toBe('updated');
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update.mock.calls[0][0].data.subGroupOid).toBe('501');
+  });
+
+  it('skips complete RUZ row (no casual overwrite)', async () => {
+    const create = jest.fn();
+    const update = jest.fn();
+    const prisma = {
+      scheduleLesson: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ source: 'RUZ', subGroupOid: '501' }),
         create,
+        update,
       },
     };
     const result = await upsertScheduleLesson(prisma as never, {
@@ -118,5 +149,6 @@ describe('RUZ upsert SoT create-only', () => {
     });
     expect(result).toBe('skipped');
     expect(create).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
   });
 });

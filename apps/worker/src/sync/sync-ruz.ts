@@ -93,13 +93,15 @@ export async function syncRuz(options: SyncOptions = {}): Promise<SyncResult> {
     const label = group.label ?? groupId;
     try {
       if (prisma && !forcePull) {
-        const localCount = await countLessonsInRange(
+        const coverage = await countLessonsInRange(
           prisma,
           groupId,
           range.start,
           range.finish,
         );
-        if (shouldSkipGroupRuzSync(localCount)) {
+        if (
+          shouldSkipGroupRuzSync(coverage.total, coverage.withSubGroupOid)
+        ) {
           groupsSkipped += 1;
           continue;
         }

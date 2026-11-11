@@ -3,10 +3,10 @@
 **Режим:** полный инвентарь всего сделанного за двое суток (не только то, что уехало на VPS этой ночью).  
 **Продукт:** Деканат+ (mgimo-hack-app) · MGIMO×AI Challenge  
 **Repo:** `/Users/ron1n97/projects/stuff/mgimo-hack-app`  
-**Base:** `main` · tip (claimed): `956481ec390ed5a53cfc9a5431e69ab29d4a0643`  
+**Base:** `main` · tip: `839557a` (process-log + SoT follow-ups merged)  
 **VPS:** `root@177.177.212.34` · `/opt/mgimo-hack-app` · compose `-p dekanat`  
 **SSH:** `-i ~/.ssh/mgimo_hack_app_ed25519 -o IdentitiesOnly=yes`  
-**Статус файла:** локальная правка process-log (**не закоммичена**), расширяет `d8ca375` / changelog-заметку `956481e`.
+**Статус файла:** закоммичен; tip-cut **не** сделан — SSH banner timeout 2× (2026-11-11 вечер), live на `demo-stable`.
 
 ---
 
@@ -28,7 +28,7 @@
 
 **Код:** все запланированные feature/fix-ветки ночи слиты в `main` и запушены на GitHub. ADR-коллизии перенумерованы в ряд **0007–0015**. Локальные unit-тесты зелёные (`apps/api` 100, `apps/worker` 16). После merge починен web-build (`cbc6674`). В Unreleased CHANGELOG и короткий process-log уже лежат (`d8ca375`, `956481e`).
 
-**Live VPS:** спокойно держится на пяти контейнерах с **`IMAGE_TAG=demo-stable`** за Caddy LE. С Mac: web **200**, api `/auth/me` **401**. Bot и worker **выключены** ради RAM (~889 MiB). Tip `main` (`956481e` / ship-fix `cbc6674`) **в git есть**, на этот VPS **ещё не нарезан** — после multi-agent race / OOM tip-образы сносились, оператор откатил/удержал `demo-stable`.
+**Live VPS:** спокойно держится на пяти контейнерах с **`IMAGE_TAG=demo-stable`** за Caddy LE. С Mac: web **200**, api `/auth/me` **401**. Bot и worker **выключены** ради RAM (~889 MiB). Tip `main` сейчас `839557a` (SoT follow-ups + process-log) **в git/GitHub есть**, на VPS **ещё не нарезан**. Вечерний tip-cut остановлен: SSH `banner exchange` timeout ×2 при живом HTTPS.
 
 **Смысл двух суток одной фразой:** появился полноценный продуктовый срез (расписание с подгруппами, клубы, push, преподаватель, AI-чат, HTTPS, demo-login, Telegram-egress), а прод-стенд намеренно заморожен на стабильном срезе, пока RAM и соло-оператор не позволят спокойный tip-cut.
 
@@ -40,8 +40,9 @@
 | **11-10 день/вечер** | Параллельные worktrees: RUZ subgroup/SoT, clubs, push, teacher, liquid-glass, demo-login, in-app AI, HTTPS sslip, Telegram egress+gost |
 | **11-11 ~00:20–01:40** | Feature-коммиты + merge storm на `main`; ADR renumber 0007–0015; research timetable md+docx |
 | **11-11 ~01:45–02:05** | Web merge fix; process-log; CHANGELOG + note про VPS race |
-| **11-11 после tip** | Follow-up на `fix/ruz-subgroup-schedule` (**ещё не в main**): SoT enrichment без overwrite LOCAL + миграция `source` отдельно (`1a0a073`, `811a64f`) |
+| **11-11 после tip** | Follow-up SoT (`1a0a073`, `811a64f`) — **влито в main** (`839557a`) |
 | **11-11 ночь** | VPS thrash → calm recovery: gentle hold, `chattr -i`, live 200/401 на `demo-stable` |
+| **11-11 вечер (дожим)** | Process-log commit; SoT merge+push; tip-cut STOP (SSH timeout); HTTP 200/401; VAPID route на live → 404 |
 
 ---
 
@@ -536,4 +537,13 @@ Cleanup `git worktree remove` / `prune` — **отложен** до tip-cut.
 
 ---
 
-*Конец overnight inventory. Коммит этого файла — только по явной просьбе. VPS не трогали.*
+*Конец overnight inventory / вечерний дожим.*
+
+### Осталось для tip-cut (когда SSH жив, соло, MemAvailable ≳ 350 MiB)
+
+1. SSH: `docker ps`, `IMAGE_TAG`, `free -m`, `grep -E '^VAPID_' .env | sed 's/=.*/=SET/'` (без значений).
+2. Собрать/подтянуть amd64 `api`+`web` под tip `839557a` (или ближайший GHCR SHA); **не** thrash `compose down`.
+3. Один `compose -p dekanat up -d` для api/web (migrate отдельно при необходимости `20261111023000_schedule_lesson_source`).
+4. Доказать: web 200, `/auth/me` 401, `/notifications/push/vapid-public-key` не 404 (после login — ключ не пустой).
+5. Bot/worker поднимать только если MemAvailable > ~350 MiB после healthy api/web.
+

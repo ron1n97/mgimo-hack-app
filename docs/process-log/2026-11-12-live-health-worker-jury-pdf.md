@@ -35,10 +35,17 @@ Telegram-бот / `TELEGRAM_PROXY` / gost egress / `dekanat-bot` — **не тр
 - `docs/process-log/jury-process-pdf-checklist.md` — заполнен по имеющемуся сырью.
 - Draft: `jury-process-draft-2026-11-12.md` + PDF рядом.
 
+## Later same day (automated continue)
+
+- Screenshot pack: `screenshots/2026-11-12/` (login, today×2, schedule, clubs, AI, staff).
+- Owner sign-off **draft**: `owner-signoff-criterion3-checklist.md` (agent vs Roman).
+- Mobile→live notes: `2026-11-12-mobile-expo-live-dogfood.md` (CORS ok; Expo start left to owner).
+- Jury draft MD updated with embeds; PDF regenerated.
+- IDOR smoke: Boris cannot read Anna request (404).
+
 ## Still blocked (human)
 
-- R-SURVEY / R-FG (Q1/Q1b)
-- Owner sign-off критерия 3
-- Mobile Expo dogfood / store-ready
-- Screenshot pack for final jury PDF
+- R-SURVEY / R-FG (Q1/Q1b) — без выдуманных ответов
+- Owner **подпись** кр.3 по чеклисту
+- Expo dogfood на телефоне / store-ready
 - Optional tip-cut only if product commits after `ebc7780` matter for demo

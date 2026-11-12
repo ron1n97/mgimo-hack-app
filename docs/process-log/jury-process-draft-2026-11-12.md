@@ -95,21 +95,43 @@ Desk research ЛК вузов РФ; не dual СамГТУ; не «офиц. с�
 - Live health: web/api 200; clubs ≈97; api/web `ebc7780`; tip `5fadc9d` docs-heavy — tip-cut **не** делали.
 - Поднят только RUZ worker (`restart: unless-stopped`); bot не стартуем.
 - Smoke in-product `/ai/chat` → `source: zcode`.
+- Пакет скринов live + черновик owner sign-off кр.3 + mobile→live dogfood notes (без выдуманных опросов).
 
 ---
 
-## 4. Путь идея → кабинет (скриншоты — TODO в финале)
+## 4. Путь идея → кабинет (скриншоты live 2026-11-12)
 
-В финальном PDF вставить кадры:
+Каталог: [`screenshots/2026-11-12/`](./screenshots/2026-11-12/) (viewport ~390×844 + один desktop 1440×900).
 
-1. Стратегия / хаб ideas (vault)
-2. Ранний UI / wire (если сохранился)
-3. Студент: Сегодня / Расписание / Заявки / Клубы
-4. Сотрудник / преподаватель
-5. Mobile / PWA (нижняя liquid-glass навигация)
-6. 1–2 кадра «как ломалось» (empty/error/loading)
+### Login / demo quick-login
 
-Пока этот черновик — текстовый каркас без вложений.
+![Login demo mobile](./screenshots/2026-11-12/login-demo-mobile.png)
+
+### Студент — Сегодня (mobile)
+
+![Today mobile](./screenshots/2026-11-12/today-mobile.png)
+
+### Студент — Сегодня (desktop)
+
+![Today desktop](./screenshots/2026-11-12/today-desktop.png)
+
+### Расписание (подгруппы RUZ)
+
+![Schedule mobile](./screenshots/2026-11-12/schedule-mobile.png)
+
+### Клубы (реестр ~97)
+
+![Clubs mobile](./screenshots/2026-11-12/clubs-mobile.png)
+
+### In-app ИИ (Ассистент+ + дисклеймер)
+
+![AI chat mobile](./screenshots/2026-11-12/ai-chat-mobile.png)
+
+### Сотрудник — очередь заявок
+
+![Staff requests mobile](./screenshots/2026-11-12/staff-requests-mobile.png)
+
+Ещё желательно в финале (не блокирует этот черновик): кадр стратегии/vault; ранний wire; empty/error; преподаватель; Expo на устройстве.
 
 ---
 
@@ -117,12 +139,12 @@ Desk research ЛК вузов РФ; не dual СамГТУ; не «офиц. с�
 
 - Регистрация/login → JWT; demo quick-login по personaId **без** паролей в JS-бандле (`docs/DEMO.md`).
 - Только вымышленные ПДн; demo-аккаунты (Рискова, Спокойный, Иванова, Деканатская…).
-- IDOR: чужую заявку не видно (тесты изоляции в api).
+- IDOR (smoke 2026-11-12): Борис `GET /requests/{id Анны}` → **404**; в списке только свои заявки. Юнит/интеграционные тесты изоляции в api — рядом в репо.
 - Пароли bcrypt/argon2; секреты в `.env` на VPS, не в git.
-- LLM-ключ (`ZCODE_API_KEY`) только сервер; в ответе ИИ — дисклеймер «не офиц. позиция вуза».
+- LLM-ключ (`ZCODE_API_KEY`) только сервер; в ответе ИИ — дисклеймер «не офиц. позиция вуза» (см. скрин AI).
 - Дисклеймер в UI: неофициальный кабинет; расписание из открытого RUZ.
 
-Owner sign-off критерия 3 («можно жюри») — **ещё не отмечен** в этом черновике.
+Owner sign-off критерия 3: черновик чеклиста [`owner-signoff-criterion3-checklist.md`](./owner-signoff-criterion3-checklist.md) — **подписи Романа ещё нет**.
 
 ---
 
@@ -132,6 +154,7 @@ Owner sign-off критерия 3 («можно жюри») — **ещё не о
 - Demo accounts / seed и проверка сценариев.
 - Решение по LLM (Z Code) и по отмене Telegram-поверхности (2026-11-12).
 - Sign-off кр.3 и полевые R-SURVEY/R-FG — в очереди.
+- Expo dogfood на живом API — команды для owner в `2026-11-12-mobile-expo-live-dogfood.md`.
 
 ---
 
@@ -139,10 +162,13 @@ Owner sign-off критерия 3 («можно жюри») — **ещё не о
 
 | Пункт | Статус |
 |-------|--------|
-| 6 разделов брифа заполнены текстом | частично (скриншоты и FG — дыры) |
+| 6 разделов брифа заполнены текстом | да (полевые цифры — placeholder) |
+| Скриншоты live | да (пакет 2026-11-12) |
 | Удачи и фейлы | да |
 | Нет секретов / боевых ПДн / лого вуза | да |
 | Связь с критериями 1–4 | да |
 | Экспорт PDF | этот файл → `jury-process-draft-2026-11-12.pdf` |
+| Результаты опроса / ФГ | **placeholder** — не выдуманы |
+| Owner sign-off кр.3 | черновик есть, подпись нет |
 
 **Не выдумывать:** результаты опроса, протокол ФГ, «официальность» вуза, готовность mobile store.

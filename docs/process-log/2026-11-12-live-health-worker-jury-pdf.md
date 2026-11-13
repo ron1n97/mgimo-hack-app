@@ -43,9 +43,17 @@ Telegram-бот / `TELEGRAM_PROXY` / gost egress / `dekanat-bot` — **не тр
 - Jury draft MD updated with embeds; PDF regenerated.
 - IDOR smoke: Boris cannot read Anna request (404).
 
+## Later polish (screens + «как ломалось»)
+
+- New shots: `admin-overview-mobile.png`, `admin-any-group-profile-mobile.png`, `staff-teachers-empty-mobile.png`, `ai-disclaimer-closeup-mobile.png`.
+- Jury draft §3b «как ломалось» (SSH/iptables thrash, OOM 137, Clash/TUN vs SSH) — quotes only, no fake infra pics.
+- Live note: `teacher-ivanova` still **STAFF**; TEACHER count 0 until `seed:extras`.
+- Tip-cut api/web again **SKIP** (already `ebc7780`).
+
 ## Still blocked (human)
 
 - R-SURVEY / R-FG (Q1/Q1b) — без выдуманных ответов
 - Owner **подпись** кр.3 по чеклисту
 - Expo dogfood на телефоне / store-ready
 - Optional tip-cut only if product commits after `ebc7780` matter for demo
+- Optional: `seed:extras` → TEACHER + скрин `/teacher`

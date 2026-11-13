@@ -92,10 +92,41 @@ Desk research ЛК вузов РФ; не dual СамГТУ; не «офиц. с�
 ### 2026-11-12 (этот срез)
 
 - Owner: Telegram-поверхность сдачи отменена.
-- Live health: web/api 200; clubs ≈97; api/web `ebc7780`; tip `5fadc9d` docs-heavy — tip-cut **не** делали.
+- Live health: web/api 200; clubs ≈97; api/web `ebc7780`; tip `5fadc9d` docs-heavy — tip-cut **не** делали (и снова **SKIP** в polish-проходе: продукт уже на `ebc7780`).
 - Поднят только RUZ worker (`restart: unless-stopped`); bot не стартуем.
 - Smoke in-product `/ai/chat` → `source: zcode`.
 - Пакет скринов live + черновик owner sign-off кр.3 + mobile→live dogfood notes (без выдуманных опросов).
+- Дожим скринов: admin overview + any-group, staff→назначение пар (empty), AI disclaimer close-up.
+
+---
+
+## 3b. Как ломалось (реальные инциденты)
+
+Без постановочных кадров — цитаты из process-log и то, что реально мешало выкладке.
+
+### VPS thrash / «iptables wars» / SSH 255
+
+Агрессивный keeper на VPS каждую пару секунд дёргал compose и блокировал файлы:
+
+> `/usr/local/bin/dekanat-hold.sh` каждые 5 с делал `docker start` cores + `docker stop` bot/worker + **`pkill -9 -f 'docker compose -p dekanat'`** + `chattr +i` … → thrash, SSH 255, 502.
+
+Замена: мягкий hold без `pkill` compose и **без iptables wars**; сайт остался на 200/401 через swap.  
+Источник: `ironring-batch-2026-11-10-11.md` §3.15.
+
+### OOM 137 / multi-agent tip race
+
+Параллельные SSH-агенты гоняли `IMAGE_TAG` и `docker rmi` tip-образов на ~889 MiB RAM:
+
+> Compose часто **OOM 137**. HTTPS мигал **502**. Tip web image load’ился, потом **стирался** рейсерами.
+
+Итог той ночи: calm recovery на `demo-stable`, tip-cut отложен.  
+Источник: тот же лог §4.2–4.4.
+
+### Clash / TUN vs SSH (клиентская сторона)
+
+HTTPS к live через VPN/TUN открывался, а новый SSH к `:22` зависал на banner (отдельно от thrash на VPS). В process-log зафиксировано как tip-cut STOP / SSH timeout; разбор Clash/INCY TUN — в рабочих сессиях, без скрина UI VPN. Для жюри важно: «лайв 200 ≠ всегда есть спокойный SSH для tip-cut».
+
+Скриншотов инфраструктуры нет (и не рисуем) — только лог.
 
 ---
 
@@ -123,15 +154,35 @@ Desk research ЛК вузов РФ; не dual СамГТУ; не «офиц. с�
 
 ![Clubs mobile](./screenshots/2026-11-12/clubs-mobile.png)
 
-### In-app ИИ (Ассистент+ + дисклеймер)
+### In-app ИИ (Ассистент+)
 
 ![AI chat mobile](./screenshots/2026-11-12/ai-chat-mobile.png)
+
+### In-app ИИ — дисклеймер (крупно)
+
+Текст ответа + строка «не официальная позиция вуза»:
+
+![AI disclaimer close-up](./screenshots/2026-11-12/ai-disclaimer-closeup-mobile.png)
 
 ### Сотрудник — очередь заявок
 
 ![Staff requests mobile](./screenshots/2026-11-12/staff-requests-mobile.png)
 
-Ещё желательно в финале (не блокирует этот черновик): кадр стратегии/vault; ранний wire; empty/error; преподаватель; Expo на устройстве.
+### Преподавательский контур на live (honest)
+
+На live `teacher@demo.local` / persona `teacher-ivanova` сейчас **STAFF**, не `Role.TEACHER` (admin overview: преподаватели = **0**). Кабинет `/teacher` без TEACHER-аккаунта недоступен, пока не прогонят `seed:extras` (нужен спокойный SSH). Доступный кадр: назначение пар сотрудником + empty state.
+
+![Staff teachers empty](./screenshots/2026-11-12/staff-teachers-empty-mobile.png)
+
+### Админ — обзор платформы
+
+![Admin overview mobile](./screenshots/2026-11-12/admin-overview-mobile.png)
+
+### Админ — любая группа из каталога (просмотр расписания)
+
+![Admin any-group profile](./screenshots/2026-11-12/admin-any-group-profile-mobile.png)
+
+Ещё желательно в финале (не блокирует этот черновик): кадр стратегии/vault; ранний wire; отдельный ErrorState UI; **настоящий** `/teacher` после seed TEACHER; Expo на устройстве.
 
 ---
 
@@ -163,8 +214,8 @@ Owner sign-off критерия 3: черновик чеклиста [`owner-sig
 | Пункт | Статус |
 |-------|--------|
 | 6 разделов брифа заполнены текстом | да (полевые цифры — placeholder) |
-| Скриншоты live | да (пакет 2026-11-12) |
-| Удачи и фейлы | да |
+| Скриншоты live | да (пакет 2026-11-12 + admin/any-group/empty/AI disclaimer) |
+| Удачи и фейлы / «как ломалось» | да (цитаты process-log; без fake pics) |
 | Нет секретов / боевых ПДн / лого вуза | да |
 | Связь с критериями 1–4 | да |
 | Экспорт PDF | этот файл → `jury-process-draft-2026-11-12.pdf` |

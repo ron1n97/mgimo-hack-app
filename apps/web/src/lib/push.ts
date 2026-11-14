@@ -15,21 +15,28 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return output;
 }
 
+export function serviceWorkerSupported(): boolean {
+  return typeof window !== "undefined" && "serviceWorker" in navigator;
+}
+
 export function pushSupported(): boolean {
   return (
-    typeof window !== "undefined" &&
-    "serviceWorker" in navigator &&
+    serviceWorkerSupported() &&
     "PushManager" in window &&
     "Notification" in window
   );
 }
 
+/** Register SW for PWA installability even when Web Push APIs are missing. */
 export async function ensureServiceWorker(): Promise<ServiceWorkerRegistration | null> {
-  if (!pushSupported()) return null;
-  const existing = await navigator.serviceWorker.getRegistration();
-  if (existing) return existing;
+  if (!serviceWorkerSupported()) return null;
   try {
-    return await navigator.serviceWorker.register("/sw.js");
+    const existing = await navigator.serviceWorker.getRegistration();
+    if (existing) {
+      await existing.update().catch(() => undefined);
+      return existing;
+    }
+    return await navigator.serviceWorker.register("/sw.js", { scope: "/" });
   } catch {
     return null;
   }

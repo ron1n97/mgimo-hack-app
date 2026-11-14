@@ -9,6 +9,7 @@ import { AssistantChat } from "./assistant/AssistantChat";
 import { BottomNav } from "./BottomNav";
 import { DisclaimerBanner } from "./DisclaimerBanner";
 import { PushPrompt } from "./PushPrompt";
+import { PwaInstallPrompt } from "./PwaInstallPrompt";
 
 const studentLinks = [
   { href: "/today", label: "Сегодня" },
@@ -165,6 +166,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 pb-24 pt-6 md:pb-10">{children}</main>
+      <PwaInstallPrompt />
       <PushPrompt />
       <BottomNav />
       {user ? <AssistantChat /> : null}

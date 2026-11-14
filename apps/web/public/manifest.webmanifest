@@ -1,9 +1,12 @@
 {
+  "id": "/",
   "name": "Деканат+",
   "short_name": "Деканат+",
   "description": "Расписание, заявки и учёба в одном кабинете",
   "start_url": "/today",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#F3EADC",
   "theme_color": "#0B1C2C",
   "lang": "ru",
@@ -18,7 +21,13 @@
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

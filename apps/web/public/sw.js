@@ -1,33 +1,57 @@
-/* PWA shell + Web Push (ADR 0009) */
-const CACHE = "dekanat-web-v2";
-const PRECACHE = ["/", "/today", "/notifications", "/manifest.webmanifest"];
+/* PWA shell + Web Push (ADR 0013). Cache policy: apps/web/src/lib/sw-cache-policy.mjs */
+const CACHE = "dekanat-web-v3";
+
+function isCacheableAsset(requestUrl) {
+  try {
+    const url = new URL(requestUrl);
+    if (url.origin !== self.location.origin) return false;
+    const pathname = url.pathname;
+    if (pathname.startsWith("/_next/static/")) return true;
+    if (pathname.startsWith("/icons/")) return true;
+    if (pathname === "/manifest.webmanifest") return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function shouldPutInCache(request, response) {
+  if (request.method !== "GET") return false;
+  if (!isCacheableAsset(request.url)) return false;
+  return response.ok;
+}
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting()),
-  );
+  event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))),
-    ).then(() => self.clients.claim()),
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))),
+      )
+      .then(() => self.clients.claim()),
   );
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+  const request = event.request;
+  if (request.method !== "GET") return;
+  // Never intercept API / HTML / RSC — browser talks to network with Authorization.
+  // Old v2 SW cache-first'd API 401s and bounced logged-in users to /.
+  if (!isCacheableAsset(request.url)) return;
+
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(event.request, copy));
-          return response;
-        })
-        .catch(() => cached);
-      return cached || network;
+    caches.open(CACHE).then(async (cache) => {
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      const response = await fetch(request);
+      if (shouldPutInCache(request, response)) {
+        cache.put(request, response.clone());
+      }
+      return response;
     }),
   );
 });

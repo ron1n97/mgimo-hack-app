@@ -1,18 +1,15 @@
 import { Injectable } from '@nestjs/common';
+import { EventModerationStatus } from '@prisma/client';
 import { GradesService } from '../grades/grades.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RequestsService } from '../requests/requests.service';
 import { ScheduleService } from '../schedule/schedule.service';
-
-function moscowDateString(d = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Moscow',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(d);
-}
+import {
+  moscowDateString,
+  moscowWeekBounds,
+  splitClubDigestByDay,
+} from './today-digest';
 
 function moscowMinutesNow(): number {
   const parts = new Intl.DateTimeFormat('en-GB', {
@@ -80,6 +77,28 @@ export class TodayService {
     );
     const unread = notifs.filter((n) => !n.readAt);
 
+    const week = moscowWeekBounds(day);
+    const weekStart = new Date(`${week.from}T00:00:00+03:00`);
+    const weekEnd = new Date(`${week.to}T23:59:59.999+03:00`);
+    const clubEvents = await this.prisma.eventCandidate.findMany({
+      where: {
+        moderationStatus: EventModerationStatus.APPROVED,
+        startsAt: { gte: weekStart, lte: weekEnd },
+      },
+      orderBy: [{ startsAt: 'asc' }, { createdAt: 'desc' }],
+      take: 40,
+      include: { club: { select: { id: true, name: true } } },
+    });
+    const mapped = clubEvents.map((e) => ({
+      id: e.id,
+      title: e.title,
+      body: e.body,
+      url: e.url,
+      startsAt: e.startsAt,
+      club: e.club,
+    }));
+    const buckets = splitClubDigestByDay(mapped, day);
+
     return {
       date: day,
       profile,
@@ -92,6 +111,13 @@ export class TodayService {
       recentGrades: allGrades.slice(0, 8),
       openRequests: openTickets.slice(0, 5),
       unreadNotifications: unread.slice(0, 5),
+      clubEventsToday: buckets.today,
+      clubDigestWeek: {
+        from: week.from,
+        to: week.to,
+        items: buckets.week,
+        todayCount: buckets.today.length,
+      },
       disclaimer:
         'Неофициальный кабинет. Расписание — из открытого RUZ МГИМО.',
     };

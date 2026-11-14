@@ -133,6 +133,15 @@ export type NotificationItem = {
   read: boolean;
 };
 
+export type TodayClubEvent = {
+  id: string;
+  title: string;
+  body?: string | null;
+  url?: string | null;
+  startsAt?: string | null;
+  club?: { id: string; name: string } | null;
+};
+
 export type TodayHub = {
   date?: string;
   lessons: ScheduleItem[];
@@ -141,6 +150,13 @@ export type TodayHub = {
   unreadNotifications: number;
   importantUnread: NotificationItem[];
   recentGrades: GradeItem[];
+  clubEventsToday: TodayClubEvent[];
+  clubDigestWeek: {
+    from: string;
+    to: string;
+    todayCount: number;
+    items: TodayClubEvent[];
+  };
 };
 
 export type ClubTag = {

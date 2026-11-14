@@ -57,6 +57,14 @@ export default function TodayPage() {
         </h1>
         {user?.groupName ? (
           <p className="mt-1 text-sm text-ink-muted">Группа {user.groupName}</p>
+        ) : user?.role === "student" ? (
+          <p className="mt-1 text-sm text-ink-muted">
+            Группа ещё не привязана в базе — откройте{" "}
+            <Link href="/profile" className="text-copper underline-offset-2 hover:underline">
+              профиль
+            </Link>
+            .
+          </p>
         ) : (
           <p className="mt-1 text-sm text-ink-muted">
             <Link href="/profile" className="text-copper underline-offset-2 hover:underline">
@@ -133,6 +141,59 @@ export default function TodayPage() {
                 })}
               </ul>
             )}
+          </section>
+
+          <section>
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <h2 className="font-serif text-xl text-ink">Клубы сегодня</h2>
+              <Link href="/clubs" className="text-sm text-copper">
+                Дайджест →
+              </Link>
+            </div>
+            {data.clubEventsToday.length === 0 ? (
+              <p className="text-sm text-ink-muted">
+                На сегодня клубных событий в ленте нет.{" "}
+                <Link href="/clubs" className="text-copper underline-offset-2 hover:underline">
+                  Недельный дайджест
+                </Link>
+                {data.clubDigestWeek.items.length
+                  ? ` · ещё ${data.clubDigestWeek.items.length} на этой неделе`
+                  : ""}
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {data.clubEventsToday.map((ev) => (
+                  <li
+                    key={ev.id}
+                    className="rounded-xl border border-cream-deep bg-white/40 px-4 py-3"
+                  >
+                    <p className="text-[10px] uppercase tracking-wide text-copper">
+                      {ev.club?.name ?? "Клуб"}
+                    </p>
+                    <p className="mt-1 font-medium text-ink">{ev.title}</p>
+                    {ev.body ? (
+                      <p className="mt-1 line-clamp-2 text-sm text-ink-muted">{ev.body}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {data.clubDigestWeek.items.length > 0 ? (
+              <div className="mt-3 rounded-xl border border-dashed border-cream-deep bg-cream/30 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-ink-muted">
+                  Недельный дайджест
+                </p>
+                <p className="mt-1 text-sm text-ink">
+                  {data.clubDigestWeek.items.length} событий на неделю
+                  {data.clubDigestWeek.from
+                    ? ` (${data.clubDigestWeek.from} — ${data.clubDigestWeek.to})`
+                    : ""}
+                </p>
+                <Link href="/clubs#weekly-digest" className="mt-1 inline-block text-sm text-copper">
+                  Открыть сводку в клубах →
+                </Link>
+              </div>
+            ) : null}
           </section>
 
           {data.importantUnread.length > 0 ? (

@@ -42,6 +42,29 @@ export default function ClubsPage() {
     [interests],
   );
 
+  const { todayFeed, weekFeed } = useMemo(() => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 1);
+    const weekEnd = new Date(start);
+    const day = start.getDay();
+    const mondayOffset = day === 0 ? -6 : 1 - day;
+    const monday = new Date(start);
+    monday.setDate(start.getDate() + mondayOffset);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 7);
+    const today: DigestFeedItem[] = [];
+    const week: DigestFeedItem[] = [];
+    for (const item of feed) {
+      if (!item.startsAt) continue;
+      const t = new Date(item.startsAt).getTime();
+      if (t >= start.getTime() && t < end.getTime()) today.push(item);
+      if (t >= monday.getTime() && t < sunday.getTime()) week.push(item);
+    }
+    return { todayFeed: today, weekFeed: week };
+  }, [feed]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -341,6 +364,62 @@ export default function ClubsPage() {
             </ul>
           )
         ) : null}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-serif text-xl text-ink">Что сегодня</h2>
+        <p className="text-sm text-ink-muted">
+          Ежедневный дайджест по подпискам (stub-лента, если ingest ещё нет).
+        </p>
+        {todayFeed.length === 0 ? (
+          <p className="text-sm text-ink-muted">На сегодня анонсов нет.</p>
+        ) : (
+          <ul className="space-y-2">
+            {todayFeed.map((item) => (
+              <li
+                key={`today-${item.id}`}
+                className="rounded-xl border border-cream-deep bg-white/50 px-4 py-3"
+              >
+                <p className="text-xs text-ink-muted">{item.club?.name}</p>
+                <h3 className="font-medium text-ink">{item.title}</h3>
+                {item.body ? (
+                  <p className="mt-1 text-sm text-ink-muted">{item.body}</p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section id="weekly-digest" className="scroll-mt-24 space-y-3">
+        <h2 className="font-serif text-xl text-ink">Недельный дайджест</h2>
+        <p className="text-sm text-ink-muted">
+          Сводка на текущую неделю — удобнее ежедневного шума.
+        </p>
+        {weekFeed.length === 0 ? (
+          <p className="text-sm text-ink-muted">На этой неделе пока пусто.</p>
+        ) : (
+          <ul className="space-y-2">
+            {weekFeed.map((item) => (
+              <li
+                key={`week-${item.id}`}
+                className="rounded-xl border border-cream-deep bg-white/40 px-4 py-3"
+              >
+                <p className="text-xs text-ink-muted">
+                  {item.club?.name}
+                  {item.startsAt
+                    ? ` · ${new Date(item.startsAt).toLocaleDateString("ru-RU", {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                      })}`
+                    : ""}
+                </p>
+                <h3 className="font-medium text-ink">{item.title}</h3>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="space-y-3">

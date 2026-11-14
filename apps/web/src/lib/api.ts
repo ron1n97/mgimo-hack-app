@@ -15,6 +15,7 @@ import type {
   TeacherListItem,
   TeacherSlot,
   TodayHub,
+  TodayClubEvent,
   User,
   UserRole,
 } from "./types";
@@ -398,6 +399,20 @@ export async function updateProfile(payload: {
   return mapUser(raw);
 }
 
+function mapClubEvent(raw: Record<string, unknown>): TodayClubEvent {
+  const club = raw.club as Record<string, unknown> | null | undefined;
+  return {
+    id: String(raw.id ?? ""),
+    title: String(raw.title ?? ""),
+    body: raw.body == null ? null : String(raw.body),
+    url: raw.url == null ? null : String(raw.url),
+    startsAt: raw.startsAt == null ? null : String(raw.startsAt),
+    club: club
+      ? { id: String(club.id ?? ""), name: String(club.name ?? "") }
+      : null,
+  };
+}
+
 export async function fetchToday(): Promise<TodayHub> {
   const raw = await request<{
     date?: string;
@@ -408,6 +423,13 @@ export async function fetchToday(): Promise<TodayHub> {
     unreadNotifications?: unknown[];
     recentGrades?: Record<string, unknown>[];
     academicRisk?: { debts?: Record<string, unknown>[] };
+    clubEventsToday?: Record<string, unknown>[];
+    clubDigestWeek?: {
+      from?: string;
+      to?: string;
+      todayCount?: number;
+      items?: Record<string, unknown>[];
+    };
   }>("/today/me");
 
   const lessons = (raw.lessons ?? raw.schedule ?? []).map(mapLesson);
@@ -419,6 +441,8 @@ export async function fetchToday(): Promise<TodayHub> {
         .filter((n): n is Record<string, unknown> => typeof n === "object" && n !== null)
         .map(mapNotification)
     : [];
+  const clubToday = (raw.clubEventsToday ?? []).map(mapClubEvent);
+  const weekItems = (raw.clubDigestWeek?.items ?? []).map(mapClubEvent);
 
   return {
     date: raw.date,
@@ -428,6 +452,13 @@ export async function fetchToday(): Promise<TodayHub> {
     unreadNotifications: unreadItems.length,
     importantUnread: unreadItems.filter(isImportantUnread).slice(0, 5),
     recentGrades: recent.slice(0, 8),
+    clubEventsToday: clubToday,
+    clubDigestWeek: {
+      from: String(raw.clubDigestWeek?.from ?? ""),
+      to: String(raw.clubDigestWeek?.to ?? ""),
+      todayCount: Number(raw.clubDigestWeek?.todayCount ?? clubToday.length),
+      items: weekItems,
+    },
   };
 }
 

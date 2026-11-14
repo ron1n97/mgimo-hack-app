@@ -148,11 +148,16 @@ export async function seedDemoClubEvents(
 
   const sourceId = club.sources[0]?.id;
   const now = Date.now();
+  // Noon Moscow today — avoids UTC evening flipping the MSK calendar day.
+  const moscowNoon = new Date(
+    new Date().toLocaleString('en-US', { timeZone: 'Europe/Moscow' }),
+  );
+  moscowNoon.setHours(12, 0, 0, 0);
   const stubs = [
     {
       title: 'Демо: что сегодня в клубе',
       body: 'Ежедневный дайджест — stub для экрана «Сегодня» (без live-ingest).',
-      startsAt: new Date(now + 2 * 3600 * 1000),
+      startsAt: moscowNoon,
       moderationStatus: EventModerationStatus.APPROVED,
     },
     {

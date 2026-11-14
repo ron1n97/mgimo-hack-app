@@ -9,6 +9,16 @@ export const STUDENT_ENROLLMENT_FIELDS = [
   'preferredSubGroupOids',
 ] as const;
 
+/**
+ * Fields fixed in seed / registrar DB for students (Maxim feedback).
+ * Students may still edit contacts (fullName, phone).
+ */
+export const STUDENT_IMMUTABLE_FIELDS = [
+  ...STUDENT_ENROLLMENT_FIELDS,
+  'groupLabel',
+  'groupRuzId',
+] as const;
+
 export type ProfileFieldPatch = {
   faculty?: string;
   program?: string;
@@ -30,10 +40,11 @@ export function listedPresentFields(
 
 /**
  * Role rules for PATCH /auth/me:
- * - STUDENT: enrollment fields + own group/subgroups; no department.
+ * - STUDENT: contacts only; enrollment + academic/language group are read-only
+ *   (seeded / registrar). Schedule binds from that data.
  * - STAFF/ADMIN: department + optional schedule view group (any catalog group);
  *   no student enrollment fields (course/faculty/program/subgroups).
- * - TEACHER (future): not forced into student enrollment fields.
+ * - TEACHER: contacts + department; no student enrollment / view-group.
  */
 export function assertProfileFieldsForRole(
   role: Role,
@@ -43,6 +54,12 @@ export function assertProfileFieldsForRole(
     if (dto.department !== undefined) {
       throw new BadRequestException(
         'Поле department недоступно для профиля студента',
+      );
+    }
+    const forbidden = listedPresentFields(dto, STUDENT_IMMUTABLE_FIELDS);
+    if (forbidden.length > 0) {
+      throw new BadRequestException(
+        `Академические поля профиля только из базы: ${forbidden.join(', ')}`,
       );
     }
     return;

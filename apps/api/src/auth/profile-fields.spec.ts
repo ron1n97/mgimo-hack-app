@@ -5,6 +5,7 @@ import {
   isStaffLike,
   listedPresentFields,
   STUDENT_ENROLLMENT_FIELDS,
+  STUDENT_IMMUTABLE_FIELDS,
 } from './profile-fields';
 
 describe('profile fields by role', () => {
@@ -17,7 +18,7 @@ describe('profile fields by role', () => {
     ).toEqual(['faculty', 'course']);
   });
 
-  it('allows student enrollment + group fields', () => {
+  it('rejects student edits to enrollment and group binding fields', () => {
     expect(() =>
       assertProfileFieldsForRole(Role.STUDENT, {
         faculty: 'МО',
@@ -25,6 +26,23 @@ describe('profile fields by role', () => {
         course: 3,
         groupRuzId: '8035',
         preferredSubGroupOids: ['501'],
+      }),
+    ).toThrow(BadRequestException);
+
+    for (const key of STUDENT_IMMUTABLE_FIELDS) {
+      expect(() =>
+        assertProfileFieldsForRole(Role.STUDENT, {
+          [key]: key === 'course' ? 2 : key === 'preferredSubGroupOids' ? ['1'] : 'x',
+        }),
+      ).toThrow(BadRequestException);
+    }
+  });
+
+  it('allows student contact fields only', () => {
+    expect(() =>
+      assertProfileFieldsForRole(Role.STUDENT, {
+        fullName: 'Анна Рискова',
+        phone: '+79001111111',
       }),
     ).not.toThrow();
   });

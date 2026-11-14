@@ -147,33 +147,55 @@ export async function seedDemoClubEvents(
   }
 
   const sourceId = club.sources[0]?.id;
-  const existing = await prisma.eventCandidate.findFirst({
-    where: { title: 'Демо: открытая тренировка ССК' },
-  });
-  if (!existing) {
-    await prisma.eventCandidate.create({
-      data: {
-        clubId: club.id,
-        sourceId,
-        title: 'Демо: открытая тренировка ССК',
-        body: 'Кандидат из дайджеста — ждёт модерации коллеги перед афишей.',
-        url: club.sources[0]?.url,
-        startsAt: new Date(Date.now() + 3 * 24 * 3600 * 1000),
-        moderationStatus: EventModerationStatus.PENDING,
-      },
+  const now = Date.now();
+  const stubs = [
+    {
+      title: 'Демо: что сегодня в клубе',
+      body: 'Ежедневный дайджест — stub для экрана «Сегодня» (без live-ingest).',
+      startsAt: new Date(now + 2 * 3600 * 1000),
+      moderationStatus: EventModerationStatus.APPROVED,
+    },
+    {
+      title: 'Демо: открытая тренировка ССК',
+      body: 'Кандидат из дайджеста — ждёт модерации коллеги перед афишей.',
+      startsAt: new Date(now + 3 * 24 * 3600 * 1000),
+      moderationStatus: EventModerationStatus.PENDING,
+    },
+    {
+      title: 'Демо: товарищеский матч',
+      body: 'Недельный дайджест — одобрено, видно в ленте и на «Сегодня».',
+      startsAt: new Date(now + 4 * 24 * 3600 * 1000),
+      moderationStatus: EventModerationStatus.APPROVED,
+    },
+    {
+      title: 'Демо: недельный обзор клубов',
+      body: 'Сводка на неделю: встречи, дедлайны заявок в клубы, анонсы.',
+      startsAt: new Date(now + 5 * 24 * 3600 * 1000),
+      moderationStatus: EventModerationStatus.APPROVED,
+    },
+  ] as const;
+
+  for (const stub of stubs) {
+    const existing = await prisma.eventCandidate.findFirst({
+      where: { title: stub.title },
     });
+    if (existing) continue;
     await prisma.eventCandidate.create({
       data: {
         clubId: club.id,
         sourceId,
-        title: 'Демо: товарищеский матч',
-        body: 'Уже одобрено модерацией — видно в ленте дайджеста.',
+        title: stub.title,
+        body: stub.body,
         url: club.sources[0]?.url,
-        startsAt: new Date(Date.now() + 7 * 24 * 3600 * 1000),
-        moderationStatus: EventModerationStatus.APPROVED,
-        moderatedAt: new Date(),
-        moderatedByUserId: opts.staffUserId,
-        publishedAt: new Date(),
+        startsAt: stub.startsAt,
+        moderationStatus: stub.moderationStatus,
+        ...(stub.moderationStatus === EventModerationStatus.APPROVED
+          ? {
+              moderatedAt: new Date(),
+              moderatedByUserId: opts.staffUserId,
+              publishedAt: new Date(),
+            }
+          : {}),
       },
     });
   }

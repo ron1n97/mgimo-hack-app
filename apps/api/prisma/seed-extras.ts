@@ -70,6 +70,7 @@ async function upsertStudent(opts: {
   course: number;
   groupLabel: string;
   groupRuzId: string;
+  preferredSubGroupOids?: string[];
 }) {
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
   const existing = await prisma.user.findUnique({ where: { email: opts.email } });
@@ -88,6 +89,7 @@ async function upsertStudent(opts: {
         course: opts.course,
         groupLabel: opts.groupLabel,
         groupRuzId: opts.groupRuzId,
+        preferredSubGroupOids: opts.preferredSubGroupOids ?? [],
       },
       update: {
         fullName: opts.fullName,
@@ -96,6 +98,9 @@ async function upsertStudent(opts: {
         course: opts.course,
         groupLabel: opts.groupLabel,
         groupRuzId: opts.groupRuzId,
+        ...(opts.preferredSubGroupOids !== undefined
+          ? { preferredSubGroupOids: opts.preferredSubGroupOids }
+          : {}),
       },
     });
     return existing.id;
@@ -114,6 +119,7 @@ async function upsertStudent(opts: {
           course: opts.course,
           groupLabel: opts.groupLabel,
           groupRuzId: opts.groupRuzId,
+          preferredSubGroupOids: opts.preferredSubGroupOids ?? [],
         },
       },
     },
@@ -280,11 +286,38 @@ async function main() {
     course: 3,
     groupLabel: '2МЭО-01',
     groupRuzId: '8033',
+    preferredSubGroupOids: ['501'],
+  });
+
+  const dariaId = await upsertStudent({
+    email: 'daria.mp@demo.local',
+    fullName: 'Дарья Морозова',
+    phone: '+79007777777',
+    faculty: 'Международное право',
+    program: 'Бакалавриат МП',
+    course: 2,
+    groupLabel: '1МП-03',
+    groupRuzId: '8101',
+    preferredSubGroupOids: ['701'],
+  });
+
+  const kirillId = await upsertStudent({
+    email: 'kirill.meo@demo.local',
+    fullName: 'Кирилл Орлов',
+    phone: '+79008888888',
+    faculty: 'Международные экономические отношения',
+    program: 'Бакалавриат МЭО',
+    course: 4,
+    groupLabel: '4МЭО-01',
+    groupRuzId: '8204',
+    preferredSubGroupOids: ['804'],
   });
 
   if (anna) await replaceGrades(anna.id, RISK_PACK);
   if (boris) await replaceGrades(boris.id, GRADE_PACK);
   await replaceGrades(romanId, GRADE_PACK);
+  await replaceGrades(dariaId, GRADE_PACK);
+  await replaceGrades(kirillId, GRADE_PACK);
 
   // Any already-registered Гуськов* gets the same pack
   const named = await prisma.studentProfile.findMany({
@@ -298,7 +331,7 @@ async function main() {
   }
 
   console.log(
-    'OK: staff@demo.local, admin@demo.local, teacher@demo.local, roman.guskov@demo.local / Demo123!',
+    'OK: staff/admin/teacher + 5 demo students (incl. daria.mp / kirill.meo) / Demo123!',
   );
 }
 

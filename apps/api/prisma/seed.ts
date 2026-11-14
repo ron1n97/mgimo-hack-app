@@ -57,6 +57,7 @@ async function main() {
           course: 3,
           groupLabel: '2МЭО-01',
           groupRuzId: '8033',
+          preferredSubGroupOids: ['501'],
         },
       },
     },
@@ -76,6 +77,7 @@ async function main() {
           course: 3,
           groupLabel: '2МЭО-02',
           groupRuzId: '8035',
+          preferredSubGroupOids: ['602'],
         },
       },
     },
@@ -141,6 +143,47 @@ async function main() {
           course: 3,
           groupLabel: '2МЭО-01',
           groupRuzId: '8033',
+          preferredSubGroupOids: ['501'],
+        },
+      },
+    },
+  });
+
+  const daria = await prisma.user.create({
+    data: {
+      email: 'daria.mp@demo.local',
+      passwordHash,
+      role: Role.STUDENT,
+      phoneE164: '+79007777777',
+      studentProfile: {
+        create: {
+          fullName: 'Дарья Морозова',
+          faculty: 'Международное право',
+          program: 'Бакалавриат МП',
+          course: 2,
+          groupLabel: '1МП-03',
+          groupRuzId: '8101',
+          preferredSubGroupOids: ['701'],
+        },
+      },
+    },
+  });
+
+  const kirill = await prisma.user.create({
+    data: {
+      email: 'kirill.meo@demo.local',
+      passwordHash,
+      role: Role.STUDENT,
+      phoneE164: '+79008888888',
+      studentProfile: {
+        create: {
+          fullName: 'Кирилл Орлов',
+          faculty: 'Международные экономические отношения',
+          program: 'Бакалавриат МЭО',
+          course: 4,
+          groupLabel: '4МЭО-01',
+          groupRuzId: '8204',
+          preferredSubGroupOids: ['804'],
         },
       },
     },
@@ -201,6 +244,54 @@ async function main() {
         isCancelled: false,
         isMoved: false,
         rawJson: { source: 'seed' },
+      },
+      {
+        ruzExternalId: 'demo-l4',
+        groupRuzId: '8035',
+        groupLabel: '2МЭО-02',
+        date: utcDate(y, m, d),
+        begin: '10:00',
+        end: '11:30',
+        discipline: 'Теория международных отношений',
+        lecturer: 'Козлов К.К.',
+        auditorium: '118',
+        building: 'Главный корпус',
+        kindOfWork: 'Семинар',
+        isCancelled: false,
+        isMoved: false,
+        rawJson: { source: 'seed', group: '8035' },
+      },
+      {
+        ruzExternalId: 'demo-l5',
+        groupRuzId: '8101',
+        groupLabel: '1МП-03',
+        date: utcDate(y, m, d),
+        begin: '13:00',
+        end: '14:30',
+        discipline: 'Конституционное право зарубежных стран',
+        lecturer: 'Лебедева Л.Л.',
+        auditorium: '220',
+        building: 'Корпус А',
+        kindOfWork: 'Лекция',
+        isCancelled: false,
+        isMoved: false,
+        rawJson: { source: 'seed', group: '8101' },
+      },
+      {
+        ruzExternalId: 'demo-l6',
+        groupRuzId: '8204',
+        groupLabel: '4МЭО-01',
+        date: utcDate(y, m, d),
+        begin: '15:00',
+        end: '16:30',
+        discipline: 'Международные финансы',
+        lecturer: 'Новиков Н.Н.',
+        auditorium: '507',
+        building: 'Корпус Б',
+        kindOfWork: 'Лекция',
+        isCancelled: false,
+        isMoved: false,
+        rawJson: { source: 'seed', group: '8204' },
       },
     ],
   });
@@ -446,17 +537,27 @@ async function main() {
     studentUserId: anna.id,
     staffUserId: staff.id,
   });
+  // Cross-faculty dogfood personas also get the demo club in interests
+  for (const uid of [boris.id, roman.id, daria.id, kirill.id]) {
+    await seedDemoClubEvents(prisma, {
+      studentUserId: uid,
+      staffUserId: staff.id,
+    });
+  }
   console.log(
     `Clubs registry: ${clubsSeed.total} rows (${clubsSeed.created} created).`,
   );
 
   console.log('Seed OK.');
   console.log('Accounts (password Demo123!):');
-  console.log('  anna.risk@demo.local  — student, academic risk — phone +79001111111');
-  console.log('  boris.ok@demo.local   — student, calm — phone +79002222222');
-  console.log('  staff@demo.local      — staff — phone +79003333333');
-  console.log('  teacher@demo.local    — teacher — phone +79006666666');
-  console.log('Telegram bot: share contact with matching demo phone to auth.');
+  console.log('  anna.risk@demo.local   — student МО 2МЭО-01 (risk) — +79001111111');
+  console.log('  boris.ok@demo.local    — student МО 2МЭО-02 — +79002222222');
+  console.log('  roman.guskov@demo.local — student МО 2МЭО-01 — +79005555555');
+  console.log('  daria.mp@demo.local    — student МП 1МП-03 — +79007777777');
+  console.log('  kirill.meo@demo.local  — student МЭО 4МЭО-01 — +79008888888');
+  console.log('  staff@demo.local       — staff — +79003333333');
+  console.log('  teacher@demo.local     — teacher — +79006666666');
+  console.log('  admin@demo.local       — admin — +79004444444');
   console.log('DISCLAIMER: contest fictional data, not official MGIMO.');
 }
 

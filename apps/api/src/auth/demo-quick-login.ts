@@ -51,6 +51,18 @@ export const DEMO_PERSONAS: readonly DemoPersona[] = [
     roleHint: 'student',
   },
   {
+    id: 'student-daria',
+    email: 'daria.mp@demo.local',
+    buttonLabel: 'Войти как студент Морозова (МП)',
+    roleHint: 'student',
+  },
+  {
+    id: 'student-kirill',
+    email: 'kirill.meo@demo.local',
+    buttonLabel: 'Войти как студент Орлов (МЭО)',
+    roleHint: 'student',
+  },
+  {
     id: 'teacher-ivanova',
     email: 'teacher@demo.local',
     buttonLabel: 'Войти как преподаватель Иванова',

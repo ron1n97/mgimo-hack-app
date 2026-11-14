@@ -32,3 +32,20 @@
 
 - Unit: `profile-fields`, `today-digest`, demo personas.
 - Live: tip-cut api+web после merge; curl web/manifest/sw; demo-login + `/today/me`.
+
+
+## Live proof (`134b3e019cbb`)
+
+| Check | Result |
+|-------|--------|
+| Web `/today` | 200 |
+| `manifest.webmanifest` / `sw.js` | 200; SW `Service-Worker-Allowed: /`, no-cache |
+| Demo personas | 5 students + staff/teacher/admin |
+| `PATCH /auth/me` course as student | **400** immutable |
+| `/today/me` clubEventsToday | «Демо: что сегодня в клубе» |
+| `/today/me` clubDigestWeek | ≥3 items |
+| Bot | not started |
+| Worker | stopped for RAM during tip-cut |
+| IMAGE_TAG | `134b3e019cbb` (api+web) |
+
+CI Deploy compose-up failed on redis name conflict; calm manual `compose up -d --no-deps api web` used instead.

@@ -59,6 +59,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="min-h-dvh bg-cream text-ink">
         <DisclaimerBanner />
         <main>{children}</main>
+        {/* Install hint on login too — demo checks PWA before quick-login. */}
+        <PwaInstallPrompt />
       </div>
     );
   }

@@ -5,6 +5,11 @@
 
 ## [Unreleased]
 
+### Changed
+- Student academic profile fields are read-only (seed-bound); today hub shows club digest; PWA install hint + SW registration without PushManager gate.
+- Demo seed: five fictional students across faculties; clubs daily/weekly digest stubs.
+
+
 ### Added
 - Telegram egress proxy for RU VPS (undici `TELEGRAM_PROXY`, ADR 0007) + keepalive script
 - RUZ subgroup preference + lessonOid upsert + DB-first schedule SoT (ADR 0008/0009)

@@ -38,3 +38,4 @@ scripts/logs/
 
 # agent worktrees / local Claude
 .claude/
+.gstack/

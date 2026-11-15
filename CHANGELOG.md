@@ -5,6 +5,11 @@
 
 ## [Unreleased]
 
+### Fixed
+- `/clubs` weekly/today digest no longer empty without subscriptions (public stub feed).
+- Demo club «сегодня» stubs refresh `startsAt` on `seed:extras` (Moscow noon).
+- PWA SW no longer caches API 401s that bounced JWT sessions to login.
+
 ### Changed
 - Student academic profile fields are read-only (seed-bound); today hub shows club digest; PWA install hint + SW registration without PushManager gate.
 - Demo seed: five fictional students across faculties; clubs daily/weekly digest stubs.

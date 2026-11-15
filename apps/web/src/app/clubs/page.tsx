@@ -12,6 +12,7 @@ import {
   subscribeClub,
   unsubscribeClub,
 } from "@/lib/api";
+import { splitDigestFeed } from "@/lib/digest-split";
 import type { Club, ClubTag, DigestFeedItem, StudentInterests } from "@/lib/types";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
@@ -21,7 +22,10 @@ export default function ClubsPage() {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [tags, setTags] = useState<ClubTag[]>([]);
   const [interests, setInterests] = useState<StudentInterests | null>(null);
-  const [feed, setFeed] = useState<DigestFeedItem[]>([]);
+  /** Personalized feed (subscriptions). Empty until user picks tags/clubs. */
+  const [interestFeed, setInterestFeed] = useState<DigestFeedItem[]>([]);
+  /** All approved stubs — powers «Что сегодня» / «Недельный дайджест». */
+  const [publicFeed, setPublicFeed] = useState<DigestFeedItem[]>([]);
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -43,33 +47,15 @@ export default function ClubsPage() {
   );
 
   const { todayFeed, weekFeed } = useMemo(() => {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 1);
-    const weekEnd = new Date(start);
-    const day = start.getDay();
-    const mondayOffset = day === 0 ? -6 : 1 - day;
-    const monday = new Date(start);
-    monday.setDate(start.getDate() + mondayOffset);
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 7);
-    const today: DigestFeedItem[] = [];
-    const week: DigestFeedItem[] = [];
-    for (const item of feed) {
-      if (!item.startsAt) continue;
-      const t = new Date(item.startsAt).getTime();
-      if (t >= start.getTime() && t < end.getTime()) today.push(item);
-      if (t >= monday.getTime() && t < sunday.getTime()) week.push(item);
-    }
+    const { today, week } = splitDigestFeed(publicFeed);
     return { todayFeed: today, weekFeed: week };
-  }, [feed]);
+  }, [publicFeed]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [clubList, tagList, mine, digest] = await Promise.all([
+      const [clubList, tagList, mine, personalized, allDigest] = await Promise.all([
         fetchClubs({
           tag: activeTag ?? undefined,
           q: q.trim() || undefined,
@@ -77,11 +63,13 @@ export default function ClubsPage() {
         fetchTags(),
         fetchInterests(),
         fetchDigestFeed("subscribed"),
+        fetchDigestFeed(),
       ]);
       setClubs(clubList);
       setTags(tagList);
       setInterests(mine);
-      setFeed(digest);
+      setInterestFeed(personalized);
+      setPublicFeed(allDigest);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Ошибка загрузки");
     } finally {
@@ -103,7 +91,7 @@ export default function ClubsPage() {
       const updated = await setInterestTags([...next]);
       setInterests(updated);
       const digest = await fetchDigestFeed("subscribed");
-      setFeed(digest);
+      setInterestFeed(digest);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось сохранить интересы");
     } finally {
@@ -120,7 +108,7 @@ export default function ClubsPage() {
         : await subscribeClub(club.id);
       setInterests(updated);
       const digest = await fetchDigestFeed("subscribed");
-      setFeed(digest);
+      setInterestFeed(digest);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось подписаться");
     } finally {
@@ -369,10 +357,13 @@ export default function ClubsPage() {
       <section className="space-y-3">
         <h2 className="font-serif text-xl text-ink">Что сегодня</h2>
         <p className="text-sm text-ink-muted">
-          Ежедневный дайджест по подпискам (stub-лента, если ingest ещё нет).
+          Анонсы клубов на сегодня (stub-лента, если live-ingest ещё нет). Не требует подписки.
         </p>
         {todayFeed.length === 0 ? (
-          <p className="text-sm text-ink-muted">На сегодня анонсов нет.</p>
+          <p className="text-sm text-ink-muted">
+            На сегодня анонсов нет
+            {weekFeed.length ? ` · смотрите недельный дайджест ниже (${weekFeed.length})` : ""}.
+          </p>
         ) : (
           <ul className="space-y-2">
             {todayFeed.map((item) => (
@@ -427,14 +418,14 @@ export default function ClubsPage() {
         <p className="text-sm text-ink-muted">
           Только одобренные события (модерация до афиши). Скрапер TG — отдельно.
         </p>
-        {feed.length === 0 ? (
+        {interestFeed.length === 0 ? (
           <EmptyState
             title="Пока пусто"
-            description="Подпишитесь на теги или клубы — сюда попадут одобренные анонсы."
+            description="Подпишитесь на теги или клубы — сюда попадут одобренные анонсы. Общий дайджест — в блоках выше."
           />
         ) : (
           <ul className="space-y-3">
-            {feed.map((item) => (
+            {interestFeed.map((item) => (
               <li
                 key={item.id}
                 className="rounded-2xl border border-cream-deep bg-white/50 px-4 py-3"

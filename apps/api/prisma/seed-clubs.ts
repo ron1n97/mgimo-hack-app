@@ -148,35 +148,44 @@ export async function seedDemoClubEvents(
 
   const sourceId = club.sources[0]?.id;
   const now = Date.now();
-  // Noon Moscow today — avoids UTC evening flipping the MSK calendar day.
-  const moscowNoon = new Date(
-    new Date().toLocaleString('en-US', { timeZone: 'Europe/Moscow' }),
-  );
-  moscowNoon.setHours(12, 0, 0, 0);
+  // Moscow calendar noon as UTC instant (09:00Z ≈ 12:00 MSK in winter).
+  // Re-run seed:extras must refresh startsAt — otherwise "сегодня" freezes on first seed day.
+  const mskDay = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Moscow',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+  const [y, m, d] = mskDay.split('-').map(Number);
+  const moscowNoon = new Date(Date.UTC(y, m - 1, d, 9, 0, 0));
   const stubs = [
     {
       title: 'Демо: что сегодня в клубе',
       body: 'Ежедневный дайджест — stub для экрана «Сегодня» (без live-ingest).',
       startsAt: moscowNoon,
       moderationStatus: EventModerationStatus.APPROVED,
+      refreshStartsAt: true,
     },
     {
       title: 'Демо: открытая тренировка ССК',
       body: 'Кандидат из дайджеста — ждёт модерации коллеги перед афишей.',
       startsAt: new Date(now + 3 * 24 * 3600 * 1000),
       moderationStatus: EventModerationStatus.PENDING,
+      refreshStartsAt: true,
     },
     {
       title: 'Демо: товарищеский матч',
       body: 'Недельный дайджест — одобрено, видно в ленте и на «Сегодня».',
       startsAt: new Date(now + 4 * 24 * 3600 * 1000),
       moderationStatus: EventModerationStatus.APPROVED,
+      refreshStartsAt: true,
     },
     {
       title: 'Демо: недельный обзор клубов',
       body: 'Сводка на неделю: встречи, дедлайны заявок в клубы, анонсы.',
       startsAt: new Date(now + 5 * 24 * 3600 * 1000),
       moderationStatus: EventModerationStatus.APPROVED,
+      refreshStartsAt: true,
     },
   ] as const;
 
@@ -184,7 +193,26 @@ export async function seedDemoClubEvents(
     const existing = await prisma.eventCandidate.findFirst({
       where: { title: stub.title },
     });
-    if (existing) continue;
+    if (existing) {
+      if (stub.refreshStartsAt) {
+        await prisma.eventCandidate.update({
+          where: { id: existing.id },
+          data: {
+            startsAt: stub.startsAt,
+            body: stub.body,
+            moderationStatus: stub.moderationStatus,
+            ...(stub.moderationStatus === EventModerationStatus.APPROVED
+              ? {
+                  moderatedAt: existing.moderatedAt ?? new Date(),
+                  moderatedByUserId: existing.moderatedByUserId ?? opts.staffUserId,
+                  publishedAt: existing.publishedAt ?? new Date(),
+                }
+              : {}),
+          },
+        });
+      }
+      continue;
+    }
     await prisma.eventCandidate.create({
       data: {
         clubId: club.id,

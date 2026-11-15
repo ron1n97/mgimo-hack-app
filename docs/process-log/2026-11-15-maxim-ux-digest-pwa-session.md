@@ -30,3 +30,17 @@
 - VPS prune images (disk 100% → ~58%).
 - Tip-cut api+web на новый tip после push.
 
+
+## Live tip-cut (`2836c65d421d`)
+
+| Check | Result |
+|-------|--------|
+| Images streamed | api/web/worker/bot `2836c65d421d` |
+| CI `compose up` | **fail** redis name conflict (known) |
+| Manual | `compose up -d --no-deps --force-recreate api web` |
+| `DEMO_QUICK_LOGIN` | was wiped by PROD_ENV rewrite → restored + `gh secret set PROD_ENV` |
+| `/today/me` | today stub + week 4 |
+| `/clubs` public digest | «Что сегодня» + «Недельный» без подписок |
+| SW | `dekanat-web-v3` |
+| Disk prune | 100% → ~58% before tip-cut |
+

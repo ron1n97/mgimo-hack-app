@@ -174,5 +174,7 @@ jobs:
       - name: Compose up
         run: |
           HOST="${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
+          # Avoid redis/postgres name-conflict recreate; tip-cut product surfaces only.
+          # Bot/worker stay off on the 14G demo VPS unless explicitly started.
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes "$HOST" \
-            'cd /opt/mgimo-hack-app && docker compose up -d --remove-orphans && docker compose ps'
+            'cd /opt/mgimo-hack-app && docker compose up -d postgres redis && docker compose up -d --no-deps --force-recreate api web && docker compose ps'

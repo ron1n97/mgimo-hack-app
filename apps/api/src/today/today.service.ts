@@ -85,8 +85,9 @@ export class TodayService {
         moderationStatus: EventModerationStatus.APPROVED,
         startsAt: { gte: weekStart, lte: weekEnd },
       },
-      orderBy: [{ startsAt: 'asc' }, { createdAt: 'desc' }],
-      take: 40,
+      // Newest first + high cap so TG ingest for ~70 clubs still fills «сегодня».
+      orderBy: [{ startsAt: 'desc' }, { createdAt: 'desc' }],
+      take: 200,
       include: { club: { select: { id: true, name: true } } },
     });
     const mapped = clubEvents.map((e) => ({

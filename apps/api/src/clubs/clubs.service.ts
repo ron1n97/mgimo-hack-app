@@ -28,6 +28,7 @@ import {
   syncTelegramDigest,
   type TelegramIngestResult,
 } from './telegram-ingest';
+import { moscowDateString, moscowWeekBounds } from '../today/today-digest';
 
 const clubInclude = {
   tags: { include: { tag: true } },
@@ -296,11 +297,17 @@ export class ClubsService {
     actorUserId: string;
     personalized?: boolean;
   }) {
+    const week = moscowWeekBounds(moscowDateString());
+    const weekStart = new Date(`${week.from}T00:00:00+03:00`);
+    const weekEnd = new Date(`${week.to}T23:59:59.999+03:00`);
     const events = await this.prisma.eventCandidate.findMany({
-      where: { moderationStatus: EventModerationStatus.APPROVED },
-      // Newest first — TG ingest writes past publishedAt; asc+take hid the feed.
+      where: {
+        moderationStatus: EventModerationStatus.APPROVED,
+        startsAt: { gte: weekStart, lte: weekEnd },
+      },
+      // Newest first within the current MSK week (avoids cap dropping «сегодня»).
       orderBy: [{ startsAt: 'desc' }, { createdAt: 'desc' }],
-      take: 80,
+      take: 200,
       include: {
         club: {
           include: { tags: { include: { tag: true } } },

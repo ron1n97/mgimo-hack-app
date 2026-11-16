@@ -8,9 +8,11 @@ const CRON = process.env.RUZ_SYNC_CRON ?? '0 */6 * * *';
 const DIGEST_CRON = process.env.DIGEST_INGEST_CRON ?? '30 */6 * * *';
 const DIGEST_TG_CRON = process.env.DIGEST_TG_SYNC_CRON ?? '15 */2 * * *';
 const ONCE = process.argv.includes('--once');
-const DIGEST_ONCE =
-  process.argv.includes('--digest-once') || process.argv.includes('--digest');
 const DIGEST_TG_ONLY = process.argv.includes('--digest-tg');
+const DIGEST_ONCE =
+  process.argv.includes('--digest-once') ||
+  process.argv.includes('--digest') ||
+  DIGEST_TG_ONLY;
 
 async function runSync(label: string): Promise<void> {
   console.log(`[worker] sync start (${label}) at ${new Date().toISOString()}`);
@@ -70,6 +72,11 @@ async function runDigest(label: string): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  if (DIGEST_TG_ONLY && !ONCE) {
+    await runTgDigest('once');
+    return;
+  }
+
   if (DIGEST_ONCE && !ONCE) {
     await runDigest('once');
     return;

@@ -96,16 +96,17 @@ describe('digest-news-feed', () => {
     const todayRow = rows.find((r) => r.seedKey === 'today-open');
     expect(todayRow).toBeDefined();
     expect(moscowDateString(todayRow!.startsAt)).toBe(moscowDateString(now));
-    expect(todayRow!.url).toMatch(/t\.me\/sskmgimo/);
+    expect(todayRow!.url).toMatch(/t\.me\/sskmgimo#seed\/today-open/);
 
     const nso = rows.find((r) => r.seedKey === 'week-nso');
-    expect(nso?.url).toMatch(/vk\.com\/nso/);
+    expect(nso?.url).toMatch(/vk\.com\/nso.*#seed\/week-nso/);
     expect(nso?.sourceId).toBe('s-vk');
 
     for (const row of rows) {
       const day = moscowDateString(row.startsAt);
       expect(day >= from && day <= to).toBe(true);
       expect(row.url).toBeTruthy();
+      expect(row.url).toMatch(/#seed\//);
       expect(row.url).toMatch(/vk\.com\/|t\.me\//);
     }
   });

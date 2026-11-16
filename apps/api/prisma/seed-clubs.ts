@@ -194,6 +194,10 @@ export async function seedDemoClubEvents(
     const existing = await prisma.eventCandidate.findFirst({
       where: { title: stub.title },
     });
+    const baseUrl = club.sources[0]?.url?.replace(/#.*$/, '') ?? null;
+    const stubUrl = baseUrl
+      ? `${baseUrl}#demo/${encodeURIComponent(stub.title)}`
+      : null;
     if (existing) {
       if (stub.refreshStartsAt) {
         await prisma.eventCandidate.update({
@@ -201,6 +205,7 @@ export async function seedDemoClubEvents(
           data: {
             startsAt: stub.startsAt,
             body: stub.body,
+            url: stubUrl ?? undefined,
             moderationStatus: stub.moderationStatus,
             ...(stub.moderationStatus === EventModerationStatus.APPROVED
               ? {
@@ -220,7 +225,7 @@ export async function seedDemoClubEvents(
         sourceId,
         title: stub.title,
         body: stub.body,
-        url: club.sources[0]?.url,
+        url: stubUrl,
         startsAt: stub.startsAt,
         moderationStatus: stub.moderationStatus,
         ...(stub.moderationStatus === EventModerationStatus.APPROVED

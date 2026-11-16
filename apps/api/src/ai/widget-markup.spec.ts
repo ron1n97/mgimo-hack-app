@@ -79,4 +79,21 @@ describe('widget markup DSL', () => {
       ),
     ).toBe('Пара Право завтра');
   });
+
+  it('strips orphan list bullets and folds parenthetical into subtitle', () => {
+    const input = [
+      '**Пары:**',
+      '- {{widget:lesson|id=les1|title=Право|time=09:00-10:20}}',
+      '(Потапов Н.А., зал 7)',
+      '- {{widget:lesson|id=les2|title=Японский|time=10:35-11:55}}',
+      '(Сумская Н.В., ауд. 2051)',
+    ].join('\n');
+
+    const { parts, widgets } = parseAssistantMarkup(input, 'STUDENT');
+    expect(widgets).toHaveLength(2);
+    expect(widgets[0].subtitle).toBe('Потапов Н.А., зал 7');
+    expect(widgets[1].subtitle).toBe('Сумская Н.В., ауд. 2051');
+    expect(parts.map((p) => p.type)).toEqual(['text', 'widget', 'widget']);
+    expect(parts[0]).toMatchObject({ type: 'text', text: '**Пары:**' });
+  });
 });

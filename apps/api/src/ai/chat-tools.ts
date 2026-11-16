@@ -93,13 +93,16 @@ export function toolsForRole(role: string): ChatToolDefinition[] {
 export function widgetDslInstructions(): string {
   return [
     'Когда упоминаешь конкретные сущности кабинета, вставляй виджет-теги (не markdown-ссылки):',
-    '{{widget:lesson|id=ID|title=Название|time=09:00-10:30}}',
+    '{{widget:lesson|id=ID|title=Название|time=09:00-10:30|subtitle=Преподаватель, ауд.}}',
     '{{widget:request|id=ID|title=Тема|status=SUBMITTED}}',
     '{{widget:grade|id=ID|title=Предмет}}',
     '{{widget:task|id=ID|title=Что сделать}}',
     '{{widget:event|id=ID|title=Событие}}',
     '{{widget:notification|id=ID|title=Уведомление}}',
     'Шорткаты: [[today]] [[schedule]] [[lesson:id=...|title=...]] [[request:id=...]]',
+    'Преподавателя и аудиторию клади в subtitle виджета, не отдельной строкой в скобках.',
+    'Не ставь маркеры списка «-» перед виджетами — карточка виджета уже элемент списка.',
+    'Заголовки секций можно выделять **жирным**.',
     'Сначала вызови нужные tools, потом ответь кратко по-русски и вставь виджеты по фактам tools.',
     'Не выдумывай id, оценки, статусы. Без угроз отчисления как факта.',
   ].join(' ');

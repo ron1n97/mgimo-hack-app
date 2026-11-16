@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start --port 3000",
     "lint": "next lint",
-    "test": "node --test src/lib/sw-cache-policy.test.mjs src/lib/digest-split.test.mjs"
+    "test": "node --test src/lib/sw-cache-policy.test.mjs src/lib/digest-split.test.mjs src/lib/assistant-text.test.mjs"
   },
   "dependencies": {
     "next": "^15.1.0",

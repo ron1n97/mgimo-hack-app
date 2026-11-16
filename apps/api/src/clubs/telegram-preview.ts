@@ -212,8 +212,11 @@ export function extractEventAt(
   // Optional clock after a date token: "в 16:00" / "16:00" / "16.00".
   const timeTail = '(?:\\s*(?:в|во)?\\s+(\\d{1,2})[:.](\\d{2}))?';
 
+  // Whole-word «в/во» only — not the tail of «клубов», «новостей», …
   const precededByVo = (index: number): boolean =>
-    /(?:в|во)\s+$/.test(lower.slice(Math.max(0, index - 4), index));
+    /(?:^|[^\p{L}])(?:в|во)\s+$/u.test(
+      lower.slice(Math.max(0, index - 8), index),
+    );
 
   const withMonthTime = new RegExp(
     `(\\d{1,2})\\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\\s+(\\d{4}))?${timeTail}`,

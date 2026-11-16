@@ -77,6 +77,13 @@ describe('telegram-preview', () => {
     );
   });
 
+  it('still parses dd.mm after words ending in в', () => {
+    const published = new Date('2026-11-16T10:00:00.000Z');
+    expect(extractEventAt('Анонс клубов 20.11 в 18:00', published)).toEqual(
+      mskDateTimeToUtc(2026, 11, 20, 18, 0),
+    );
+  });
+
   it('keeps same-year past dates (no false next-year wrap)', () => {
     const published = new Date('2026-11-16T10:00:00.000Z');
     expect(extractEventAt('Итоги встречи 5 ноября', published)).toEqual(

@@ -95,6 +95,7 @@ export class TodayService {
       title: e.title,
       body: e.body,
       url: e.url,
+      imageUrl: e.imageUrl,
       startsAt: e.startsAt,
       club: e.club,
     }));

@@ -406,6 +406,7 @@ function mapClubEvent(raw: Record<string, unknown>): TodayClubEvent {
     title: String(raw.title ?? ""),
     body: raw.body == null ? null : String(raw.body),
     url: raw.url == null ? null : String(raw.url),
+    imageUrl: raw.imageUrl == null ? null : String(raw.imageUrl),
     startsAt: raw.startsAt == null ? null : String(raw.startsAt),
     club: club
       ? { id: String(club.id ?? ""), name: String(club.name ?? "") }
@@ -849,7 +850,9 @@ export async function fetchDigestFeed(
       title: String(row.title ?? ""),
       body: (row.body as string | null | undefined) ?? null,
       url: (row.url as string | null | undefined) ?? null,
+      imageUrl: (row.imageUrl as string | null | undefined) ?? null,
       startsAt: row.startsAt ? String(row.startsAt) : null,
+      publishedAt: row.publishedAt ? String(row.publishedAt) : null,
       club: club
         ? { id: String(club.id), name: String(club.name ?? "") }
         : null,

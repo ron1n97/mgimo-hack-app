@@ -1,7 +1,7 @@
+/** Keep in sync with apps/api/src/clubs/telegram-preview.ts. */
 /**
  * Parse public Telegram channel preview pages (https://t.me/s/<username>).
  * No Bot API token required — HTML widget scrape only.
- * Keep in sync with apps/api/src/clubs/telegram-preview.ts.
  */
 
 export type TelegramPreviewPost = {
@@ -9,9 +9,13 @@ export type TelegramPreviewPost = {
   postId: string;
   url: string;
   publishedAt: Date;
+  /** Event/meeting time if parsed from text; else null. */
+  eventAt: Date | null;
   title: string;
+  /** Short plain description for cards (not full post). */
   body: string;
   text: string;
+  imageUrl: string | null;
 };
 
 const ENTITY: Record<string, string> = {
@@ -21,6 +25,21 @@ const ENTITY: Record<string, string> = {
   quot: '"',
   apos: "'",
   nbsp: ' ',
+};
+
+const MONTHS: Record<string, number> = {
+  января: 1,
+  февраля: 2,
+  марта: 3,
+  апреля: 4,
+  мая: 5,
+  июня: 6,
+  июля: 7,
+  августа: 8,
+  сентября: 9,
+  октября: 10,
+  ноября: 11,
+  декабря: 12,
 };
 
 export function decodeHtmlEntities(input: string): string {
@@ -75,14 +94,161 @@ export function telegramPreviewUrl(usernameOrUrl: string): string | null {
   return `https://t.me/s/${username}`;
 }
 
+function isNoiseLine(line: string): boolean {
+  const t = line.trim();
+  if (!t) return true;
+  if (/^https?:\/\//i.test(t)) return true;
+  if (/^#[\wа-яё]+(\s+#[\wа-яё]+)*$/i.test(t)) return true;
+  if (/^(на связи|подписывайтесь|жми|подробнее)/i.test(t)) return true;
+  // emoji / symbol only
+  if (/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\s⚡🔥👉➡️🔗🍁🎾😍❤️]+$/u.test(t)) {
+    return true;
+  }
+  return false;
+}
+
+function cleanLine(line: string): string {
+  return line
+    .replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\s⚡🔥👉➡️🔗🍁🎾😍❤️«»]+/u, '')
+    .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}⚡🔥👉➡️🔗🍁🎾😍❤️]+$/u, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+/** Title + short body for digest cards. */
 export function titleAndBodyFromText(text: string): { title: string; body: string } {
   const lines = text
     .split(/\n+/)
-    .map((l) => l.trim())
-    .filter(Boolean);
-  const title = (lines[0] ?? 'Пост').slice(0, 140);
-  const body = lines.slice(1).join('\n').slice(0, 2000);
+    .map((l) => cleanLine(l))
+    .filter((l) => !isNoiseLine(l));
+
+  const title = (lines[0] ?? 'Анонс').slice(0, 100);
+  const body = lines
+    .slice(1)
+    .join(' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+    .slice(0, 280);
   return { title, body };
+}
+
+/** First channel photo URL in a message chunk (skip emoji / tiny icons). */
+export function extractImageUrl(chunk: string): string | null {
+  const photoWrap = /tgme_widget_message_photo_wrap[^>]*style="([^"]*)"/i.exec(
+    chunk,
+  );
+  if (photoWrap) {
+    const url = /background-image:url\('([^']+)'\)/i.exec(photoWrap[1])?.[1];
+    if (url && /telesco\.pe|cdn\d*\.telegram/i.test(url)) return url;
+  }
+  const videoThumb =
+    /tgme_widget_message_video_thumb[^>]*style="([^"]*)"/i.exec(chunk);
+  if (videoThumb) {
+    const url = /background-image:url\('([^']+)'\)/i.exec(videoThumb[1])?.[1];
+    if (url && /telesco\.pe|cdn\d*\.telegram/i.test(url)) return url;
+  }
+  return null;
+}
+
+function mskParts(d: Date): { y: number; m: number; day: number } {
+  const fmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Moscow',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const [y, m, day] = fmt.format(d).split('-').map(Number);
+  return { y, m, day };
+}
+
+/** Interpret civil MSK date/time as UTC Date. */
+export function mskDateTimeToUtc(
+  year: number,
+  month: number,
+  day: number,
+  hour = 12,
+  minute = 0,
+): Date {
+  return new Date(
+    Date.UTC(year, month - 1, day, hour - 3, minute, 0),
+  );
+}
+
+/**
+ * Pull event/meeting datetime from Russian club-post text.
+ * Falls back to null when nothing reliable is found.
+ */
+export function extractEventAt(
+  text: string,
+  publishedAt: Date,
+): Date | null {
+  const pub = mskParts(publishedAt);
+  const lower = text.toLowerCase().replace(/\s+/g, ' ');
+
+  const withMonthTime =
+    /(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+(\d{4}))?(?:\s*(?:в|во)?\s+(\d{1,2})[:.](\d{2}))?/i.exec(
+      lower,
+    );
+  if (withMonthTime) {
+    const day = Number(withMonthTime[1]);
+    const month = MONTHS[withMonthTime[2].toLowerCase()];
+    let year = withMonthTime[3] ? Number(withMonthTime[3]) : pub.y;
+    const hour = withMonthTime[4] ? Number(withMonthTime[4]) : 12;
+    const minute = withMonthTime[5] ? Number(withMonthTime[5]) : 0;
+    if (!withMonthTime[3]) {
+      // If date is long before publish, assume next year (Dec→Jan wrap).
+      let candidate = mskDateTimeToUtc(year, month, day, hour, minute);
+      if (candidate.getTime() < publishedAt.getTime() - 2 * 24 * 3600 * 1000) {
+        year += 1;
+        candidate = mskDateTimeToUtc(year, month, day, hour, minute);
+      }
+      return candidate;
+    }
+    return mskDateTimeToUtc(year, month, day, hour, minute);
+  }
+
+  const numeric =
+    /(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?(?:\s*(?:в|во)?\s+(\d{1,2})[:.](\d{2}))?/.exec(
+      lower,
+    );
+  if (numeric) {
+    const day = Number(numeric[1]);
+    const month = Number(numeric[2]);
+    let year = numeric[3]
+      ? Number(numeric[3].length === 2 ? `20${numeric[3]}` : numeric[3])
+      : pub.y;
+    const hour = numeric[4] ? Number(numeric[4]) : 12;
+    const minute = numeric[5] ? Number(numeric[5]) : 0;
+    let candidate = mskDateTimeToUtc(year, month, day, hour, minute);
+    if (
+      !numeric[3] &&
+      candidate.getTime() < publishedAt.getTime() - 2 * 24 * 3600 * 1000
+    ) {
+      year += 1;
+      candidate = mskDateTimeToUtc(year, month, day, hour, minute);
+    }
+    return candidate;
+  }
+
+  const relative =
+    /(сегодня|завтра)(?:\s*(?:в|во)?\s+(\d{1,2})[:.](\d{2}))?/.exec(lower);
+  if (relative) {
+    const parts = mskParts(publishedAt);
+    const offset = relative[1] === 'завтра' ? 1 : 0;
+    // Civil MSK day arithmetic via UTC date components (no TZ shift).
+    const civil = new Date(Date.UTC(parts.y, parts.m - 1, parts.day + offset));
+    const hour = relative[2] ? Number(relative[2]) : 12;
+    const minute = relative[3] ? Number(relative[3]) : 0;
+    return mskDateTimeToUtc(
+      civil.getUTCFullYear(),
+      civil.getUTCMonth() + 1,
+      civil.getUTCDate(),
+      hour,
+      minute,
+    );
+  }
+
+  return null;
 }
 
 /**
@@ -106,16 +272,23 @@ export function parseTelegramPreviewHtml(html: string): TelegramPreviewPost[] {
       /tgme_widget_message_text[^>]*>([\s\S]*?)<\/div>/.exec(chunk)?.[1] ?? '';
     if (!datetime) continue;
     const publishedAt = new Date(datetime);
+    if (Number.isNaN(publishedAt.getTime())) continue;
     const text = stripHtml(textHtml);
-    if (Number.isNaN(publishedAt.getTime()) || !text) continue;
-    const { title, body } = titleAndBodyFromText(text);
+    const imageUrl = extractImageUrl(chunk);
+    if (!text && !imageUrl) continue;
+    const { title, body } = titleAndBodyFromText(
+      text || 'Фото-анонс в канале',
+    );
+    const eventAt = text ? extractEventAt(text, publishedAt) : null;
     posts.push({
       postId,
       url: `https://t.me/${postId}`,
       publishedAt,
+      eventAt,
       title,
       body,
-      text,
+      text: text || title,
+      imageUrl,
     });
   }
 

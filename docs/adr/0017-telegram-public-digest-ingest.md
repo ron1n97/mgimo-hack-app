@@ -12,7 +12,8 @@
 ## Решение
 - Парсить HTML preview `t.me/s/…` (без BotFather token).
 - Источники: `ClubSource` kind=`TELEGRAM`, `enabled`, клуб с `digestEnabled` (или source без клуба); до ~120 источников за прогон.
-- Upsert `EventCandidate` по уникальному `url` (`https://t.me/<channel>/<id>`), `startsAt` = время поста, статус **APPROVED** (digestEnabled = staff-gate).
+- Upsert `EventCandidate` по уникальному `url` (`https://t.me/<channel>/<id>`), статус **APPROVED** (digestEnabled = staff-gate).
+- Карточка дайджеста: короткий title/body, опциональный `imageUrl` (photo wrap CDN), `startsAt` = дата/время события из текста (`23 ноября в 16:00`, `завтра в 18:00`, …) иначе время публикации.
 - Уже **REJECTED** посты не переутверждаем.
 - Staff (JWT): `POST /staff/digest/ingest-telegram`.
 - Worker: in-process Prisma ingest (`syncTelegramDigestLocal`) — **без** публичного `/internal/*` shared-secret endpoint.

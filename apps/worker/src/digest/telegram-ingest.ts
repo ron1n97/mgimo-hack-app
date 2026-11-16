@@ -152,9 +152,11 @@ export async function syncTelegramDigest(
           clubId: source.clubId,
           sourceId: source.id,
           title: post.title,
-          body: post.body || post.text.slice(0, 2000),
+          body: post.body || null,
           url: post.url,
-          startsAt: post.publishedAt,
+          imageUrl: post.imageUrl,
+          // Prefer event/meeting time from text; else publish time for week feed.
+          startsAt: post.eventAt ?? post.publishedAt,
           moderationStatus: EventModerationStatus.APPROVED,
           publishedAt: post.publishedAt,
           moderatedAt: now,

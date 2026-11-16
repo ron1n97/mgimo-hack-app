@@ -55,7 +55,7 @@ export class AiController {
 
     try {
       await this.ai.chatStream(user.userId, user.role, dto, write);
-    } catch (err) {
+    } catch {
       write({
         type: 'assistant',
         content: 'Не удалось получить ответ ассистента.',
@@ -64,7 +64,6 @@ export class AiController {
         source: 'stub',
         disclaimer: 'Ошибка потока ИИ.',
         steps: [],
-        error: err instanceof Error ? err.message : String(err),
       });
       write({ type: 'done' });
     } finally {

@@ -30,7 +30,6 @@ export type ChatStreamEvent =
       source: 'zcode' | 'stub';
       disclaimer: string;
       steps: ChatStep[];
-      error?: string;
     }
   | { type: 'done' };
 
@@ -122,6 +121,7 @@ export async function completeChatTurn(
       steps: steps.map((s) => ({ ...s, status: 'done' as const })),
       error,
     };
+    // Never stream internal LLM/provider diagnostics to the client.
     emit({
       type: 'assistant',
       content: result.content,
@@ -130,7 +130,6 @@ export async function completeChatTurn(
       source: result.source,
       disclaimer: result.disclaimer,
       steps: result.steps,
-      error: result.error,
     });
     emit({ type: 'done' });
     return result;

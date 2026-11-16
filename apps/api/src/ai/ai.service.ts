@@ -95,7 +95,14 @@ export class AiService {
     dto: ChatDto,
     onEvent: (event: ChatStreamEvent) => void,
   ) {
-    await this.runChatTurn(userId, role, dto, onEvent);
+    try {
+      await this.runChatTurn(userId, role, dto, onEvent);
+    } catch (err) {
+      this.logger.warn(
+        `chatStream failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      throw err;
+    }
   }
 
   private async runChatTurn(

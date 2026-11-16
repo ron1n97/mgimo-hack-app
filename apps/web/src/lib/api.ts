@@ -590,7 +590,6 @@ export type AiChatStreamEvent =
       source: "zcode" | "stub";
       disclaimer?: string;
       steps?: AiHarnessStep[];
-      error?: string;
     }
   | { type: "done" };
 

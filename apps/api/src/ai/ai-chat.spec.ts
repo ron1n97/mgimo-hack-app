@@ -153,7 +153,37 @@ describe('completeChatTurn', () => {
     expect(
       stepEvents.find((e) => e.step?.tool === 'get_grades')?.step?.label,
     ).toBe('Проверяю оценки и долги');
-    expect(events.some((e) => e.type === 'assistant')).toBe(true);
+    const assistant = events.find((e) => e.type === 'assistant') as
+      | { type: 'assistant'; error?: string }
+      | undefined;
+    expect(assistant).toBeDefined();
+    expect(assistant).not.toHaveProperty('error');
     expect(events.some((e) => e.type === 'done')).toBe(true);
+  });
+
+  it('keeps provider error server-side and omits it from stream assistant events', async () => {
+    const events: Array<Record<string, unknown>> = [];
+    const fetchImpl = jest.fn(async () => {
+      return new Response('upstream secret leaked body', { status: 401 });
+    }) as unknown as typeof fetch;
+
+    const result = await completeChatTurn({
+      apiKey: 'secret',
+      baseUrl: 'https://example.test/v1',
+      model: 'glm-5.3',
+      role: 'STUDENT',
+      userMessage: 'пары',
+      runTool: async () => ({}),
+      stubReply: () => 'STUB_OK',
+      fetchImpl,
+      onEvent: (e) => events.push(e as never),
+    });
+
+    expect(result.source).toBe('stub');
+    expect(result.error).toMatch(/http_401/);
+    expect(result.error).toMatch(/upstream secret/);
+    const assistant = events.find((e) => e.type === 'assistant');
+    expect(assistant).toMatchObject({ content: 'STUB_OK', source: 'stub' });
+    expect(assistant).not.toHaveProperty('error');
   });
 });

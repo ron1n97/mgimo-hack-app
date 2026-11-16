@@ -51,6 +51,39 @@ export function tidyAssistantText(text: string): string {
     .trim();
 }
 
+const WIDGET_DSL = /\{\{widget:[^}]+\}\}/g;
+const SHORTCUT_DSL = /\[\[[a-z]+(?::[^\]]*)?\]\]/gi;
+
+/** Strip widget DSL + light markdown markers for typewriter preview. */
+export function stripAssistantMarkup(text: string): string {
+  return tidyAssistantText(
+    text
+      .replace(WIDGET_DSL, "")
+      .replace(SHORTCUT_DSL, "")
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/\*([^*]+)\*/g, "$1"),
+  );
+}
+
+/**
+ * Plain text for harness typewriter — never flash raw `{{widget}}` / `[[today]]`.
+ * Empty string means skip typing and show the finished message immediately.
+ */
+export function typingPlainFromParts(
+  parts: TidiablePart[] | undefined,
+  fallbackText: string,
+): string {
+  if (parts?.length) {
+    const tidied = tidyAssistantParts(parts);
+    return tidied
+      .filter((p): p is Extract<TidiablePart, { type: "text" }> => p.type === "text")
+      .map((p) => stripAssistantMarkup(p.text))
+      .filter(Boolean)
+      .join("\n\n");
+  }
+  return stripAssistantMarkup(fallbackText);
+}
+
 export type TidiablePart =
   | { type: "text"; text: string }
   | {

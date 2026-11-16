@@ -1,8 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { typingPlainFromParts } from "@/lib/assistant-text";
 import type { AssistantPart } from "@/lib/widget-markup";
 import { AssistantMessage } from "./AssistantMessage";
+
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined" || !window.matchMedia) return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 export function AssistantReveal({
   parts,
@@ -24,39 +30,43 @@ export function AssistantReveal({
   onTypingDone?: () => void;
   onNavigate?: () => void;
 }) {
-  const [typed, setTyped] = useState(animateTyping ? "" : fallbackText);
-  const [typingDone, setTypingDone] = useState(!animateTyping);
+  const plain = typingPlainFromParts(parts, fallbackText);
+  const shouldAnimate =
+    animateTyping && plain.length > 0 && !prefersReducedMotion();
+
+  const [typed, setTyped] = useState(shouldAnimate ? "" : plain);
+  const [typingDone, setTypingDone] = useState(!shouldAnimate);
   const onTypingDoneRef = useRef(onTypingDone);
   onTypingDoneRef.current = onTypingDone;
 
   useEffect(() => {
-    if (!animateTyping) {
-      setTyped(fallbackText);
+    const nextPlain = typingPlainFromParts(parts, fallbackText);
+    const animate =
+      animateTyping && nextPlain.length > 0 && !prefersReducedMotion();
+
+    if (!animate) {
+      setTyped(nextPlain);
       setTypingDone(true);
+      if (animateTyping) onTypingDoneRef.current?.();
       return;
     }
-    const full = fallbackText || "";
-    if (!full) {
-      setTypingDone(true);
-      onTypingDoneRef.current?.();
-      return;
-    }
+
     setTyped("");
     setTypingDone(false);
     let i = 0;
     const tick = window.setInterval(() => {
-      i += Math.max(1, Math.ceil(full.length / 80));
-      if (i >= full.length) {
-        setTyped(full);
+      i += Math.max(1, Math.ceil(nextPlain.length / 80));
+      if (i >= nextPlain.length) {
+        setTyped(nextPlain);
         setTypingDone(true);
         window.clearInterval(tick);
         onTypingDoneRef.current?.();
       } else {
-        setTyped(full.slice(0, i));
+        setTyped(nextPlain.slice(0, i));
       }
     }, 18);
     return () => window.clearInterval(tick);
-  }, [fallbackText, animateTyping]);
+  }, [fallbackText, parts, animateTyping]);
 
   const secs =
     durationMs != null ? Math.max(1, Math.round(durationMs / 1000)) : null;

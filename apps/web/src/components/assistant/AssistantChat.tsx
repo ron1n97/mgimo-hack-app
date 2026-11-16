@@ -231,7 +231,9 @@ export function AssistantChat() {
               ))}
 
               {busy ? (
-                <p className="text-xs text-ink-muted animate-pulse">Думаю…</p>
+                <p className="text-xs text-ink-muted animate-pulse">
+                  Думаю… обычно 15–30 сек (Z Code)
+                </p>
               ) : null}
               {error ? (
                 <p className="rounded-xl bg-copper/10 px-3 py-2 text-xs text-copper">

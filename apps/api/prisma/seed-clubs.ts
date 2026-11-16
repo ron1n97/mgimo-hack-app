@@ -11,6 +11,7 @@ import {
 import * as fs from 'fs';
 import * as path from 'path';
 import { detectSourceKind, slugifyTag } from '../src/clubs/club-slug';
+import { materializeDigestNewsFeed } from '../src/clubs/digest-news-feed';
 
 type RegistryRow = {
   name: string;
@@ -233,6 +234,79 @@ export async function seedDemoClubEvents(
     });
   }
 
+  await seedDigestNewsFeed(prisma, { staffUserId: opts.staffUserId });
+
   // Ensure membership role type is referenced for prisma client tree-shake safety
   void ClubMembershipRole.OWNER;
+}
+
+/**
+ * Durable MSK-week news-like digest rows with links to club VK/TG sources.
+ * Idempotent upsert by title; refreshes startsAt on every seed / seed:extras.
+ */
+export async function seedDigestNewsFeed(
+  prisma: PrismaClient,
+  opts: { staffUserId: string; now?: Date },
+) {
+  const clubs = await prisma.club.findMany({
+    where: { status: ClubStatus.CONFIRMED },
+    include: { sources: true },
+    orderBy: { name: 'asc' },
+  });
+  if (!clubs.length) return { upserted: 0 };
+
+  const rows = materializeDigestNewsFeed(
+    clubs.map((c) => ({
+      id: c.id,
+      name: c.name,
+      sources: c.sources.map((s) => ({
+        id: s.id,
+        kind: s.kind,
+        url: s.url,
+        enabled: s.enabled,
+      })),
+    })),
+    opts.now ?? new Date(),
+  );
+
+  let upserted = 0;
+  for (const row of rows) {
+    const existing = await prisma.eventCandidate.findFirst({
+      where: { title: row.title },
+    });
+    if (existing) {
+      await prisma.eventCandidate.update({
+        where: { id: existing.id },
+        data: {
+          body: row.body,
+          startsAt: row.startsAt,
+          clubId: row.clubId,
+          sourceId: row.sourceId ?? undefined,
+          url: row.url ?? undefined,
+          moderationStatus: EventModerationStatus.APPROVED,
+          moderatedAt: existing.moderatedAt ?? new Date(),
+          moderatedByUserId: existing.moderatedByUserId ?? opts.staffUserId,
+          publishedAt: existing.publishedAt ?? new Date(),
+        },
+      });
+      upserted += 1;
+      continue;
+    }
+    await prisma.eventCandidate.create({
+      data: {
+        clubId: row.clubId,
+        sourceId: row.sourceId ?? undefined,
+        title: row.title,
+        body: row.body,
+        url: row.url ?? undefined,
+        startsAt: row.startsAt,
+        moderationStatus: EventModerationStatus.APPROVED,
+        moderatedAt: new Date(),
+        moderatedByUserId: opts.staffUserId,
+        publishedAt: new Date(),
+      },
+    });
+    upserted += 1;
+  }
+  return { upserted };
 }

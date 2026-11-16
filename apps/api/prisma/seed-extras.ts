@@ -8,6 +8,7 @@
  */
 import { PrismaClient, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { seedDemoClubEvents, seedDigestNewsFeed } from './seed-clubs';
 
 const prisma = new PrismaClient();
 const DEMO_PASSWORD = 'Demo123!';
@@ -328,6 +329,30 @@ async function main() {
     if (row.userId === romanId) continue;
     await replaceGrades(row.userId, GRADE_PACK);
     console.log('grades →', row.fullName);
+  }
+
+  const staffUser =
+    (await prisma.user.findUnique({ where: { email: 'staff@demo.local' } })) ??
+    (await prisma.user.findFirst({ where: { role: Role.STAFF } }));
+  const annaUser = await prisma.user.findUnique({
+    where: { email: 'anna.risk@demo.local' },
+  });
+  if (staffUser && annaUser) {
+    await seedDemoClubEvents(prisma, {
+      studentUserId: annaUser.id,
+      staffUserId: staffUser.id,
+    });
+    for (const uid of [romanId, dariaId, kirillId]) {
+      await seedDemoClubEvents(prisma, {
+        studentUserId: uid,
+        staffUserId: staffUser.id,
+      });
+    }
+  } else if (staffUser) {
+    const news = await seedDigestNewsFeed(prisma, {
+      staffUserId: staffUser.id,
+    });
+    console.log('digest news feed upserted:', news.upserted);
   }
 
   console.log(

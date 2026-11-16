@@ -17,4 +17,4 @@
 
 ## Последствия
 - IDOR: подписки всегда по JWT `userId`; draft-клубы скрыты от чужих студентов; staff-only confirm/digest/moderation.
-- Ingest t.me/s/… и push — другие агенты; лента пока на seed/stub EventCandidate.
+- Ingest: см. ADR 0016 (VK wall + durable seed; TG scrape не делаем). Push — ADR 0013.

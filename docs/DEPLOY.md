@@ -54,6 +54,27 @@ not required just to show the buttons. Deploy workflow also bakes
 ## Manual re-deploy
 Actions → Deploy → Run workflow
 
+## Digest news feed + VK ingest (ADR 0016)
+After tip-cut of api/worker (or full deploy):
+
+```bash
+# On VPS host (/opt/mgimo-hack-app or compose project dir)
+docker compose up -d --no-deps --force-recreate api worker
+# Refresh MSK-week seed stubs (titles «Дайджест: …») without wiping RUZ lessons
+docker compose exec api sh -lc 'cd /app && node --import tsx prisma/seed-extras.ts' \
+  || docker compose exec api pnpm --filter @dekanat/api seed:extras
+```
+
+Optional live VK walls — set in `PROD_ENV` / host `.env` then recreate worker:
+
+```bash
+VK_SERVICE_TOKEN=...          # service token; absent → ingest no-op + log
+DIGEST_INGEST_CRON="30 */6 * * *"
+# One-shot: docker compose exec worker node dist/index.js --digest-once
+```
+
+Telegram channel scrape is **not** enabled (bot product cancelled). Club TG URLs stay as links in seed/UI only.
+
 ## Telegram bot on RU VPS
 `api.telegram.org` is blocked from the VPS. Bot uses `TELEGRAM_PROXY=http://127.0.0.1:40000`
 (`network_mode: host`). Port `40000` is an HTTP CONNECT reverse tunnel from a Mac

@@ -58,6 +58,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-dekanat}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dekanat}?schema=public
       REDIS_URL: redis://redis:6379
       RUZ_BASE_URL: ${RUZ_BASE_URL:-https://ruz.mgimo.ru}
+      VK_SERVICE_TOKEN: ${VK_SERVICE_TOKEN:-}
+      DIGEST_INGEST_CRON: ${DIGEST_INGEST_CRON:-30 */6 * * *}
     depends_on:
       postgres:
         condition: service_healthy

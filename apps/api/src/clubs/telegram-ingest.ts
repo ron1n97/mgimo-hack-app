@@ -30,6 +30,8 @@ export type TelegramIngestResult = {
   sourcesOk: number;
   postsUpserted: number;
   postsSkippedRejected: number;
+  /** Existing post URL already owned by another club/source — do not reassign. */
+  postsSkippedForeign: number;
   stubsRetired: number;
   errors: Array<{ sourceId: string; url: string; error: string }>;
 };
@@ -59,6 +61,18 @@ export async function defaultFetchTelegramHtml(url: string): Promise<string> {
 function isFresh(post: TelegramPreviewPost, now: Date, maxAgeDays: number): boolean {
   const ageMs = now.getTime() - post.publishedAt.getTime();
   return ageMs <= maxAgeDays * 24 * 3600 * 1000 && ageMs >= -24 * 3600 * 1000;
+}
+
+/** Whether this ClubSource may refresh an existing EventCandidate row. */
+export function sourceOwnsEvent(
+  source: { id: string; clubId: string | null },
+  row: { clubId: string | null; sourceId: string | null },
+): boolean {
+  if (row.sourceId === source.id) return true;
+  if (row.clubId && source.clubId && row.clubId === source.clubId) return true;
+  // Orphan row (no club/source) — first successful ingest may claim it.
+  if (!row.clubId && !row.sourceId) return true;
+  return false;
 }
 
 /**
@@ -92,6 +106,7 @@ export async function syncTelegramDigest(
     sourcesOk: 0,
     postsUpserted: 0,
     postsSkippedRejected: 0,
+    postsSkippedForeign: 0,
     stubsRetired: 0,
     errors: [],
   };
@@ -109,10 +124,25 @@ export async function syncTelegramDigest(
       for (const post of posts) {
         const existing = await prisma.eventCandidate.findFirst({
           where: { url: post.url },
-          select: { id: true, moderationStatus: true },
+          select: {
+            id: true,
+            moderationStatus: true,
+            clubId: true,
+            sourceId: true,
+          },
         });
         if (existing?.moderationStatus === EventModerationStatus.REJECTED) {
           result.postsSkippedRejected += 1;
+          continue;
+        }
+        if (
+          existing &&
+          !sourceOwnsEvent(
+            { id: source.id, clubId: source.clubId },
+            existing,
+          )
+        ) {
+          result.postsSkippedForeign += 1;
           continue;
         }
 
@@ -136,7 +166,6 @@ export async function syncTelegramDigest(
           try {
             await prisma.eventCandidate.create({ data });
           } catch (err) {
-            // Unique url race with concurrent ingest — treat as upserted.
             const code =
               err && typeof err === 'object' && 'code' in err
                 ? String((err as { code?: string }).code)
@@ -144,10 +173,24 @@ export async function syncTelegramDigest(
             if (code !== 'P2002') throw err;
             const raced = await prisma.eventCandidate.findFirst({
               where: { url: post.url },
-              select: { id: true, moderationStatus: true },
+              select: {
+                id: true,
+                moderationStatus: true,
+                clubId: true,
+                sourceId: true,
+              },
             });
             if (!raced || raced.moderationStatus === EventModerationStatus.REJECTED) {
               if (raced) result.postsSkippedRejected += 1;
+              continue;
+            }
+            if (
+              !sourceOwnsEvent(
+                { id: source.id, clubId: source.clubId },
+                raced,
+              )
+            ) {
+              result.postsSkippedForeign += 1;
               continue;
             }
             await prisma.eventCandidate.update({
@@ -168,7 +211,6 @@ export async function syncTelegramDigest(
     }
   }
 
-  // Only drop seed fallbacks when we actually landed live posts.
   if (retireDemoStubs && result.postsUpserted > 0) {
     const retired = await prisma.eventCandidate.updateMany({
       where: {

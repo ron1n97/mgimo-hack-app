@@ -1,5 +1,5 @@
 import { EventModerationStatus } from '@prisma/client';
-import { syncTelegramDigest } from './telegram-ingest';
+import { sourceOwnsEvent, syncTelegramDigest } from './telegram-ingest';
 
 describe('syncTelegramDigest', () => {
   it('upserts posts from enabled telegram sources and retires demo stubs only after success', async () => {
@@ -89,6 +89,53 @@ describe('syncTelegramDigest', () => {
     expect(result.postsUpserted).toBe(0);
     expect(result.stubsRetired).toBe(0);
     expect(prisma.eventCandidate.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('does not reassign a post URL owned by another club', async () => {
+    const html = `
+      <div class="tgme_widget_message js-widget_message" data-post="sskmgimo/10">
+        <time datetime="2026-11-16T10:00:00+00:00"></time>
+        <div class="tgme_widget_message_text js-message_text">Тренировка</div>
+      </div>`;
+    const prisma = {
+      clubSource: {
+        findMany: jest.fn(async () => [
+          {
+            id: 'alias-src',
+            url: 'https://t.me/s/sskmgimo',
+            clubId: 'attacker-club',
+            club: { id: 'attacker-club', digestEnabled: true },
+          },
+        ]),
+      },
+      eventCandidate: {
+        findFirst: jest.fn(async () => ({
+          id: 'ev-official',
+          moderationStatus: EventModerationStatus.APPROVED,
+          clubId: 'official-club',
+          sourceId: 'official-src',
+        })),
+        create: jest.fn(),
+        update: jest.fn(),
+        updateMany: jest.fn(async () => ({ count: 0 })),
+      },
+    };
+
+    const result = await syncTelegramDigest(prisma as never, {
+      fetchHtml: async () => html,
+      now: new Date('2026-11-16T12:00:00Z'),
+      retireDemoStubs: false,
+    });
+
+    expect(result.postsSkippedForeign).toBe(1);
+    expect(result.postsUpserted).toBe(0);
+    expect(prisma.eventCandidate.update).not.toHaveBeenCalled();
+    expect(
+      sourceOwnsEvent(
+        { id: 'alias-src', clubId: 'attacker-club' },
+        { clubId: 'official-club', sourceId: 'official-src' },
+      ),
+    ).toBe(false);
   });
 
   it('skips staff-rejected posts on re-ingest', async () => {

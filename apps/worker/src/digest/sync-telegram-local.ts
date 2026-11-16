@@ -2,7 +2,7 @@
  * Run public t.me/s ingest in-process via Prisma (no public HTTP ingest endpoint).
  * Keep logic aligned with apps/api/src/clubs/telegram-ingest.ts.
  */
-import { getPrisma } from '../db';
+import { disconnectPrisma, getPrisma } from '../db';
 import { syncTelegramDigest } from './telegram-ingest';
 
 export type DigestSyncLocalResult = {
@@ -11,11 +11,19 @@ export type DigestSyncLocalResult = {
   body?: unknown;
 };
 
-export async function syncTelegramDigestLocal(): Promise<DigestSyncLocalResult> {
+export async function syncTelegramDigestLocal(
+  opts: { disconnect?: boolean } = {},
+): Promise<DigestSyncLocalResult> {
   if (!process.env.DATABASE_URL) {
     return { skipped: true, reason: 'DATABASE_URL missing' };
   }
   const prisma = getPrisma();
-  const body = await syncTelegramDigest(prisma);
-  return { skipped: false, body };
+  try {
+    const body = await syncTelegramDigest(prisma);
+    return { skipped: false, body };
+  } finally {
+    if (opts.disconnect) {
+      await disconnectPrisma();
+    }
+  }
 }

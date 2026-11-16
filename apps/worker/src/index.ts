@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { syncRuz } from './sync/sync-ruz';
 import { ingestDigest } from './digest/ingest-digest';
 import { syncTelegramDigestLocal } from './digest/sync-telegram-local';
+import { disconnectPrisma } from './db';
 import { writeFile } from 'node:fs/promises';
 
 const CRON = process.env.RUZ_SYNC_CRON ?? '0 */6 * * *';
@@ -46,12 +47,17 @@ async function runVkDigest(label: string): Promise<void> {
   }
 }
 
-async function runTgDigest(label: string): Promise<void> {
+async function runTgDigest(
+  label: string,
+  opts: { disconnect?: boolean } = {},
+): Promise<void> {
   console.log(
     `[worker] digest TG start (${label}) at ${new Date().toISOString()}`,
   );
   try {
-    const result = await syncTelegramDigestLocal();
+    const result = await syncTelegramDigestLocal({
+      disconnect: opts.disconnect,
+    });
     if (result.skipped) {
       console.warn(`[worker] digest TG skipped: ${result.reason}`);
       return;
@@ -73,12 +79,13 @@ async function runDigest(label: string): Promise<void> {
 
 async function main(): Promise<void> {
   if (DIGEST_TG_ONLY && !ONCE) {
-    await runTgDigest('once');
+    await runTgDigest('once', { disconnect: true });
     return;
   }
 
   if (DIGEST_ONCE && !ONCE) {
     await runDigest('once');
+    await disconnectPrisma();
     return;
   }
 
@@ -87,6 +94,7 @@ async function main(): Promise<void> {
     if (DIGEST_ONCE) {
       await runDigest('once');
     }
+    await disconnectPrisma();
     return;
   }
 

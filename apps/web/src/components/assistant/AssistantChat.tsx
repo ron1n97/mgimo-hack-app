@@ -10,7 +10,8 @@ import {
   type AssistantWidget,
   type WidgetKind,
 } from "@/lib/widget-markup";
-import { AssistantMessage } from "./AssistantMessage";
+import { AssistantReveal } from "./AssistantReveal";
+import { AssistantThinking } from "./AssistantThinking";
 
 type UiMessage = {
   id: string;
@@ -19,6 +20,7 @@ type UiMessage = {
   parts?: AssistantPart[];
   source?: "zcode" | "stub";
   disclaimer?: string;
+  durationMs?: number;
 };
 
 function roleToApi(role: UserRole): string {
@@ -59,6 +61,7 @@ export function AssistantChat() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [thinkStartedAt, setThinkStartedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [user, setUser] = useState<User | null>(null);
@@ -73,7 +76,7 @@ export function AssistantChat() {
     if (!open) return;
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, open, busy]);
+  }, [messages, open, busy, thinkStartedAt]);
 
   async function send(text: string) {
     const trimmed = text.trim();
@@ -91,6 +94,8 @@ export function AssistantChat() {
       content: m.content,
     }));
     setMessages((prev) => [...prev, userMsg]);
+    const started = Date.now();
+    setThinkStartedAt(started);
     setBusy(true);
 
     try {
@@ -108,6 +113,7 @@ export function AssistantChat() {
           parts,
           source: res.source,
           disclaimer: res.disclaimer,
+          durationMs: Date.now() - started,
         },
       ]);
     } catch (err) {
@@ -118,6 +124,7 @@ export function AssistantChat() {
       setError(message);
     } finally {
       setBusy(false);
+      setThinkStartedAt(null);
     }
   }
 
@@ -157,7 +164,7 @@ export function AssistantChat() {
                   Ассистент<span className="text-copper">+</span>
                 </p>
                 <p className="text-xs text-ink-muted">
-                  Чат по кабинету · виджеты ведут на экраны
+                  Ход агента · виджеты ведут на экраны
                 </p>
               </div>
               <button
@@ -171,12 +178,13 @@ export function AssistantChat() {
 
             <div
               ref={listRef}
-              className="flex-1 space-y-3 overflow-y-auto px-4 py-3"
+              className="flex-1 space-y-4 overflow-y-auto px-4 py-3"
             >
               {messages.length === 0 ? (
                 <div className="space-y-3 pt-2">
                   <p className="text-sm text-ink-muted">
-                    Спросите про пары, заявки или долги — ответ с кнопками-виджетами.
+                    Спросите про пары, заявки или долги — ответ с
+                    кнопками-виджетами.
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {(SUGGESTIONS[role] ?? SUGGESTIONS.student).map((s) => (
@@ -199,42 +207,34 @@ export function AssistantChat() {
                   key={m.id}
                   className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
                 >
-                  <div
-                    className={`max-w-[92%] rounded-2xl px-3 py-2 ${
-                      m.role === "user"
-                        ? "bg-ink text-cream"
-                        : "border border-ink/10 bg-white/70"
-                    }`}
-                  >
-                    {m.role === "user" ? (
-                      <p className="whitespace-pre-wrap text-sm">{m.content}</p>
-                    ) : (
-                      <>
-                        <AssistantMessage
-                          parts={m.parts}
-                          fallbackText={m.content}
-                          onNavigate={() => setOpen(false)}
-                        />
-                        {m.source === "stub" ? (
-                          <p className="mt-2 text-[11px] text-copper">
-                            {m.disclaimer ?? "ИИ недоступен — шаблонный ответ."}
-                          </p>
-                        ) : m.disclaimer ? (
-                          <p className="mt-2 text-[11px] text-ink-muted">
-                            {m.disclaimer}
-                          </p>
-                        ) : null}
-                      </>
-                    )}
-                  </div>
+                  {m.role === "user" ? (
+                    <div className="max-w-[92%] space-y-1">
+                      <p className="px-0.5 text-right text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted">
+                        Вы
+                      </p>
+                      <div className="rounded-2xl bg-ink px-3 py-2 text-cream">
+                        <p className="whitespace-pre-wrap text-sm">{m.content}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <AssistantReveal
+                      parts={m.parts}
+                      fallbackText={m.content}
+                      source={m.source}
+                      disclaimer={m.disclaimer}
+                      durationMs={m.durationMs}
+                      onNavigate={() => setOpen(false)}
+                    />
+                  )}
                 </div>
               ))}
 
-              {busy ? (
-                <p className="text-xs text-ink-muted animate-pulse">
-                  Думаю… обычно 15–30 сек (Z Code)
-                </p>
+              {busy && thinkStartedAt != null ? (
+                <div className="flex justify-start">
+                  <AssistantThinking startedAt={thinkStartedAt} />
+                </div>
               ) : null}
+
               {error ? (
                 <p className="rounded-xl bg-copper/10 px-3 py-2 text-xs text-copper">
                   {error}

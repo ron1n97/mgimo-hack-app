@@ -14,12 +14,15 @@
 - Источники: `ClubSource` kind=`TELEGRAM`, `enabled`, клуб с `digestEnabled` (или source без клуба); до ~120 источников за прогон.
 - Upsert `EventCandidate` по уникальному `url` (`https://t.me/<channel>/<id>`), `startsAt` = время поста, статус **APPROVED** (digestEnabled = staff-gate).
 - Уже **REJECTED** посты не переутверждаем.
-- Staff: `POST /staff/digest/ingest-telegram`; worker → `POST /internal/digest/telegram` с `DIGEST_INGEST_KEY`.
+- Staff (JWT): `POST /staff/digest/ingest-telegram`.
+- Worker: in-process Prisma ingest (`syncTelegramDigestLocal`) — **без** публичного `/internal/*` shared-secret endpoint.
+- Caddy: `handle /internal*` → 404 на API vhost (defense in depth).
 - Retire seed-stub заголовков `Демо:` / `Демо-событие:` / `Новость:` **только если** `postsUpserted > 0`.
-- `GET /digest/feed` отдаёт newest-first (`startsAt desc`).
+- Public feed = MSK week; interest feed = 21d + SQL filter by subscriptions.
 - Окно свежести ~21 день; ~8 постов на источник.
 
 ## Последствия
-- Лента зависит от сети до `t.me` с api; при блоке stubs остаются (retire не срабатывает).
+- Лента зависит от сети до `t.me` с api/worker; при блоке stubs остаются.
 - VK live — ADR 0016 (`VK_SERVICE_TOKEN`).
 - Auto-approve TG ослабляет кабинет модерации: gate = digestEnabled.
+- Worker и API держат копии parse/ingest модулей — менять оба при правках парсера.

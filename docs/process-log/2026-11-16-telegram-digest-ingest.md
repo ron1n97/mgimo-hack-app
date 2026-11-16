@@ -7,7 +7,8 @@ Owner: «Это же выдуманно?» → «ТАК А ХУЛИ НЕ РЕА�
 - Парсер публичного preview `t.me/s/<channel>` (без Bot API).
 - `syncTelegramDigest` → upsert APPROVED `EventCandidate` по URL поста; retire seed stub'ов.
 - Staff `POST /staff/digest/ingest-telegram` + кнопка на `/staff/clubs`.
-- Worker cron / `--digest` → `POST /internal/digest/telegram` (`DIGEST_INGEST_KEY`).
+- Worker cron / `--digest-tg` → in-process Prisma ingest (no public `/internal` key).
+- Security: removed shared-secret public ingest endpoint; Caddy blocks `/internal*`.
 - ADR 0017, DEMO/CHANGELOG copy.
 
 ## Проверка сети (агент)

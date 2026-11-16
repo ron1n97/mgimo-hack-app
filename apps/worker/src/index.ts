@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import { syncRuz } from './sync/sync-ruz';
 import { ingestDigest } from './digest/ingest-digest';
-import { syncTelegramDigestViaApi } from './digest/sync-telegram-via-api';
+import { syncTelegramDigestLocal } from './digest/sync-telegram-local';
 import { writeFile } from 'node:fs/promises';
 
 const CRON = process.env.RUZ_SYNC_CRON ?? '0 */6 * * *';
@@ -51,7 +51,7 @@ async function runTgDigest(label: string): Promise<void> {
     `[worker] digest TG start (${label}) at ${new Date().toISOString()}`,
   );
   try {
-    const result = await syncTelegramDigestViaApi();
+    const result = await syncTelegramDigestLocal();
     if (result.skipped) {
       console.warn(`[worker] digest TG skipped: ${result.reason}`);
       return;

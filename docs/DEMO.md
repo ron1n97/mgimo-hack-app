@@ -38,7 +38,7 @@
 Источники ленты:
 - Seed `Дайджест: …` / демо-stubs (MSK-неделя) — ADR 0016.
 - Live TG: публичные каналы `t.me/s/…` (ADR 0017). Staff → `/staff/clubs` →
-  «Стянуть посты из Telegram», или worker + `DIGEST_INGEST_KEY`.
+  «Стянуть посты из Telegram» (JWT), либо worker cron / `pnpm digest:tg`.
 - Live VK: опционально при `VK_SERVICE_TOKEN` (PENDING → модерация).
 
 После успешного TG-ingest seed-stubs `Демо:…` уходят в REJECTED.

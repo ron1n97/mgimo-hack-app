@@ -9,5 +9,11 @@ dekanat.177.177.212.34.sslip.io {
 
 api.dekanat.177.177.212.34.sslip.io {
 	encode gzip
-	reverse_proxy api:3001
+	# Never expose worker/internal control planes on the public API vhost.
+	handle /internal* {
+		respond "Not Found" 404
+	}
+	handle {
+		reverse_proxy api:3001
+	}
 }

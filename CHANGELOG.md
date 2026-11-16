@@ -11,6 +11,7 @@
 - PWA SW no longer caches API 401s that bounced JWT sessions to login.
 
 ### Changed
+- `/clubs`: digest is the default tab (today / week / interests); catalog is a separate tab so the feed is not buried under the club list.
 - Student academic profile fields are read-only (seed-bound); today hub shows club digest; PWA install hint + SW registration without PushManager gate.
 - Demo seed: five fictional students across faculties; clubs daily/weekly digest stubs.
 - AI chat shows «обычно 15–30 сек» while waiting on Z Code.

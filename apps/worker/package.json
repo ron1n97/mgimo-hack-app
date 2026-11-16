@@ -8,6 +8,7 @@
     "dev": "tsx watch src/index.ts",
     "sync:once": "tsx src/index.ts --once",
     "digest:once": "tsx src/index.ts --digest-once",
+    "digest:tg": "tsx src/index.ts --digest-tg",
     "fetch:json": "tsx scripts/fetch-to-json.ts",
     "test": "jest",
     "prisma:generate": "prisma generate --schema ../api/prisma/schema.prisma"

@@ -14,7 +14,7 @@
 2. **Worker job `ingestDigest`** (`DIGEST_INGEST_CRON`, boot + `--digest-once`):
    - если `VK_SERVICE_TOKEN` задан — `wall.get` по enabled `ClubSource` kind=VK → новые кандидаты со статусом **PENDING** (модерация staff, ADR 0012);
    - без токена — no-op + лог;
-   - TELEGRAM sources — **skip** (без channel scrape / без возрождения bot product);
+   - TELEGRAM sources — skip **в этом job**; live scrape публичных каналов — **ADR 0017** (`t.me/s`, без Bot API);
    - WEBSITE/RSS — out of this slice (лог skip; можно расширить отдельно).
 3. Дедуп live-постов по `EventCandidate.url` (`https://vk.com/wall{owner}_{id}`).
 4. UI AI-чата: hint «обычно 15–30 сек» при ожидании Z Code.
@@ -25,3 +25,6 @@
 − Без `VK_SERVICE_TOKEN` на VPS ingest остаётся seed-only.
 − TG-каналы в реестре остаются как ссылки для студента, не как scrape-источник.
 − Cloud agent без SSH на VPS: merge + document tip-cut; deploy/seed на live — локально/CI.
+
+## Связанное
+- Live Telegram public preview scrape — **ADR 0017** (пересмотр skip TG из этого ADR).

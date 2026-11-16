@@ -161,17 +161,42 @@ function mskParts(d: Date): { y: number; m: number; day: number } {
   return { y, m, day };
 }
 
-/** Interpret civil MSK date/time as UTC Date. */
+/** Interpret civil MSK date/time as UTC Date. Date-only → 00:00 MSK. */
 export function mskDateTimeToUtc(
   year: number,
   month: number,
   day: number,
-  hour = 12,
+  hour = 0,
   minute = 0,
 ): Date {
   return new Date(
     Date.UTC(year, month - 1, day, hour - 3, minute, 0),
   );
+}
+
+function isValidDayMonth(day: number, month: number): boolean {
+  return (
+    Number.isInteger(day) &&
+    Number.isInteger(month) &&
+    day >= 1 &&
+    day <= 31 &&
+    month >= 1 &&
+    month <= 12
+  );
+}
+
+/**
+ * Bump year only for Dec→Jan style wrap (late publish, early event month),
+ * not for same-month recap dates that are simply in the past.
+ */
+function resolveYear(
+  pub: { y: number; m: number },
+  month: number,
+  explicitYear: number | null,
+): number {
+  if (explicitYear != null) return explicitYear;
+  if (pub.m >= 11 && month <= 2) return pub.y + 1;
+  return pub.y;
 }
 
 /**
@@ -186,58 +211,32 @@ export function extractEventAt(
   const lower = text.toLowerCase().replace(/\s+/g, ' ');
 
   const withMonthTime =
-    /(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+(\d{4}))?(?:\s*(?:в|во)?\s+(\d{1,2})[:.](\d{2}))?/i.exec(
+    /(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+(\d{4}))?(?:\s*(?:в|во)\s+(\d{1,2})[:.](\d{2}))?/i.exec(
       lower,
     );
   if (withMonthTime) {
     const day = Number(withMonthTime[1]);
     const month = MONTHS[withMonthTime[2].toLowerCase()];
-    let year = withMonthTime[3] ? Number(withMonthTime[3]) : pub.y;
-    const hour = withMonthTime[4] ? Number(withMonthTime[4]) : 12;
+    if (!isValidDayMonth(day, month)) return null;
+    const year = resolveYear(
+      pub,
+      month,
+      withMonthTime[3] ? Number(withMonthTime[3]) : null,
+    );
+    const hour = withMonthTime[4] ? Number(withMonthTime[4]) : 0;
     const minute = withMonthTime[5] ? Number(withMonthTime[5]) : 0;
-    if (!withMonthTime[3]) {
-      // If date is long before publish, assume next year (Dec→Jan wrap).
-      let candidate = mskDateTimeToUtc(year, month, day, hour, minute);
-      if (candidate.getTime() < publishedAt.getTime() - 2 * 24 * 3600 * 1000) {
-        year += 1;
-        candidate = mskDateTimeToUtc(year, month, day, hour, minute);
-      }
-      return candidate;
-    }
     return mskDateTimeToUtc(year, month, day, hour, minute);
   }
 
-  const numeric =
-    /(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?(?:\s*(?:в|во)?\s+(\d{1,2})[:.](\d{2}))?/.exec(
+  // Word-boundary relative days (avoid сегодняшний / послезавтра).
+  const relative =
+    /(?:^|[^\p{L}])(сегодня|завтра)(?=[^\p{L}]|$)(?:\s*(?:в|во)\s+(\d{1,2})[:.](\d{2}))?/u.exec(
       lower,
     );
-  if (numeric) {
-    const day = Number(numeric[1]);
-    const month = Number(numeric[2]);
-    let year = numeric[3]
-      ? Number(numeric[3].length === 2 ? `20${numeric[3]}` : numeric[3])
-      : pub.y;
-    const hour = numeric[4] ? Number(numeric[4]) : 12;
-    const minute = numeric[5] ? Number(numeric[5]) : 0;
-    let candidate = mskDateTimeToUtc(year, month, day, hour, minute);
-    if (
-      !numeric[3] &&
-      candidate.getTime() < publishedAt.getTime() - 2 * 24 * 3600 * 1000
-    ) {
-      year += 1;
-      candidate = mskDateTimeToUtc(year, month, day, hour, minute);
-    }
-    return candidate;
-  }
-
-  const relative =
-    /(сегодня|завтра)(?:\s*(?:в|во)?\s+(\d{1,2})[:.](\d{2}))?/.exec(lower);
   if (relative) {
-    const parts = mskParts(publishedAt);
     const offset = relative[1] === 'завтра' ? 1 : 0;
-    // Civil MSK day arithmetic via UTC date components (no TZ shift).
-    const civil = new Date(Date.UTC(parts.y, parts.m - 1, parts.day + offset));
-    const hour = relative[2] ? Number(relative[2]) : 12;
+    const civil = new Date(Date.UTC(pub.y, pub.m - 1, pub.day + offset));
+    const hour = relative[2] ? Number(relative[2]) : 0;
     const minute = relative[3] ? Number(relative[3]) : 0;
     return mskDateTimeToUtc(
       civil.getUTCFullYear(),
@@ -246,6 +245,39 @@ export function extractEventAt(
       hour,
       minute,
     );
+  }
+
+  // Numeric dates: require year, or `/` separator (`.` alone collides with 18.00 clocks).
+  const numericWithYear =
+    /(\d{1,2})[./](\d{1,2})[./](\d{2,4})(?:\s*(?:в|во)\s+(\d{1,2})[:.](\d{2}))?/.exec(
+      lower,
+    );
+  if (numericWithYear) {
+    const day = Number(numericWithYear[1]);
+    const month = Number(numericWithYear[2]);
+    if (!isValidDayMonth(day, month)) return null;
+    const year = Number(
+      numericWithYear[3].length === 2
+        ? `20${numericWithYear[3]}`
+        : numericWithYear[3],
+    );
+    const hour = numericWithYear[4] ? Number(numericWithYear[4]) : 0;
+    const minute = numericWithYear[5] ? Number(numericWithYear[5]) : 0;
+    return mskDateTimeToUtc(year, month, day, hour, minute);
+  }
+
+  const numericSlash =
+    /(\d{1,2})\/(\d{1,2})(?!\d)(?:\s*(?:в|во)\s+(\d{1,2})[:.](\d{2}))?/.exec(
+      lower,
+    );
+  if (numericSlash) {
+    const day = Number(numericSlash[1]);
+    const month = Number(numericSlash[2]);
+    if (!isValidDayMonth(day, month)) return null;
+    const year = resolveYear(pub, month, null);
+    const hour = numericSlash[3] ? Number(numericSlash[3]) : 0;
+    const minute = numericSlash[4] ? Number(numericSlash[4]) : 0;
+    return mskDateTimeToUtc(year, month, day, hour, minute);
   }
 
   return null;

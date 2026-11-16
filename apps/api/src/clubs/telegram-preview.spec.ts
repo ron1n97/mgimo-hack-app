@@ -55,6 +55,28 @@ describe('telegram-preview', () => {
     expect(extractEventAt('Просто новость без даты', published)).toBeNull();
   });
 
+  it('does not treat dotted clock times as calendar dates', () => {
+    const published = new Date('2026-11-16T10:00:00.000Z');
+    expect(extractEventAt('Сбор в 18.00 у входа', published)).toBeNull();
+    expect(extractEventAt('Старт в 16.05', published)).toBeNull();
+    expect(extractEventAt('Игра 11/05 в 19:00', published)).toEqual(
+      mskDateTimeToUtc(2026, 5, 11, 19, 0),
+    );
+  });
+
+  it('keeps same-year past dates (no false next-year wrap)', () => {
+    const published = new Date('2026-11-16T10:00:00.000Z');
+    expect(extractEventAt('Итоги встречи 5 ноября', published)).toEqual(
+      mskDateTimeToUtc(2026, 11, 5, 0, 0),
+    );
+  });
+
+  it('does not match сегодня/завтра inside longer words', () => {
+    const published = new Date('2026-11-16T10:00:00.000Z');
+    expect(extractEventAt('сегодняшний эфир уже записан', published)).toBeNull();
+    expect(extractEventAt('послезавтра будет анонс', published)).toBeNull();
+  });
+
   it('extracts photo url from widget wrap', () => {
     const chunk =
       `<a class="tgme_widget_message_photo_wrap" style="background-image:url('https://cdn4.telesco.pe/file/x.jpg')"></a>`;

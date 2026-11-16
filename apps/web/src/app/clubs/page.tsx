@@ -35,8 +35,8 @@ function formatEventWhen(iso?: string | null): string | null {
     hour: "2-digit",
     minute: "2-digit",
   });
-  // Noon placeholder from date-only parse → show date without fake time.
-  if (time === "12:00") return date;
+  // Date-only parses use 00:00 MSK — omit fake midnight clock.
+  if (time === "00:00") return date;
   return `${date}, ${time}`;
 }
 

@@ -181,13 +181,20 @@ export default function TodayPage() {
                       <p className="text-[10px] uppercase tracking-wide text-copper">
                         {ev.club?.name ?? "Клуб"}
                         {ev.startsAt
-                          ? ` · ${new Date(ev.startsAt).toLocaleString("ru-RU", {
-                              timeZone: "Europe/Moscow",
-                              day: "numeric",
-                              month: "short",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}`
+                          ? ` · ${(() => {
+                              const d = new Date(ev.startsAt!);
+                              const date = d.toLocaleDateString("ru-RU", {
+                                timeZone: "Europe/Moscow",
+                                day: "numeric",
+                                month: "short",
+                              });
+                              const time = d.toLocaleTimeString("ru-RU", {
+                                timeZone: "Europe/Moscow",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              });
+                              return time === "00:00" ? date : `${date}, ${time}`;
+                            })()}`
                           : ""}
                       </p>
                       <p className="mt-1 font-medium text-ink">{ev.title}</p>

@@ -209,10 +209,16 @@ export function extractEventAt(
   const pub = mskParts(publishedAt);
   const lower = text.toLowerCase().replace(/\s+/g, ' ');
 
-  const withMonthTime =
-    /(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+(\d{4}))?(?:\s*(?:в|во)\s+(\d{1,2})[:.](\d{2}))?/i.exec(
-      lower,
-    );
+  // Optional clock after a date token: "в 16:00" / "16:00" / "16.00".
+  const timeTail = '(?:\\s*(?:в|во)?\\s+(\\d{1,2})[:.](\\d{2}))?';
+
+  const precededByVo = (index: number): boolean =>
+    /(?:в|во)\s+$/.test(lower.slice(Math.max(0, index - 4), index));
+
+  const withMonthTime = new RegExp(
+    `(\\d{1,2})\\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\\s+(\\d{4}))?${timeTail}`,
+    'i',
+  ).exec(lower);
   if (withMonthTime) {
     const day = Number(withMonthTime[1]);
     const month = MONTHS[withMonthTime[2].toLowerCase()];
@@ -228,10 +234,10 @@ export function extractEventAt(
   }
 
   // Word-boundary relative days (avoid сегодняшний / послезавтра).
-  const relative =
-    /(?:^|[^\p{L}])(сегодня|завтра)(?=[^\p{L}]|$)(?:\s*(?:в|во)\s+(\d{1,2})[:.](\d{2}))?/u.exec(
-      lower,
-    );
+  const relative = new RegExp(
+    `(?:^|[^\\p{L}])(сегодня|завтра)(?=[^\\p{L}]|$)${timeTail}`,
+    'u',
+  ).exec(lower);
   if (relative) {
     const offset = relative[1] === 'завтра' ? 1 : 0;
     const civil = new Date(Date.UTC(pub.y, pub.m - 1, pub.day + offset));
@@ -246,11 +252,9 @@ export function extractEventAt(
     );
   }
 
-  // Numeric dates: require year, or `/` separator (`.` alone collides with 18.00 clocks).
-  const numericWithYear =
-    /(\d{1,2})[./](\d{1,2})[./](\d{2,4})(?:\s*(?:в|во)\s+(\d{1,2})[:.](\d{2}))?/.exec(
-      lower,
-    );
+  const numericWithYear = new RegExp(
+    `(\\d{1,2})[./](\\d{1,2})[./](\\d{2,4})${timeTail}`,
+  ).exec(lower);
   if (numericWithYear) {
     const day = Number(numericWithYear[1]);
     const month = Number(numericWithYear[2]);
@@ -265,17 +269,20 @@ export function extractEventAt(
     return mskDateTimeToUtc(year, month, day, hour, minute);
   }
 
-  const numericSlash =
-    /(\d{1,2})\/(\d{1,2})(?!\d)(?:\s*(?:в|во)\s+(\d{1,2})[:.](\d{2}))?/.exec(
-      lower,
-    );
-  if (numericSlash) {
-    const day = Number(numericSlash[1]);
-    const month = Number(numericSlash[2]);
-    if (!isValidDayMonth(day, month)) return null;
+  // dd/mm or dd.mm without year. Skip "в 18.00" clocks; bare "18.00" fails month check.
+  const shortRe = new RegExp(
+    `(\\d{1,2})([./])(\\d{1,2})(?!\\.\\d)(?!\\d)${timeTail}`,
+    'g',
+  );
+  let shortMatch: RegExpExecArray | null;
+  while ((shortMatch = shortRe.exec(lower)) !== null) {
+    if (precededByVo(shortMatch.index)) continue;
+    const day = Number(shortMatch[1]);
+    const month = Number(shortMatch[3]);
+    if (!isValidDayMonth(day, month)) continue;
     const year = resolveYear(pub, month, null);
-    const hour = numericSlash[3] ? Number(numericSlash[3]) : 0;
-    const minute = numericSlash[4] ? Number(numericSlash[4]) : 0;
+    const hour = shortMatch[4] ? Number(shortMatch[4]) : 0;
+    const minute = shortMatch[5] ? Number(shortMatch[5]) : 0;
     return mskDateTimeToUtc(year, month, day, hour, minute);
   }
 

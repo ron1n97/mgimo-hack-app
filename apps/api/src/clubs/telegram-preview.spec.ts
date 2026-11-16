@@ -62,6 +62,19 @@ describe('telegram-preview', () => {
     expect(extractEventAt('Игра 11/05 в 19:00', published)).toEqual(
       mskDateTimeToUtc(2026, 5, 11, 19, 0),
     );
+    expect(extractEventAt('Сбор 20.11 в 18:00', published)).toEqual(
+      mskDateTimeToUtc(2026, 11, 20, 18, 0),
+    );
+  });
+
+  it('parses clock without в after date words', () => {
+    const published = new Date('2026-11-11T08:00:00.000Z');
+    expect(extractEventAt('Увидимся 23 ноября 16:00 на сцене', published)).toEqual(
+      mskDateTimeToUtc(2026, 11, 23, 16, 0),
+    );
+    expect(extractEventAt('Завтра 18:00 встреча актива', published)).toEqual(
+      mskDateTimeToUtc(2026, 11, 12, 18, 0),
+    );
   });
 
   it('keeps same-year past dates (no false next-year wrap)', () => {

@@ -43,6 +43,31 @@ function tidyAssistantText(text) {
     .trim();
 }
 
+const WIDGET_DSL = /\{\{widget:[^}]+\}\}/g;
+const SHORTCUT_DSL = /\[\[[a-z]+(?::[^\]]*)?\]\]/gi;
+
+function stripAssistantMarkup(text) {
+  return tidyAssistantText(
+    text
+      .replace(WIDGET_DSL, "")
+      .replace(SHORTCUT_DSL, "")
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/\*([^*]+)\*/g, "$1"),
+  );
+}
+
+function typingPlainFromParts(parts, fallbackText) {
+  if (parts?.length) {
+    const tidied = tidyAssistantParts(parts);
+    return tidied
+      .filter((p) => p.type === "text")
+      .map((p) => stripAssistantMarkup(p.text))
+      .filter(Boolean)
+      .join("\n\n");
+  }
+  return stripAssistantMarkup(fallbackText);
+}
+
 function tidyAssistantParts(parts) {
   const out = [];
   for (let i = 0; i < parts.length; i++) {
@@ -118,5 +143,33 @@ describe("tidyAssistantParts", () => {
     assert.equal(parts.length, 1);
     assert.equal(parts[0].type, "widget");
     assert.equal(parts[0].widget.subtitle, "Потапов Н.А., зал 7, Корпус МЭО");
+  });
+});
+
+describe("typingPlainFromParts", () => {
+  it("never exposes raw widget DSL during typewriter", () => {
+    const plain = typingPlainFromParts(
+      [
+        { type: "text", text: "**Сегодня** пары:" },
+        {
+          type: "widget",
+          widget: { kind: "lesson", title: "Право" },
+        },
+      ],
+      "raw {{widget:lesson|title=X}} [[today]]",
+    );
+    assert.equal(plain, "Сегодня пары:");
+    assert.equal(plain.includes("{{"), false);
+    assert.equal(plain.includes("[["), false);
+  });
+
+  it("strips DSL from fallback when parts missing", () => {
+    assert.equal(
+      typingPlainFromParts(
+        undefined,
+        "ИИ недоступен\n[[today]]\n{{widget:task|title=Учёба|href=/grades}}",
+      ),
+      "ИИ недоступен",
+    );
   });
 });

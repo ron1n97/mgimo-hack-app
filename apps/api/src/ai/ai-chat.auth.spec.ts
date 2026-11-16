@@ -15,4 +15,8 @@ describe('POST /ai/chat auth', () => {
   it('exposes chat handler on controller prototype', () => {
     expect(typeof AiController.prototype.chat).toBe('function');
   });
+
+  it('exposes chatStream harness endpoint on controller prototype', () => {
+    expect(typeof AiController.prototype.chatStream).toBe('function');
+  });
 });

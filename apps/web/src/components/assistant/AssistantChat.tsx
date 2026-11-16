@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ApiError, postAiChat, type AiChatResponse } from "@/lib/api";
+import {
+  ApiError,
+  streamAiChat,
+  type AiChatResponse,
+  type AiHarnessStep,
+} from "@/lib/api";
 import { getUser } from "@/lib/auth";
 import type { User, UserRole } from "@/lib/types";
 import {
@@ -10,7 +15,8 @@ import {
   type AssistantWidget,
   type WidgetKind,
 } from "@/lib/widget-markup";
-import { AssistantMessage } from "./AssistantMessage";
+import { AssistantReveal } from "./AssistantReveal";
+import { AssistantThinking } from "./AssistantThinking";
 
 type UiMessage = {
   id: string;
@@ -19,6 +25,9 @@ type UiMessage = {
   parts?: AssistantPart[];
   source?: "zcode" | "stub";
   disclaimer?: string;
+  durationMs?: number;
+  /** After first typewriter pass — reopen shows full text, no re-animate. */
+  settled?: boolean;
 };
 
 function roleToApi(role: UserRole): string {
@@ -59,10 +68,14 @@ export function AssistantChat() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [thinkStartedAt, setThinkStartedAt] = useState<number | null>(null);
+  const [elapsedSec, setElapsedSec] = useState(0);
+  const [liveSteps, setLiveSteps] = useState<AiHarnessStep[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const role = user?.role ?? "student";
 
   useEffect(() => {
@@ -73,7 +86,24 @@ export function AssistantChat() {
     if (!open) return;
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, open, busy]);
+  }, [messages, open, busy, thinkStartedAt, liveSteps]);
+
+  useEffect(() => {
+    if (!busy || thinkStartedAt == null) {
+      setElapsedSec(0);
+      return;
+    }
+    const tick = window.setInterval(() => {
+      setElapsedSec(Math.max(0, Math.floor((Date.now() - thinkStartedAt) / 1000)));
+    }, 250);
+    return () => window.clearInterval(tick);
+  }, [busy, thinkStartedAt]);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   async function send(text: string) {
     const trimmed = text.trim();
@@ -91,13 +121,31 @@ export function AssistantChat() {
       content: m.content,
     }));
     setMessages((prev) => [...prev, userMsg]);
+    const started = Date.now();
+    setThinkStartedAt(started);
+    setLiveSteps([]);
     setBusy(true);
 
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+
     try {
-      const res: AiChatResponse = await postAiChat({
-        message: trimmed,
-        history,
-      });
+      const res = await streamAiChat(
+        { message: trimmed, history },
+        (event) => {
+          if (event.type === "step") {
+            setLiveSteps((prev) => {
+              const idx = prev.findIndex((s) => s.id === event.step.id);
+              if (idx === -1) return [...prev, event.step];
+              const next = [...prev];
+              next[idx] = event.step;
+              return next;
+            });
+          }
+        },
+        ac.signal,
+      );
       const parts = mapParts(res, role);
       setMessages((prev) => [
         ...prev,
@@ -108,16 +156,22 @@ export function AssistantChat() {
           parts,
           source: res.source,
           disclaimer: res.disclaimer,
+          durationMs: Date.now() - started,
         },
       ]);
     } catch (err) {
+      if (ac.signal.aborted) return;
       const message =
         err instanceof ApiError
           ? err.message
           : "Не удалось получить ответ ассистента";
       setError(message);
     } finally {
-      setBusy(false);
+      if (!ac.signal.aborted) {
+        setBusy(false);
+        setThinkStartedAt(null);
+        setLiveSteps([]);
+      }
     }
   }
 
@@ -157,7 +211,7 @@ export function AssistantChat() {
                   Ассистент<span className="text-copper">+</span>
                 </p>
                 <p className="text-xs text-ink-muted">
-                  Чат по кабинету · виджеты ведут на экраны
+                  Живые шаги · набор текста · виджеты
                 </p>
               </div>
               <button
@@ -171,12 +225,13 @@ export function AssistantChat() {
 
             <div
               ref={listRef}
-              className="flex-1 space-y-3 overflow-y-auto px-4 py-3"
+              className="flex-1 space-y-4 overflow-y-auto px-4 py-3"
             >
               {messages.length === 0 ? (
                 <div className="space-y-3 pt-2">
                   <p className="text-sm text-ink-muted">
-                    Спросите про пары, заявки или долги — ответ с кнопками-виджетами.
+                    Спросите про пары, заявки или долги — ответ с
+                    кнопками-виджетами.
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {(SUGGESTIONS[role] ?? SUGGESTIONS.student).map((s) => (
@@ -199,42 +254,46 @@ export function AssistantChat() {
                   key={m.id}
                   className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
                 >
-                  <div
-                    className={`max-w-[92%] rounded-2xl px-3 py-2 ${
-                      m.role === "user"
-                        ? "bg-ink text-cream"
-                        : "border border-ink/10 bg-white/70"
-                    }`}
-                  >
-                    {m.role === "user" ? (
-                      <p className="whitespace-pre-wrap text-sm">{m.content}</p>
-                    ) : (
-                      <>
-                        <AssistantMessage
-                          parts={m.parts}
-                          fallbackText={m.content}
-                          onNavigate={() => setOpen(false)}
-                        />
-                        {m.source === "stub" ? (
-                          <p className="mt-2 text-[11px] text-copper">
-                            {m.disclaimer ?? "ИИ недоступен — шаблонный ответ."}
-                          </p>
-                        ) : m.disclaimer ? (
-                          <p className="mt-2 text-[11px] text-ink-muted">
-                            {m.disclaimer}
-                          </p>
-                        ) : null}
-                      </>
-                    )}
-                  </div>
+                  {m.role === "user" ? (
+                    <div className="max-w-[92%] space-y-1">
+                      <p className="px-0.5 text-right text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted">
+                        Вы
+                      </p>
+                      <div className="rounded-2xl bg-ink px-3 py-2 text-cream">
+                        <p className="whitespace-pre-wrap text-sm">{m.content}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <AssistantReveal
+                      parts={m.parts}
+                      fallbackText={m.content}
+                      source={m.source}
+                      disclaimer={m.disclaimer}
+                      durationMs={m.durationMs}
+                      animateTyping={!m.settled}
+                      onTypingDone={() =>
+                        setMessages((prev) =>
+                          prev.map((row) =>
+                            row.id === m.id ? { ...row, settled: true } : row,
+                          ),
+                        )
+                      }
+                      onNavigate={() => setOpen(false)}
+                    />
+                  )}
                 </div>
               ))}
 
-              {busy ? (
-                <p className="text-xs text-ink-muted animate-pulse">
-                  Думаю… обычно 15–30 сек (Z Code)
-                </p>
+              {busy && thinkStartedAt != null ? (
+                <div className="flex justify-start">
+                  <AssistantThinking
+                    steps={liveSteps}
+                    startedAt={thinkStartedAt}
+                    elapsedSec={elapsedSec}
+                  />
+                </div>
               ) : null}
+
               {error ? (
                 <p className="rounded-xl bg-copper/10 px-3 py-2 text-xs text-copper">
                   {error}

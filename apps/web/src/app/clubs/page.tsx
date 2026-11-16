@@ -20,44 +20,71 @@ import { LoadingState } from "@/components/LoadingState";
 
 type ClubsTab = "digest" | "catalog";
 
+function formatEventWhen(iso?: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const date = d.toLocaleDateString("ru-RU", {
+    timeZone: "Europe/Moscow",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+  const time = d.toLocaleTimeString("ru-RU", {
+    timeZone: "Europe/Moscow",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  // Date-only parses use 00:00 MSK — omit fake midnight clock.
+  if (time === "00:00") return date;
+  return `${date}, ${time}`;
+}
+
 function DigestItem({
   item,
   idPrefix,
-  showDate,
 }: {
   item: DigestFeedItem;
   idPrefix: string;
-  showDate?: boolean;
 }) {
+  const when = formatEventWhen(item.startsAt);
   return (
     <li
       key={`${idPrefix}-${item.id}`}
       className="border-b border-cream-deep/80 py-3 last:border-b-0"
     >
-      <p className="text-xs text-ink-muted">
-        {item.club?.name}
-        {showDate && item.startsAt
-          ? ` · ${new Date(item.startsAt).toLocaleDateString("ru-RU", {
-              weekday: "short",
-              day: "numeric",
-              month: "short",
-            })}`
-          : ""}
-      </p>
-      <h3 className="font-medium text-ink">{item.title}</h3>
-      {item.body ? (
-        <p className="mt-1 text-sm text-ink-muted">{item.body}</p>
-      ) : null}
-      {item.url ? (
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-1 inline-block text-xs text-copper underline-offset-2 hover:underline"
-        >
-          Открыть пост
-        </a>
-      ) : null}
+      <div className="flex gap-3">
+        {item.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={item.imageUrl}
+            alt=""
+            className="h-16 w-16 shrink-0 rounded-lg object-cover bg-cream-deep"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        ) : null}
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-ink-muted">
+            {item.club?.name}
+            {when ? ` · ${when}` : ""}
+          </p>
+          <h3 className="font-medium text-ink">{item.title}</h3>
+          {item.body ? (
+            <p className="mt-1 line-clamp-3 text-sm text-ink-muted">{item.body}</p>
+          ) : null}
+          {item.url ? (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1 inline-block text-sm text-copper underline-offset-2 hover:underline"
+            >
+              Открыть в Telegram →
+            </a>
+          ) : null}
+        </div>
+      </div>
     </li>
   );
 }
@@ -329,12 +356,7 @@ export default function ClubsPage() {
             ) : (
               <ul>
                 {weekFeed.map((item) => (
-                  <DigestItem
-                    key={item.id}
-                    item={item}
-                    idPrefix="week"
-                    showDate
-                  />
+                  <DigestItem key={item.id} item={item} idPrefix="week" />
                 ))}
               </ul>
             )}

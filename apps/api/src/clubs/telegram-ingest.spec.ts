@@ -6,7 +6,8 @@ describe('syncTelegramDigest', () => {
     const html = `
       <div class="tgme_widget_message js-widget_message" data-post="sskmgimo/10">
         <time datetime="2026-11-16T10:00:00+00:00"></time>
-        <div class="tgme_widget_message_text js-message_text">Реальная тренировка<br/>Зал 3</div>
+        <a class="tgme_widget_message_photo_wrap" style="background-image:url('https://cdn4.telesco.pe/file/train.jpg')"></a>
+        <div class="tgme_widget_message_text js-message_text">Реальная тренировка<br/>Зал 3. Сбор 18 ноября в 19:30</div>
       </div>`;
 
     const created: unknown[] = [];
@@ -44,8 +45,13 @@ describe('syncTelegramDigest', () => {
     expect(created[0]).toMatchObject({
       url: 'https://t.me/sskmgimo/10',
       title: 'Реальная тренировка',
+      body: 'Зал 3. Сбор 18 ноября в 19:30',
+      imageUrl: 'https://cdn4.telesco.pe/file/train.jpg',
       moderationStatus: EventModerationStatus.APPROVED,
     });
+    expect((created[0] as { startsAt: Date }).startsAt.toISOString()).toBe(
+      '2026-11-18T16:30:00.000Z', // 19:30 MSK
+    );
     expect(prisma.eventCandidate.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({

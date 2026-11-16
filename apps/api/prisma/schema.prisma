@@ -369,6 +369,9 @@ model EventCandidate {
   body             String?
   /// Stable post URL (t.me/… or vk.com/wall…) — unique when set (Postgres allows many NULLs).
   url              String?               @unique
+  /// Public CDN thumb from t.me/s photo wrap (optional).
+  imageUrl         String?
+  /// Event/meeting time when parsed from post text; else publish time.
   startsAt         DateTime?
   moderationStatus EventModerationStatus @default(PENDING)
   moderatedAt      DateTime?

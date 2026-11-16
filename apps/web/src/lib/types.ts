@@ -138,6 +138,7 @@ export type TodayClubEvent = {
   title: string;
   body?: string | null;
   url?: string | null;
+  imageUrl?: string | null;
   startsAt?: string | null;
   club?: { id: string; name: string } | null;
 };
@@ -191,7 +192,9 @@ export type DigestFeedItem = {
   title: string;
   body?: string | null;
   url?: string | null;
+  imageUrl?: string | null;
   startsAt?: string | null;
+  publishedAt?: string | null;
   club?: { id: string; name: string } | null;
 };
 

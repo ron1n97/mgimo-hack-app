@@ -165,15 +165,45 @@ export default function TodayPage() {
                 {data.clubEventsToday.map((ev) => (
                   <li
                     key={ev.id}
-                    className="rounded-xl border border-cream-deep bg-white/40 px-4 py-3"
+                    className="flex gap-3 rounded-xl border border-cream-deep bg-white/40 px-4 py-3"
                   >
-                    <p className="text-[10px] uppercase tracking-wide text-copper">
-                      {ev.club?.name ?? "Клуб"}
-                    </p>
-                    <p className="mt-1 font-medium text-ink">{ev.title}</p>
-                    {ev.body ? (
-                      <p className="mt-1 line-clamp-2 text-sm text-ink-muted">{ev.body}</p>
+                    {ev.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={ev.imageUrl}
+                        alt=""
+                        className="h-14 w-14 shrink-0 rounded-lg object-cover bg-cream-deep"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                      />
                     ) : null}
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wide text-copper">
+                        {ev.club?.name ?? "Клуб"}
+                        {ev.startsAt
+                          ? ` · ${(() => {
+                              const d = new Date(ev.startsAt!);
+                              const date = d.toLocaleDateString("ru-RU", {
+                                timeZone: "Europe/Moscow",
+                                day: "numeric",
+                                month: "short",
+                              });
+                              const time = d.toLocaleTimeString("ru-RU", {
+                                timeZone: "Europe/Moscow",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              });
+                              return time === "00:00" ? date : `${date}, ${time}`;
+                            })()}`
+                          : ""}
+                      </p>
+                      <p className="mt-1 font-medium text-ink">{ev.title}</p>
+                      {ev.body ? (
+                        <p className="mt-1 line-clamp-2 text-sm text-ink-muted">
+                          {ev.body}
+                        </p>
+                      ) : null}
+                    </div>
                   </li>
                 ))}
               </ul>

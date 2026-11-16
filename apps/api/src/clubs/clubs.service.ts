@@ -297,15 +297,20 @@ export class ClubsService {
     actorUserId: string;
     personalized?: boolean;
   }) {
+    // Public «Что сегодня / Недельный» — current MSK week.
+    // Personalized «Лента по интересам» — rolling 21d (same window as TG ingest).
     const week = moscowWeekBounds(moscowDateString());
     const weekStart = new Date(`${week.from}T00:00:00+03:00`);
     const weekEnd = new Date(`${week.to}T23:59:59.999+03:00`);
+    const rollingStart = new Date(Date.now() - 21 * 24 * 3600 * 1000);
+    const startsAt = params.personalized
+      ? { gte: rollingStart }
+      : { gte: weekStart, lte: weekEnd };
     const events = await this.prisma.eventCandidate.findMany({
       where: {
         moderationStatus: EventModerationStatus.APPROVED,
-        startsAt: { gte: weekStart, lte: weekEnd },
+        startsAt,
       },
-      // Newest first within the current MSK week (avoids cap dropping «сегодня»).
       orderBy: [{ startsAt: 'desc' }, { createdAt: 'desc' }],
       take: 200,
       include: {

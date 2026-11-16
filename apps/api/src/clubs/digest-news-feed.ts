@@ -173,7 +173,8 @@ export function materializeDigestNewsFeed(
       }),
       clubId: club.id,
       sourceId: source?.id ?? null,
-      url: source?.url ?? null,
+      // Unique EventCandidate.url: channel homepage reused across stubs → fragment key.
+      url: source ? `${source.url.replace(/#.*$/, '')}#seed/${item.seedKey}` : null,
     });
   }
   return rows;

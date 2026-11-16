@@ -14,7 +14,6 @@ import { detectSourceKind, slugifyTag } from './club-slug';
 import {
   canModerateClubs,
   clubListVisibilityWhere,
-  filterDigestByInterests,
 } from './digest-filter';
 import { CreateClubDto } from './dto/create-club.dto';
 import {
@@ -24,6 +23,11 @@ import {
   SetTagSubscriptionsDto,
   StaffCreateClubDto,
 } from './dto/staff-club.dto';
+import {
+  syncTelegramDigest,
+  type TelegramIngestResult,
+} from './telegram-ingest';
+import { moscowDateString, moscowWeekBounds } from '../today/today-digest';
 
 const clubInclude = {
   tags: { include: { tag: true } },
@@ -292,44 +296,67 @@ export class ClubsService {
     actorUserId: string;
     personalized?: boolean;
   }) {
-    const events = await this.prisma.eventCandidate.findMany({
-      where: { moderationStatus: EventModerationStatus.APPROVED },
-      orderBy: [{ startsAt: 'asc' }, { createdAt: 'desc' }],
-      take: 50,
-      include: {
-        club: {
-          include: { tags: { include: { tag: true } } },
-        },
-        source: true,
+    const include = {
+      club: {
+        include: { tags: { include: { tag: true } } },
       },
-    });
+      source: true,
+    } as const;
 
     if (!params.personalized) {
+      // Public «Что сегодня / Недельный» — current MSK week.
+      const week = moscowWeekBounds(moscowDateString());
+      const weekStart = new Date(`${week.from}T00:00:00+03:00`);
+      const weekEnd = new Date(`${week.to}T23:59:59.999+03:00`);
+      const events = await this.prisma.eventCandidate.findMany({
+        where: {
+          moderationStatus: EventModerationStatus.APPROVED,
+          startsAt: { gte: weekStart, lte: weekEnd },
+        },
+        orderBy: [{ startsAt: 'desc' }, { createdAt: 'desc' }],
+        take: 200,
+        include,
+      });
       return { mode: 'all' as const, items: events };
     }
 
+    // Personalized: filter by subscriptions in SQL before take, so quieter clubs
+    // are not crowded out by louder channels in a global newest-200 slice.
     const interests = await this.getInterests(params.actorUserId);
-    const byId = new Map(events.map((e) => [e.id, e]));
-    const mapped = events.map((e) => ({
-      id: e.id,
-      clubId: e.clubId,
-      title: e.title,
-      tagIds: e.club?.tags.map((t) => t.tagId) ?? [],
-      moderationStatus: e.moderationStatus,
-    }));
-    const filtered = filterDigestByInterests(mapped, {
-      clubIds: interests.clubs.map((c) => c.id),
-      tagIds: interests.tags.map((t) => t.id),
+    const clubIds = interests.clubs.map((c) => c.id);
+    const tagIds = interests.tags.map((t) => t.id);
+    if (!clubIds.length && !tagIds.length) {
+      return {
+        mode: 'personalized' as const,
+        items: [],
+        interests: { tagIds, clubIds },
+      };
+    }
+
+    const rollingStart = new Date(Date.now() - 21 * 24 * 3600 * 1000);
+    const interestOr: Prisma.EventCandidateWhereInput[] = [];
+    if (clubIds.length) {
+      interestOr.push({ clubId: { in: clubIds } });
+    }
+    if (tagIds.length) {
+      interestOr.push({
+        club: { tags: { some: { tagId: { in: tagIds } } } },
+      });
+    }
+    const events = await this.prisma.eventCandidate.findMany({
+      where: {
+        moderationStatus: EventModerationStatus.APPROVED,
+        startsAt: { gte: rollingStart },
+        OR: interestOr,
+      },
+      orderBy: [{ startsAt: 'desc' }, { createdAt: 'desc' }],
+      take: 80,
+      include,
     });
     return {
       mode: 'personalized' as const,
-      items: filtered
-        .map((f) => byId.get(f.id))
-        .filter((e): e is (typeof events)[number] => Boolean(e)),
-      interests: {
-        tagIds: interests.tags.map((t) => t.id),
-        clubIds: interests.clubs.map((c) => c.id),
-      },
+      items: events,
+      interests: { tagIds, clubIds },
     };
   }
 
@@ -367,6 +394,17 @@ export class ClubsService {
       orderBy: { createdAt: 'desc' },
       include: { club: true, source: true },
     });
+  }
+
+  /**
+   * Scrape public t.me/s previews for enabled TELEGRAM sources → APPROVED feed.
+   * Staff gate = digestEnabled / source.enabled (no Bot API token).
+   */
+  async ingestTelegramDigest(actorRole?: string): Promise<TelegramIngestResult> {
+    if (actorRole !== undefined) {
+      this.assertStaff(actorRole);
+    }
+    return syncTelegramDigest(this.prisma);
   }
 
   private assertStaff(actorRole: string) {

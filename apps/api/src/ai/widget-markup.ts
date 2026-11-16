@@ -179,7 +179,6 @@ export function parseAssistantMarkup(
 ): { parts: AssistantPart[]; widgets: AssistantWidget[] } {
   const hits = collectHits(text, role);
   const parts: AssistantPart[] = [];
-  const widgets: AssistantWidget[] = [];
   let cursor = 0;
 
   for (const hit of hits) {
@@ -188,7 +187,6 @@ export function parseAssistantMarkup(
     }
     if (hit.widget) {
       parts.push({ type: 'widget', widget: hit.widget });
-      widgets.push(hit.widget);
     } else {
       parts.push({ type: 'text', text: hit.raw });
     }
@@ -203,7 +201,61 @@ export function parseAssistantMarkup(
     parts.push({ type: 'text', text });
   }
 
-  return { parts, widgets };
+  const tidied = tidyAssistantParts(parts);
+  const widgets = tidied
+    .filter((p): p is Extract<AssistantPart, { type: 'widget' }> => p.type === 'widget')
+    .map((p) => p.widget);
+  return { parts: tidied, widgets };
+}
+
+const ORPHAN_BULLET_LINE = /^\s*[-*•]\s*$/;
+const TRAILING_LIST_MARKER = /(?:^|\n)\s*[-*•]\s*$/;
+const LEADING_LIST_MARKER = /^\s*[-*•]\s*(?:\n|$)/;
+const PAREN_ONLY = /^\s*\(([^)]+)\)\s*$/;
+
+/** Drop orphan `-` / `•` list markers left after widget extraction. */
+export function tidyAssistantText(text: string): string {
+  return text
+    .replace(TRAILING_LIST_MARKER, '')
+    .replace(LEADING_LIST_MARKER, '')
+    .split('\n')
+    .filter((line) => !ORPHAN_BULLET_LINE.test(line))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/**
+ * Clean text around widgets: strip lone bullets, fold `(meta)` lines
+ * into the previous widget subtitle when empty.
+ */
+export function tidyAssistantParts(parts: AssistantPart[]): AssistantPart[] {
+  const out: AssistantPart[] = [];
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (part.type === 'widget') {
+      let widgetPart = part;
+      const next = parts[i + 1];
+      if (next?.type === 'text') {
+        const cleaned = tidyAssistantText(next.text);
+        const meta = cleaned.match(PAREN_ONLY);
+        if (meta && !widgetPart.widget.subtitle) {
+          widgetPart = {
+            type: 'widget',
+            widget: { ...widgetPart.widget, subtitle: meta[1] },
+          };
+          i += 1;
+        }
+      }
+      out.push(widgetPart);
+      continue;
+    }
+
+    const cleaned = tidyAssistantText(part.text);
+    if (!cleaned) continue;
+    out.push({ type: 'text', text: cleaned });
+  }
+  return out;
 }
 
 export function stripWidgetMarkup(text: string): string {

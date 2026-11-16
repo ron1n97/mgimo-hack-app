@@ -900,6 +900,17 @@ export async function addDigestSource(payload: {
   });
 }
 
+export async function ingestTelegramDigest(): Promise<{
+  sourcesTried: number;
+  sourcesOk: number;
+  postsUpserted: number;
+  postsSkippedRejected?: number;
+  stubsRetired: number;
+  errors: Array<{ sourceId: string; url: string; error: string }>;
+}> {
+  return request("/staff/digest/ingest-telegram", { method: "POST", body: {} });
+}
+
 export async function fetchTeacherSlots(params?: {
   from?: string;
   to?: string;

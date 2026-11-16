@@ -6,7 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RequestsService } from '../requests/requests.service';
 import { ScheduleService } from '../schedule/schedule.service';
 import { TodayService } from '../today/today.service';
-import { completeChatTurn } from './ai-chat';
+import { completeChatTurn, type ChatStreamEvent } from './ai-chat';
 import { buildApplicationDocx } from './application-docx';
 import {
   ApplicationProfile,
@@ -77,8 +77,35 @@ export class AiService {
   }
 
   async chat(userId: string, role: string, dto: ChatDto) {
+    const result = await this.runChatTurn(userId, role, dto);
+    return {
+      role: 'assistant' as const,
+      content: result.content,
+      parts: result.parts,
+      widgets: result.widgets,
+      source: result.source,
+      disclaimer: result.disclaimer,
+      steps: result.steps,
+    };
+  }
+
+  async chatStream(
+    userId: string,
+    role: string,
+    dto: ChatDto,
+    onEvent: (event: ChatStreamEvent) => void,
+  ) {
+    await this.runChatTurn(userId, role, dto, onEvent);
+  }
+
+  private async runChatTurn(
+    userId: string,
+    role: string,
+    dto: ChatDto,
+    onEvent?: (event: ChatStreamEvent) => void,
+  ) {
     const profileHint = await this.profileHintFor(userId, role);
-    const result = await completeChatTurn({
+    return completeChatTurn({
       apiKey: this.apiKey,
       baseUrl: this.baseUrl,
       model: this.model,
@@ -89,16 +116,8 @@ export class AiService {
       runTool: (name, args) => this.runChatTool(userId, role, name, args),
       stubReply: () => this.stubChatReply(role),
       logger: (msg) => this.logger.warn(msg),
+      onEvent,
     });
-
-    return {
-      role: 'assistant' as const,
-      content: result.content,
-      parts: result.parts,
-      widgets: result.widgets,
-      source: result.source,
-      disclaimer: result.disclaimer,
-    };
   }
 
   private async profileHintFor(userId: string, role: string): Promise<string> {

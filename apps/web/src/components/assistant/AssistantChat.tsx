@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ApiError, postAiChat, type AiChatResponse } from "@/lib/api";
+import {
+  ApiError,
+  streamAiChat,
+  type AiChatResponse,
+  type AiHarnessStep,
+} from "@/lib/api";
 import { getUser } from "@/lib/auth";
 import type { User, UserRole } from "@/lib/types";
 import {
@@ -62,10 +67,13 @@ export function AssistantChat() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [thinkStartedAt, setThinkStartedAt] = useState<number | null>(null);
+  const [elapsedSec, setElapsedSec] = useState(0);
+  const [liveSteps, setLiveSteps] = useState<AiHarnessStep[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const role = user?.role ?? "student";
 
   useEffect(() => {
@@ -76,7 +84,24 @@ export function AssistantChat() {
     if (!open) return;
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, open, busy, thinkStartedAt]);
+  }, [messages, open, busy, thinkStartedAt, liveSteps]);
+
+  useEffect(() => {
+    if (!busy || thinkStartedAt == null) {
+      setElapsedSec(0);
+      return;
+    }
+    const tick = window.setInterval(() => {
+      setElapsedSec(Math.max(0, Math.floor((Date.now() - thinkStartedAt) / 1000)));
+    }, 250);
+    return () => window.clearInterval(tick);
+  }, [busy, thinkStartedAt]);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   async function send(text: string) {
     const trimmed = text.trim();
@@ -96,13 +121,29 @@ export function AssistantChat() {
     setMessages((prev) => [...prev, userMsg]);
     const started = Date.now();
     setThinkStartedAt(started);
+    setLiveSteps([]);
     setBusy(true);
 
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+
     try {
-      const res: AiChatResponse = await postAiChat({
-        message: trimmed,
-        history,
-      });
+      const res = await streamAiChat(
+        { message: trimmed, history },
+        (event) => {
+          if (event.type === "step") {
+            setLiveSteps((prev) => {
+              const idx = prev.findIndex((s) => s.id === event.step.id);
+              if (idx === -1) return [...prev, event.step];
+              const next = [...prev];
+              next[idx] = event.step;
+              return next;
+            });
+          }
+        },
+        ac.signal,
+      );
       const parts = mapParts(res, role);
       setMessages((prev) => [
         ...prev,
@@ -117,14 +158,18 @@ export function AssistantChat() {
         },
       ]);
     } catch (err) {
+      if (ac.signal.aborted) return;
       const message =
         err instanceof ApiError
           ? err.message
           : "Не удалось получить ответ ассистента";
       setError(message);
     } finally {
-      setBusy(false);
-      setThinkStartedAt(null);
+      if (!ac.signal.aborted) {
+        setBusy(false);
+        setThinkStartedAt(null);
+        setLiveSteps([]);
+      }
     }
   }
 
@@ -164,7 +209,7 @@ export function AssistantChat() {
                   Ассистент<span className="text-copper">+</span>
                 </p>
                 <p className="text-xs text-ink-muted">
-                  Ход агента · виджеты ведут на экраны
+                  Живые шаги · набор текста · виджеты
                 </p>
               </div>
               <button
@@ -231,7 +276,11 @@ export function AssistantChat() {
 
               {busy && thinkStartedAt != null ? (
                 <div className="flex justify-start">
-                  <AssistantThinking startedAt={thinkStartedAt} />
+                  <AssistantThinking
+                    steps={liveSteps}
+                    startedAt={thinkStartedAt}
+                    elapsedSec={elapsedSec}
+                  />
                 </div>
               ) : null}
 

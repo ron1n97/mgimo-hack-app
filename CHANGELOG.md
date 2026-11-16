@@ -6,6 +6,7 @@
 ## [Unreleased]
 
 ### Added
+- Assistant harness stream (ADR 0018): `POST /ai/chat/stream` NDJSON with live tool/model steps; web typewriter reply + concrete step labels (not fake «думаю»).
 - Live clubs digest from public Telegram channel previews (`t.me/s/…`, ADR 0017): staff ingest button, worker cron, internal key endpoint; demo stubs retired only after successful ingest.
 - Durable MSK-week digest news seed (`seedDigestNewsFeed`) + worker `ingestDigest` for VK walls when `VK_SERVICE_TOKEN` is set (ADR 0016)
 

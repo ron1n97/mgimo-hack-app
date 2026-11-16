@@ -1,30 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+export type HarnessStep = {
+  id: string;
+  tool: string;
+  label: string;
+  status: "running" | "done";
+};
 
-const STEPS = [
-  "Читаю контекст кабинета",
-  "Смотрю расписание и заявки",
-  "Собираю ответ с виджетами",
-] as const;
-
-export function AssistantThinking({ startedAt }: { startedAt: number }) {
-  const [step, setStep] = useState(0);
-  const [elapsed, setElapsed] = useState(0);
-
-  useEffect(() => {
-    const tick = window.setInterval(() => {
-      setElapsed(Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
-    }, 250);
-    return () => window.clearInterval(tick);
-  }, [startedAt]);
-
-  useEffect(() => {
-    const advance = window.setInterval(() => {
-      setStep((s) => (s + 1) % STEPS.length);
-    }, 2800);
-    return () => window.clearInterval(advance);
-  }, []);
+export function AssistantThinking({
+  steps,
+  startedAt,
+  elapsedSec,
+}: {
+  steps: HarnessStep[];
+  startedAt: number;
+  elapsedSec: number;
+}) {
+  const visible =
+    steps.length > 0
+      ? steps
+      : [
+          {
+            id: "boot",
+            tool: "boot",
+            label: "Подключаюсь к модели",
+            status: "running" as const,
+          },
+        ];
 
   return (
     <div
@@ -36,39 +38,32 @@ export function AssistantThinking({ startedAt }: { startedAt: number }) {
         <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted">
           Ход агента
         </p>
-        <p className="tabular-nums text-[11px] text-ink-muted">{elapsed}с</p>
+        <p className="tabular-nums text-[11px] text-ink-muted">{elapsedSec}с</p>
       </div>
 
       <div className="mt-2.5 space-y-1.5">
-        {STEPS.map((label, i) => {
-          const state =
-            i < step ? "done" : i === step ? "active" : "pending";
+        {visible.map((step) => {
+          const active = step.status === "running";
           return (
             <div
-              key={label}
+              key={step.id}
               className={`flex items-center gap-2 text-sm ${
-                state === "pending"
-                  ? "text-ink-muted/55"
-                  : state === "active"
-                    ? "text-ink"
-                    : "text-ink-muted"
+                active ? "text-ink" : "text-ink-muted"
               }`}
             >
               <span
                 className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[9px] ${
-                  state === "done"
+                  step.status === "done"
                     ? "border-copper/40 bg-copper/15 text-copper"
-                    : state === "active"
-                      ? "border-ink/30 assistant-harness-dot"
-                      : "border-ink/15"
+                    : "border-ink/30 assistant-harness-dot"
                 }`}
                 aria-hidden
               >
-                {state === "done" ? "✓" : state === "active" ? "" : ""}
+                {step.status === "done" ? "✓" : ""}
               </span>
-              <span className={state === "active" ? "font-medium" : undefined}>
-                {label}
-                {state === "active" ? "…" : ""}
+              <span className={active ? "font-medium" : undefined}>
+                {step.label}
+                {active ? "…" : ""}
               </span>
             </div>
           );
@@ -76,8 +71,11 @@ export function AssistantThinking({ startedAt }: { startedAt: number }) {
       </div>
 
       <p className="mt-3 text-[11px] text-ink-muted">
-        Z Code · обычно 15–30 сек
+        {steps.length
+          ? `${steps.filter((s) => s.status === "done").length}/${steps.length} шагов · Z Code`
+          : "Жду первый tool-call…"}
       </p>
+      <span className="sr-only">started {startedAt}</span>
     </div>
   );
 }

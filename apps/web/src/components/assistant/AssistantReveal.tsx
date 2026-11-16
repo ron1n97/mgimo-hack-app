@@ -19,12 +19,30 @@ export function AssistantReveal({
   durationMs?: number;
   onNavigate?: () => void;
 }) {
-  const [phase, setPhase] = useState<"meta" | "body">("meta");
+  const [typed, setTyped] = useState("");
+  const [typingDone, setTypingDone] = useState(false);
 
   useEffect(() => {
-    const t = window.setTimeout(() => setPhase("body"), 120);
-    return () => window.clearTimeout(t);
-  }, []);
+    const full = fallbackText || "";
+    if (!full) {
+      setTypingDone(true);
+      return;
+    }
+    setTyped("");
+    setTypingDone(false);
+    let i = 0;
+    const tick = window.setInterval(() => {
+      i += Math.max(1, Math.ceil(full.length / 80));
+      if (i >= full.length) {
+        setTyped(full);
+        setTypingDone(true);
+        window.clearInterval(tick);
+      } else {
+        setTyped(full.slice(0, i));
+      }
+    }, 18);
+    return () => window.clearInterval(tick);
+  }, [fallbackText]);
 
   const secs =
     durationMs != null ? Math.max(1, Math.round(durationMs / 1000)) : null;
@@ -42,21 +60,25 @@ export function AssistantReveal({
         </span>
       </div>
 
-      <div
-        className={`rounded-2xl border border-ink/10 bg-white/70 px-3 py-2.5 ${
-          phase === "body" ? "assistant-harness-reveal" : "opacity-0"
-        }`}
-      >
-        <AssistantMessage
-          parts={parts}
-          fallbackText={fallbackText}
-          onNavigate={onNavigate}
-        />
-        {source === "stub" ? (
+      <div className="assistant-harness-reveal rounded-2xl border border-ink/10 bg-white/70 px-3 py-2.5">
+        {!typingDone ? (
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">
+            {typed}
+            <span className="assistant-harness-caret ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 bg-copper align-middle" />
+          </p>
+        ) : (
+          <AssistantMessage
+            parts={parts}
+            fallbackText={fallbackText}
+            onNavigate={onNavigate}
+          />
+        )}
+        {typingDone && source === "stub" ? (
           <p className="mt-2 text-[11px] text-copper">
             {disclaimer ?? "ИИ недоступен — шаблонный ответ."}
           </p>
-        ) : disclaimer ? (
+        ) : null}
+        {typingDone && source !== "stub" && disclaimer ? (
           <p className="mt-2 text-[11px] text-ink-muted">{disclaimer}</p>
         ) : null}
       </div>

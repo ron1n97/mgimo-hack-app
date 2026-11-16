@@ -32,6 +32,46 @@ export class AiController {
     return this.ai.chat(user.userId, user.role, dto);
   }
 
+  /** NDJSON harness stream: step / assistant / done lines. */
+  @Post('chat/stream')
+  async chatStream(
+    @CurrentUser() user: JwtPayloadUser,
+    @Body() dto: ChatDto,
+    @Res() res: Response,
+  ) {
+    res.status(200);
+    res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    if (typeof res.flushHeaders === 'function') {
+      res.flushHeaders();
+    }
+
+    const write = (event: unknown) => {
+      res.write(`${JSON.stringify(event)}\n`);
+      const flushable = res as Response & { flush?: () => void };
+      flushable.flush?.();
+    };
+
+    try {
+      await this.ai.chatStream(user.userId, user.role, dto, write);
+    } catch (err) {
+      write({
+        type: 'assistant',
+        content: 'Не удалось получить ответ ассистента.',
+        parts: [{ type: 'text', text: 'Не удалось получить ответ ассистента.' }],
+        widgets: [],
+        source: 'stub',
+        disclaimer: 'Ошибка потока ИИ.',
+        steps: [],
+        error: err instanceof Error ? err.message : String(err),
+      });
+      write({ type: 'done' });
+    } finally {
+      res.end();
+    }
+  }
+
   @Post('draft-request')
   draftRequest(
     @CurrentUser() user: JwtPayloadUser,

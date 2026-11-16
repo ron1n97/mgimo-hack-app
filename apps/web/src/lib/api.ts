@@ -570,7 +570,29 @@ export type AiChatResponse = {
   widgets: Array<Extract<AiChatPart, { type: "widget" }>["widget"]>;
   source: "zcode" | "stub";
   disclaimer?: string;
+  steps?: AiHarnessStep[];
 };
+
+export type AiHarnessStep = {
+  id: string;
+  tool: string;
+  label: string;
+  status: "running" | "done";
+};
+
+export type AiChatStreamEvent =
+  | { type: "step"; step: AiHarnessStep }
+  | {
+      type: "assistant";
+      content: string;
+      parts: AiChatPart[];
+      widgets: Array<Extract<AiChatPart, { type: "widget" }>["widget"]>;
+      source: "zcode" | "stub";
+      disclaimer?: string;
+      steps?: AiHarnessStep[];
+      error?: string;
+    }
+  | { type: "done" };
 
 export async function postAiChat(payload: {
   message: string;
@@ -583,6 +605,125 @@ export async function postAiChat(payload: {
       history: payload.history,
     },
   });
+}
+
+/** Live harness stream: tool steps as they run, then final assistant payload. */
+export async function streamAiChat(
+  payload: {
+    message: string;
+    history?: Array<{ role: "user" | "assistant"; content: string }>;
+  },
+  onEvent: (event: AiChatStreamEvent) => void,
+  signal?: AbortSignal,
+): Promise<AiChatResponse> {
+  const token = getToken();
+  const headers: Record<string, string> = {
+    Accept: "application/x-ndjson",
+    "Content-Type": "application/json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/ai/chat/stream`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        message: payload.message,
+        history: payload.history,
+      }),
+      signal,
+    });
+  } catch {
+    throw new ApiError(
+      `Сервер недоступен. Проверьте интернет и попробуйте снова.`,
+      0,
+    );
+  }
+
+  if (response.status === 401) {
+    clearSession();
+    if (typeof window !== "undefined" && window.location.pathname !== "/") {
+      window.location.href = "/";
+    }
+  }
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    let message = "Не удалось получить ответ ассистента";
+    try {
+      const data = JSON.parse(text) as { message?: string | string[] };
+      if (Array.isArray(data.message)) message = data.message.join(", ");
+      else if (typeof data.message === "string") message = data.message;
+    } catch {
+      if (text) message = text.slice(0, 200);
+    }
+    throw new ApiError(message, response.status);
+  }
+
+  if (!response.body) {
+    throw new ApiError("Поток ответа пуст", response.status);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let assistant: AiChatResponse | null = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      let event: AiChatStreamEvent;
+      try {
+        event = JSON.parse(trimmed) as AiChatStreamEvent;
+      } catch {
+        continue;
+      }
+      onEvent(event);
+      if (event.type === "assistant") {
+        assistant = {
+          role: "assistant",
+          content: event.content,
+          parts: event.parts,
+          widgets: event.widgets,
+          source: event.source,
+          disclaimer: event.disclaimer,
+          steps: event.steps,
+        };
+      }
+    }
+  }
+
+  if (buffer.trim()) {
+    try {
+      const event = JSON.parse(buffer.trim()) as AiChatStreamEvent;
+      onEvent(event);
+      if (event.type === "assistant") {
+        assistant = {
+          role: "assistant",
+          content: event.content,
+          parts: event.parts,
+          widgets: event.widgets,
+          source: event.source,
+          disclaimer: event.disclaimer,
+          steps: event.steps,
+        };
+      }
+    } catch {
+      /* ignore trailing junk */
+    }
+  }
+
+  if (!assistant) {
+    throw new ApiError("Поток завершился без ответа ассистента", 502);
+  }
+  return assistant;
 }
 
 export async function draftRequestWithAi(payload: {

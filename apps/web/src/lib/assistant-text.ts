@@ -70,20 +70,20 @@ export function tidyAssistantParts<T extends TidiablePart>(parts: T[]): T[] {
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
     if (part.type === "widget") {
-      let widgetPart = part;
       const next = parts[i + 1];
       if (next?.type === "text") {
         const cleaned = tidyAssistantText(next.text);
         const meta = cleaned.match(PAREN_ONLY);
-        if (meta && !widgetPart.widget.subtitle) {
-          widgetPart = {
-            ...widgetPart,
-            widget: { ...widgetPart.widget, subtitle: meta[1] },
-          };
+        if (meta && !part.widget.subtitle) {
+          out.push({
+            ...part,
+            widget: { ...part.widget, subtitle: meta[1] },
+          } as T);
           i += 1; // consume parenthetical text part
+          continue;
         }
       }
-      out.push(widgetPart);
+      out.push(part);
       continue;
     }
 

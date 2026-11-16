@@ -26,6 +26,8 @@ type UiMessage = {
   source?: "zcode" | "stub";
   disclaimer?: string;
   durationMs?: number;
+  /** After first typewriter pass — reopen shows full text, no re-animate. */
+  settled?: boolean;
 };
 
 function roleToApi(role: UserRole): string {
@@ -268,6 +270,14 @@ export function AssistantChat() {
                       source={m.source}
                       disclaimer={m.disclaimer}
                       durationMs={m.durationMs}
+                      animateTyping={!m.settled}
+                      onTypingDone={() =>
+                        setMessages((prev) =>
+                          prev.map((row) =>
+                            row.id === m.id ? { ...row, settled: true } : row,
+                          ),
+                        )
+                      }
                       onNavigate={() => setOpen(false)}
                     />
                   )}

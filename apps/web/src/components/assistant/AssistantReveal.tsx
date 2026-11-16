@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AssistantPart } from "@/lib/widget-markup";
 import { AssistantMessage } from "./AssistantMessage";
 
@@ -10,6 +10,8 @@ export function AssistantReveal({
   source,
   disclaimer,
   durationMs,
+  animateTyping = true,
+  onTypingDone,
   onNavigate,
 }: {
   parts?: AssistantPart[];
@@ -17,15 +19,26 @@ export function AssistantReveal({
   source?: "zcode" | "stub";
   disclaimer?: string;
   durationMs?: number;
+  /** False for history cards (reopen) — show full answer immediately. */
+  animateTyping?: boolean;
+  onTypingDone?: () => void;
   onNavigate?: () => void;
 }) {
-  const [typed, setTyped] = useState("");
-  const [typingDone, setTypingDone] = useState(false);
+  const [typed, setTyped] = useState(animateTyping ? "" : fallbackText);
+  const [typingDone, setTypingDone] = useState(!animateTyping);
+  const onTypingDoneRef = useRef(onTypingDone);
+  onTypingDoneRef.current = onTypingDone;
 
   useEffect(() => {
+    if (!animateTyping) {
+      setTyped(fallbackText);
+      setTypingDone(true);
+      return;
+    }
     const full = fallbackText || "";
     if (!full) {
       setTypingDone(true);
+      onTypingDoneRef.current?.();
       return;
     }
     setTyped("");
@@ -37,12 +50,13 @@ export function AssistantReveal({
         setTyped(full);
         setTypingDone(true);
         window.clearInterval(tick);
+        onTypingDoneRef.current?.();
       } else {
         setTyped(full.slice(0, i));
       }
     }, 18);
     return () => window.clearInterval(tick);
-  }, [fallbackText]);
+  }, [fallbackText, animateTyping]);
 
   const secs =
     durationMs != null ? Math.max(1, Math.round(durationMs / 1000)) : null;

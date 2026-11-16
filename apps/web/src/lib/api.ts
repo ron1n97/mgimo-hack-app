@@ -904,6 +904,7 @@ export async function ingestTelegramDigest(): Promise<{
   sourcesTried: number;
   sourcesOk: number;
   postsUpserted: number;
+  postsSkippedRejected?: number;
   stubsRetired: number;
   errors: Array<{ sourceId: string; url: string; error: string }>;
 }> {

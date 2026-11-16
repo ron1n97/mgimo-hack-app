@@ -357,7 +357,7 @@ export default function ClubsPage() {
       <section className="space-y-3">
         <h2 className="font-serif text-xl text-ink">Что сегодня</h2>
         <p className="text-sm text-ink-muted">
-          Анонсы клубов на сегодня (stub-лента, если live-ingest ещё нет). Не требует подписки.
+          Посты из публичных Telegram-каналов клубов (t.me/s/…). Не требует подписки.
         </p>
         {todayFeed.length === 0 ? (
           <p className="text-sm text-ink-muted">
@@ -374,7 +374,17 @@ export default function ClubsPage() {
                 <p className="text-xs text-ink-muted">{item.club?.name}</p>
                 <h3 className="font-medium text-ink">{item.title}</h3>
                 {item.body ? (
-                  <p className="mt-1 text-sm text-ink-muted">{item.body}</p>
+                  <p className="mt-1 text-sm text-ink-muted line-clamp-3">{item.body}</p>
+                ) : null}
+                {item.url ? (
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 inline-block text-sm text-copper"
+                  >
+                    Открыть в Telegram →
+                  </a>
                 ) : null}
               </li>
             ))}
@@ -385,7 +395,7 @@ export default function ClubsPage() {
       <section id="weekly-digest" className="scroll-mt-24 space-y-3">
         <h2 className="font-serif text-xl text-ink">Недельный дайджест</h2>
         <p className="text-sm text-ink-muted">
-          Сводка на текущую неделю — удобнее ежедневного шума.
+          Свежие посты каналов за текущую неделю (MSK).
         </p>
         {weekFeed.length === 0 ? (
           <p className="text-sm text-ink-muted">На этой неделе пока пусто.</p>
@@ -407,6 +417,16 @@ export default function ClubsPage() {
                     : ""}
                 </p>
                 <h3 className="font-medium text-ink">{item.title}</h3>
+                {item.url ? (
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 inline-block text-sm text-copper"
+                  >
+                    Открыть в Telegram →
+                  </a>
+                ) : null}
               </li>
             ))}
           </ul>

@@ -1,12 +1,16 @@
 import cron from 'node-cron';
 import { syncRuz } from './sync/sync-ruz';
 import { ingestDigest } from './digest/ingest-digest';
+import { syncTelegramDigestViaApi } from './digest/sync-telegram-via-api';
 import { writeFile } from 'node:fs/promises';
 
 const CRON = process.env.RUZ_SYNC_CRON ?? '0 */6 * * *';
 const DIGEST_CRON = process.env.DIGEST_INGEST_CRON ?? '30 */6 * * *';
+const DIGEST_TG_CRON = process.env.DIGEST_TG_SYNC_CRON ?? '15 */2 * * *';
 const ONCE = process.argv.includes('--once');
-const DIGEST_ONCE = process.argv.includes('--digest-once');
+const DIGEST_ONCE =
+  process.argv.includes('--digest-once') || process.argv.includes('--digest');
+const DIGEST_TG_ONLY = process.argv.includes('--digest-tg');
 
 async function runSync(label: string): Promise<void> {
   console.log(`[worker] sync start (${label}) at ${new Date().toISOString()}`);
@@ -24,36 +28,64 @@ async function runSync(label: string): Promise<void> {
   }
 }
 
-async function runDigest(label: string): Promise<void> {
+async function runVkDigest(label: string): Promise<void> {
   console.log(
-    `[worker] digest ingest start (${label}) at ${new Date().toISOString()}`,
+    `[worker] digest VK start (${label}) at ${new Date().toISOString()}`,
   );
   const result = await ingestDigest();
   console.log(
-    `[worker] digest ingest done: skipped=${result.skipped} vk=${result.vkSources} created=${result.created} tgSkipped=${result.telegramSkipped} errors=${result.errors.length}`,
+    `[worker] digest VK done: skipped=${result.skipped} vk=${result.vkSources} created=${result.created} tgSkipped=${result.telegramSkipped} errors=${result.errors.length}`,
   );
   if (result.skipReason) {
-    console.log(`[worker] digest: ${result.skipReason}`);
+    console.log(`[worker] digest VK: ${result.skipReason}`);
   }
   if (result.errors.length) {
-    console.warn('[worker] digest errors sample:', result.errors.slice(0, 5));
+    console.warn('[worker] digest VK errors sample:', result.errors.slice(0, 5));
   }
 }
 
+async function runTgDigest(label: string): Promise<void> {
+  console.log(
+    `[worker] digest TG start (${label}) at ${new Date().toISOString()}`,
+  );
+  try {
+    const result = await syncTelegramDigestViaApi();
+    if (result.skipped) {
+      console.warn(`[worker] digest TG skipped: ${result.reason}`);
+      return;
+    }
+    console.log('[worker] digest TG done:', JSON.stringify(result.body));
+  } catch (err) {
+    console.error('[worker] digest TG failed', err);
+  }
+}
+
+async function runDigest(label: string): Promise<void> {
+  if (DIGEST_TG_ONLY) {
+    await runTgDigest(label);
+    return;
+  }
+  await runVkDigest(label);
+  await runTgDigest(label);
+}
+
 async function main(): Promise<void> {
-  if (DIGEST_ONCE) {
+  if (DIGEST_ONCE && !ONCE) {
     await runDigest('once');
     return;
   }
 
   if (ONCE) {
     await runSync('once');
+    if (DIGEST_ONCE) {
+      await runDigest('once');
+    }
     return;
   }
 
   console.log(`[worker] scheduling RUZ sync with cron "${CRON}"`);
-  console.log(`[worker] scheduling digest ingest with cron "${DIGEST_CRON}"`);
-  // run once on boot, then on schedule
+  console.log(`[worker] scheduling VK digest with cron "${DIGEST_CRON}"`);
+  console.log(`[worker] scheduling TG digest with cron "${DIGEST_TG_CRON}"`);
   await runSync('boot');
   await runDigest('boot');
 
@@ -67,7 +99,12 @@ async function main(): Promise<void> {
 
   const digestExpr = cron.validate(DIGEST_CRON) ? DIGEST_CRON : '30 */6 * * *';
   cron.schedule(digestExpr, () => {
-    void runDigest('cron');
+    void runVkDigest('cron');
+  });
+
+  const tgExpr = cron.validate(DIGEST_TG_CRON) ? DIGEST_TG_CRON : '15 */2 * * *';
+  cron.schedule(tgExpr, () => {
+    void runTgDigest('cron');
   });
 }
 

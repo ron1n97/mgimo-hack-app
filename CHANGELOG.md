@@ -5,18 +5,22 @@
 
 ## [Unreleased]
 
+### Added
+- Live clubs digest from public Telegram channel previews (`t.me/s/…`, ADR 0017): staff ingest button, worker cron, internal key endpoint; demo stubs retired only after successful ingest.
+- Durable MSK-week digest news seed (`seedDigestNewsFeed`) + worker `ingestDigest` for VK walls when `VK_SERVICE_TOKEN` is set (ADR 0016)
+
 ### Fixed
 - `/clubs` weekly/today digest no longer empty without subscriptions (public stub feed).
 - Demo club «сегодня» stubs refresh `startsAt` on `seed:extras` (Moscow noon).
 - PWA SW no longer caches API 401s that bounced JWT sessions to login.
+- Digest feed orders newest posts first so TG ingest is visible on `/clubs`.
 
 ### Changed
 - Student academic profile fields are read-only (seed-bound); today hub shows club digest; PWA install hint + SW registration without PushManager gate.
-- Demo seed: five fictional students across faculties; clubs daily/weekly digest stubs.
+- Demo seed: five fictional students across faculties; clubs daily/weekly digest stubs (fallback until TG ingest runs).
 - AI chat shows «обычно 15–30 сек» while waiting on Z Code.
 
 ### Added
-- Durable MSK-week digest news seed (`seedDigestNewsFeed`) + worker `ingestDigest` for VK walls when `VK_SERVICE_TOKEN` is set (ADR 0016; no TG scrape)
 - Telegram egress proxy for RU VPS (undici `TELEGRAM_PROXY`, ADR 0007) + keepalive script
 - RUZ subgroup preference + lessonOid upsert + DB-first schedule SoT (ADR 0008/0009)
 - Clubs registry, digest sources, tags, interest subscriptions (ADR 0012)

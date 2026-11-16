@@ -7,6 +7,7 @@ import {
   addDigestSource,
   confirmClub,
   fetchStaffClubs,
+  ingestTelegramDigest,
   setClubDigest,
 } from "@/lib/api";
 import { getUser } from "@/lib/auth";
@@ -23,6 +24,7 @@ export default function StaffClubsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [sourceUrl, setSourceUrl] = useState("");
   const [sourceClubId, setSourceClubId] = useState("");
+  const [ingestInfo, setIngestInfo] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -92,6 +94,25 @@ export default function StaffClubsPage() {
     }
   }
 
+  async function onIngestTelegram() {
+    setBusyId("ingest");
+    setError(null);
+    setIngestInfo(null);
+    try {
+      const result = await ingestTelegramDigest();
+      setIngestInfo(
+        `TG: источников ${result.sourcesOk}/${result.sourcesTried}, постов ${result.postsUpserted}, stub снято ${result.stubsRetired}` +
+          (result.errors.length ? `, ошибок ${result.errors.length}` : ""),
+      );
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Не удалось стянуть Telegram",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   const drafts = items.filter((c) => c.status === "DRAFT");
   const confirmed = items.filter((c) => c.status === "CONFIRMED");
 
@@ -103,10 +124,24 @@ export default function StaffClubsPage() {
         </p>
         <h1 className="mt-1 font-serif text-3xl text-ink">Клубы и дайджест</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          Подтверждение реестра, включение digest и прямое добавление TG/VK
-          источников. Анонсы в афишу — только после модерации.
+          Подтверждение реестра, digest и TG/VK источники. Публичные каналы
+          тянем с t.me/s/… (без Bot API).
         </p>
       </header>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          disabled={busyId === "ingest"}
+          onClick={() => void onIngestTelegram()}
+          className="rounded-xl bg-copper px-3.5 py-2 text-sm font-semibold text-cream disabled:opacity-50"
+        >
+          {busyId === "ingest" ? "Тянем TG…" : "Стянуть посты из Telegram"}
+        </button>
+        {ingestInfo ? (
+          <p className="text-sm text-ink-muted">{ingestInfo}</p>
+        ) : null}
+      </div>
 
       <form
         onSubmit={onAddSource}

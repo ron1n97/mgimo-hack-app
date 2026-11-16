@@ -162,4 +162,10 @@ export class ClubsController {
   ) {
     return this.clubs.moderateEvent(id, user.userId, user.role, dto.status);
   }
+
+  @Post('staff/digest/ingest-telegram')
+  @Roles(Role.STAFF, Role.ADMIN)
+  ingestTelegram(@CurrentUser() user: JwtPayloadUser) {
+    return this.clubs.ingestTelegramDigest(user.role);
+  }
 }

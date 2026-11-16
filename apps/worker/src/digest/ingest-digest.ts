@@ -86,7 +86,7 @@ export async function ingestDigest(
     result.websiteSkipped = webSources.length;
     if (tgSources.length) {
       log.log(
-        `[ingestDigest] skip ${tgSources.length} TELEGRAM source(s) — no channel scrape without bot`,
+        `[ingestDigest] skip ${tgSources.length} TELEGRAM source(s) here — public t.me/s scrape is ADR 0017 (API / staff ingest)`,
       );
     }
     if (webSources.length) {

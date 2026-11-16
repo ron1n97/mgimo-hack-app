@@ -38,6 +38,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-dekanat}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dekanat}?schema=public
       REDIS_URL: redis://redis:6379
       API_PORT: 3001
+      DIGEST_INGEST_KEY: ${DIGEST_INGEST_KEY:-}
     # Public HTTPS via Caddy only. Localhost publish is for host-network Telegram bot.
     expose:
       - "3001"
@@ -60,11 +61,16 @@ services:
       RUZ_BASE_URL: ${RUZ_BASE_URL:-https://ruz.mgimo.ru}
       VK_SERVICE_TOKEN: ${VK_SERVICE_TOKEN:-}
       DIGEST_INGEST_CRON: ${DIGEST_INGEST_CRON:-30 */6 * * *}
+      API_URL: http://api:3001
+      DIGEST_INGEST_KEY: ${DIGEST_INGEST_KEY:-}
+      DIGEST_TG_SYNC_CRON: ${DIGEST_TG_SYNC_CRON:-15 */2 * * *}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      api:
+        condition: service_started
     mem_limit: 192m
 
   web:

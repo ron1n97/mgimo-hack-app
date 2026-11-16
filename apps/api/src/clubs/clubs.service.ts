@@ -24,6 +24,10 @@ import {
   SetTagSubscriptionsDto,
   StaffCreateClubDto,
 } from './dto/staff-club.dto';
+import {
+  syncTelegramDigest,
+  type TelegramIngestResult,
+} from './telegram-ingest';
 
 const clubInclude = {
   tags: { include: { tag: true } },
@@ -294,8 +298,9 @@ export class ClubsService {
   }) {
     const events = await this.prisma.eventCandidate.findMany({
       where: { moderationStatus: EventModerationStatus.APPROVED },
-      orderBy: [{ startsAt: 'asc' }, { createdAt: 'desc' }],
-      take: 50,
+      // Newest first — TG ingest writes past publishedAt; asc+take hid the feed.
+      orderBy: [{ startsAt: 'desc' }, { createdAt: 'desc' }],
+      take: 80,
       include: {
         club: {
           include: { tags: { include: { tag: true } } },
@@ -367,6 +372,17 @@ export class ClubsService {
       orderBy: { createdAt: 'desc' },
       include: { club: true, source: true },
     });
+  }
+
+  /**
+   * Scrape public t.me/s previews for enabled TELEGRAM sources → APPROVED feed.
+   * Staff gate = digestEnabled / source.enabled (no Bot API token).
+   */
+  async ingestTelegramDigest(actorRole?: string): Promise<TelegramIngestResult> {
+    if (actorRole !== undefined) {
+      this.assertStaff(actorRole);
+    }
+    return syncTelegramDigest(this.prisma);
   }
 
   private assertStaff(actorRole: string) {

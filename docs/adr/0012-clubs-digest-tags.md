@@ -13,8 +13,8 @@
 - Prisma: `Club` (DRAFT/CONFIRMED, `digestEnabled`), `Tag`/`ClubTag`, `ClubSource` (url unique, optional club), `ClubMembership`, `StudentTagSubscription`, `ClubSubscription`, `EventCandidate` (+ `EventModerationStatus`).
 - API: каталог/создание клуба, staff confirm + digest toggle + digest sources, интересы студента, stub `GET /digest/feed?filter=subscribed`.
 - Seed из JSON-фикстуры реестра (xlsx → `prisma/data/clubs-registry.json`).
-- Ранжирование AI и TG scraper / Web Push — out of scope этого среза.
+- Ранжирование AI и Web Push — out of scope этого среза.
 
 ## Последствия
 - IDOR: подписки всегда по JWT `userId`; draft-клубы скрыты от чужих студентов; staff-only confirm/digest/moderation.
-- Ingest: см. ADR 0016 (VK wall + durable seed; TG scrape не делаем). Push — ADR 0013.
+- Ingest: ADR 0016 (VK wall + durable seed); ADR 0017 (public TG `t.me/s` scrape). Push — ADR 0013.

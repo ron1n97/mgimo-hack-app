@@ -50,6 +50,7 @@ model User {
   eventsModerated        EventCandidate[]         @relation("EventModeratedBy")
   teacherAssignmentsMade LessonTeacherAssignment[] @relation("AssignmentAssigner")
   lessonTasksCreated     LessonTask[]              @relation("TaskAuthor")
+  timetableSolveRuns     TimetableSolveRun[]       @relation("TimetableSolveAuthor")
 }
 
 model StudentProfile {
@@ -325,6 +326,30 @@ model ClubSource {
   @@index([clubId])
   @@index([kind, enabled])
   @@unique([url])
+}
+
+/// Timetable optimizer run (ADR 0011) — proposal only, does not overwrite RUZ SoT.
+model TimetableSolveRun {
+  id              String   @id @default(cuid())
+  status          String
+  engine          String
+  objective       Float?
+  message         String?
+  groupRuzIds     String[] @default([])
+  fromDate        DateTime @db.Date
+  toDate          DateTime @db.Date
+  lambdasJson     Json?
+  softJson        Json?
+  instanceMeta    Json?
+  solutionJson    Json?
+  createdByUserId String?
+  createdAt       DateTime @default(now())
+  elapsedMs       Int?
+
+  createdBy User? @relation("TimetableSolveAuthor", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([status])
 }
 
 model ClubMembership {

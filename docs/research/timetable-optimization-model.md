@@ -2,10 +2,10 @@
 
 | Поле | Значение |
 |------|----------|
-| **Статус** | Модель v1 (принята) — без кода солвера |
-| **Дата** | 2026-11-11 |
-| **Связанные ADR** | [0010 — кабинет преподавателя без солвера](../adr/0010-teacher-lesson-assignments.md); [0011 — указатель на эту модель / CP-SAT sidecar](../adr/0011-timetable-optimization-model.md); продуктовый SoT расписания — [0009](../adr/0009-schedule-source-of-truth.md) |
-| **Реализация солвера** | Вне scope (только модель); продуктовый MVP без солвера |
+| **Статус** | Модель v1 + **солвер v0 в продукте** (2026-11-19) |
+| **Дата** | 2026-11-11 (модель) · 2026-11-19 (код) |
+| **Связанные ADR** | [0010 — кабинет преподавателя без солвера](../adr/0010-teacher-lesson-assignments.md); [0011 — CP-SAT + heuristic](../adr/0011-timetable-optimization-model.md); SoT — [0009](../adr/0009-schedule-source-of-truth.md) |
+| **Реализация солвера** | `apps/solver/solve_cpsat.py` + `apps/api/src/timetable/*`; UI `/staff/timetable`; runs в `TimetableSolveRun` |
 | **Источник домена** | Разбор публичного RUZ МГИМО + сообщения коллеги (Telegram, 2026-11-11); process-log: [`../process-log/2026-11-11-ruz-domain-and-jury-process.md`](../process-log/2026-11-11-ruz-domain-and-jury-process.md) |
 
 ---

@@ -10,6 +10,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RequestsModule } from './requests/requests.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { TeacherAssignmentsModule } from './teacher-assignments/teacher-assignments.module';
+import { TimetableModule } from './timetable/timetable.module';
 import { TodayModule } from './today/today.module';
 
 @Module({
@@ -26,6 +27,7 @@ import { TodayModule } from './today/today.module';
     AdminModule,
     ClubsModule,
     TeacherAssignmentsModule,
+    TimetableModule,
   ],
 })
 export class AppModule {}

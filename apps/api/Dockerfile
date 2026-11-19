@@ -30,8 +30,11 @@ COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/apps/api/prisma ./apps/api/prisma
+COPY apps/solver ./apps/solver
+ENV TIMETABLE_CPSAT_SCRIPT=/app/apps/solver/solve_cpsat.py
 WORKDIR /app/apps/api
 EXPOSE 3001
 # migrate then start
 CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node dist/main.js"]
 # Note: nest emits dist/main.js when tsconfig.build includes only src/**
+# CP-SAT needs host python3+ortools; without it API falls back to heuristic.

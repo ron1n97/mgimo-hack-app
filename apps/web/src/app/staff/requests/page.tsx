@@ -74,6 +74,9 @@ export default function StaffRequestsPage() {
           <a href="/staff/teachers" className="text-copper underline-offset-2 hover:underline">
             Преподаватели
           </a>
+          <a href="/staff/timetable" className="text-copper underline-offset-2 hover:underline">
+            Оптимизатор
+          </a>
         </nav>
       </header>
 

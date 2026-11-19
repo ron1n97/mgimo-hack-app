@@ -1,23 +1,24 @@
 # 0011. Модель оптимизации расписания (CP-SAT sidecar)
 
 ## Статус
-Принято (модель v1, без кода солвера)
+Принято — **реализовано v0** (2026-11-19)
 
 ## Дата
-2026-11-11
+2026-11-11 (модель) · 2026-11-19 (код солвера)
 
 ## Контекст
-MVP кабинета преподавателя ([0010](./0010-teacher-lesson-assignments.md)) сознательно без солвера. Параллельно нужна формальная постановка авторасписания: когорты/потоки/языковые подгруппы, аудитории с признаками, ставки, учебный план, календари, две факультетские сетки.
+Нужна формальная постановка авторасписания и рабочий солвер в продукте. Кабинет преподавателя ([0010](./0010-teacher-lesson-assignments.md)) остаётся ручным назначением; оптимизатор — отдельный staff-контур, **не** перезаписывает RUZ SoT ([0009](./0009-schedule-source-of-truth.md)).
 
 ## Решение
-1. Каноническая постановка и математическая модель — в research-доке: [`docs/research/timetable-optimization-model.md`](../research/timetable-optimization-model.md) (модель v1 от 2026-11-11).
-2. Решатель: Google OR-Tools **CP-SAT** в отдельном sidecar/worker (не в request-path API).
-3. Переменные v1: предперечисленные activity-instances $a \in A$ → назначение $(t,r,p)$; покрытие плана — hard при фиксированном $|A|$.
-4. Мягкие цели — линейная скаляризация с конфигурируемыми $\lambda_k$ (без захардкоженных весов в модели).
-5. Доменные факты RUZ (механизмы $C$/$K$, $\mathcal{T}$, гриды МО/МЭО, S6/H10, $W_p$, Wish, $P_{\mathrm{dept}}$) зафиксированы в research-доке; открытые вопросы Q1–Q8/Q10 закрыты; Q9 ждёт формулировку заказчика.
+1. Канон модели: [`docs/research/timetable-optimization-model.md`](../research/timetable-optimization-model.md).
+2. **Движки**
+   - Primary: Google OR-Tools **CP-SAT** — `apps/solver/solve_cpsat.py` (sidecar, stdin/stdout JSON).
+   - Fallback: in-process heuristic — `apps/api/src/timetable/solve-heuristic.ts` (H1–H5/H8/H10 + soft score).
+3. API: `POST /timetable/solve`, `GET /timetable/solves` (STAFF/ADMIN). UI: `/staff/timetable`.
+4. Persist: `TimetableSolveRun` (proposal only).
+5. Переменные v0: activity → `(slot, room, teacher)` на сетке МЭО; когорты из `subGroupOid` / `groupRuzId`.
 
 ## Последствия
-- Нет кода солвера в этом ADR; только указатель на модель.
-- Open questions закрыты research-доком от 2026-11-11 (кроме Q9 — неясен заказчику); солвер по-прежнему вне MVP.
-- Согласуется с 0010: продуктовый MVP без солвера; оптимизация — отдельный этап.
-- След процесса: [`docs/process-log/2026-11-11-ruz-domain-and-jury-process.md`](../process-log/2026-11-11-ruz-domain-and-jury-process.md).
+- Солвер в продукте; на VPS без `ortools` работает heuristic.
+- Полный H6–H9 / Wish / двухфазная декомпозиция — следующие итерации.
+- RUZ остаётся SoT; apply-to-LOCAL — отдельный шаг.

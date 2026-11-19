@@ -1232,3 +1232,40 @@ export async function markLessonMoved(
     body: payload ?? { isMoved: true },
   });
 }
+
+export type TimetableSolveRun = {
+  id: string;
+  status: string;
+  engine: string;
+  objective?: number | null;
+  message?: string | null;
+  groupRuzIds?: string[];
+  fromDate: string;
+  toDate: string;
+  softJson?: Record<string, unknown> | null;
+  elapsedMs?: number | null;
+  createdAt?: string;
+};
+
+export async function fetchTimetableSolves(): Promise<TimetableSolveRun[]> {
+  const data = await request<TimetableSolveRun[]>("/timetable/solves");
+  return Array.isArray(data) ? data : [];
+}
+
+export async function runTimetableSolve(payload: {
+  groupRuzIds: string[];
+  from: string;
+  to: string;
+  engine?: "auto" | "cpsat" | "heuristic";
+}): Promise<{
+  run: TimetableSolveRun;
+  result: {
+    status: string;
+    engine: string;
+    objective: number;
+    elapsedMs: number;
+    soft?: Record<string, number>;
+  };
+}> {
+  return request("/timetable/solve", { method: "POST", body: payload });
+}

@@ -1,25 +1,51 @@
 /**
  * Digest UI must link to a concrete post/event, not a bare channel/club homepage.
- * Channel fallbacks look like links but dump the student into the feed root.
  */
 
-const TG_POST =
-  /^https?:\/\/(?:t\.me|telegram\.me)\/(?:c\/\d+\/\d+|[^/?#]+\/\d+)(?:\?[^#]*)?(?:#.*)?$/i;
-const VK_POST =
-  /^https?:\/\/(?:m\.)?vk\.com\/(?:wall-?\d+_\d+|[\w.-]+\?w=wall-?\d+_\d+)/i;
-/** Seed/demo markers that still point at a specific stub row, not the channel root. */
-const SEED_FRAGMENT = /#(seed|demo)\//i;
+function stripFrag(url: string): string {
+  return url.split('#')[0] ?? url;
+}
 
-export function isPostOrEventUrl(url: string | null | undefined): boolean {
-  const u = url?.trim();
-  if (!u) return false;
-  if (SEED_FRAGMENT.test(u)) return true;
-  if (TG_POST.test(u.split('#')[0] ?? u)) return true;
-  if (VK_POST.test(u)) return true;
+export function isBareSocialChannel(url: string): boolean {
+  const u = stripFrag(url.trim());
+  try {
+    const parsed = new URL(u);
+    const host = parsed.hostname.replace(/^www\./, '').toLowerCase();
+    const path = parsed.pathname.replace(/\/+$/, '') || '/';
+    if (host === 't.me' || host === 'telegram.me') {
+      // /user or /c/id without message id
+      const parts = path.split('/').filter(Boolean);
+      if (parts.length === 1) return true;
+      if (parts[0] === 'c' && parts.length === 2) return true;
+      return false;
+    }
+    if (host === 'vk.com' || host === 'm.vk.com') {
+      if (path === '/' || path === '') return true;
+      if (/wall-?\d+_\d+/i.test(path) || /[?&]w=wall/i.test(parsed.search)) {
+        return false;
+      }
+      // /club123 /public123 /username without wall
+      if (/^\/(club|public)\d+$/i.test(path)) return true;
+      if (/^\/[\w.-]+$/i.test(path)) return true;
+      return false;
+    }
+  } catch {
+    return false;
+  }
   return false;
 }
 
-/** Prefer stored event URL when it is post-like; never promote bare channel URLs. */
+/** Post, event page, or seed stub — anything except bare TG/VK channel. */
+export function isPostOrEventUrl(url: string | null | undefined): boolean {
+  const u = url?.trim();
+  if (!u) return false;
+  if (/#(seed|demo)\//i.test(u)) return true;
+  if (!/^https?:\/\//i.test(u)) return false;
+  if (isBareSocialChannel(u)) return false;
+  return true;
+}
+
+/** Prefer stored event URL when it is post/event-like; never promote bare channels. */
 export function resolveDigestEventUrl(input: {
   url?: string | null;
   sourceUrl?: string | null;
@@ -30,6 +56,5 @@ export function resolveDigestEventUrl(input: {
   for (const raw of input.clubSourceUrls ?? []) {
     if (isPostOrEventUrl(raw)) return raw!.trim();
   }
-  // Bare channel / site homepage is intentionally omitted.
   return null;
 }

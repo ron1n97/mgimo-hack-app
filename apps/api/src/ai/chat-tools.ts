@@ -68,6 +68,26 @@ const TOOL_GET_NOTIFICATIONS: ChatToolDefinition = {
   },
 };
 
+const TOOL_GET_DIGEST: ChatToolDefinition = {
+  type: 'function',
+  function: {
+    name: 'get_digest',
+    description:
+      'Дайджест клубов: события на сегодня и на текущую неделю (MSK), с ссылками.',
+    parameters: { type: 'object', properties: {}, additionalProperties: false },
+  },
+};
+
+const TOOL_GET_STAFF_OVERVIEW: ChatToolDefinition = {
+  type: 'function',
+  function: {
+    name: 'get_staff_overview',
+    description:
+      'Сводка деканата: число открытых заявок, непрочитанных уведомлений, анонсов.',
+    parameters: { type: 'object', properties: {}, additionalProperties: false },
+  },
+};
+
 export function toolsForRole(role: string): ChatToolDefinition[] {
   const r = role.toUpperCase();
   if (r === 'STAFF' || r === 'ADMIN') {
@@ -75,17 +95,25 @@ export function toolsForRole(role: string): ChatToolDefinition[] {
       TOOL_GET_TODAY,
       TOOL_GET_SCHEDULE,
       TOOL_GET_STAFF_REQUESTS,
+      TOOL_GET_STAFF_OVERVIEW,
+      TOOL_GET_DIGEST,
       TOOL_GET_NOTIFICATIONS,
     ];
   }
   if (r === 'TEACHER') {
-    return [TOOL_GET_TODAY, TOOL_GET_SCHEDULE, TOOL_GET_NOTIFICATIONS];
+    return [
+      TOOL_GET_TODAY,
+      TOOL_GET_SCHEDULE,
+      TOOL_GET_DIGEST,
+      TOOL_GET_NOTIFICATIONS,
+    ];
   }
   return [
     TOOL_GET_TODAY,
     TOOL_GET_SCHEDULE,
     TOOL_GET_GRADES,
     TOOL_GET_REQUESTS,
+    TOOL_GET_DIGEST,
     TOOL_GET_NOTIFICATIONS,
   ];
 }
@@ -118,15 +146,19 @@ export function systemPromptForRole(role: string, profileHint?: string): string 
 
   if (r === 'STAFF' || r === 'ADMIN') {
     base.push(
-      'Роль: сотрудник деканата. Фокус — очередь заявок, статусы, что сделать сегодня по кабинету.',
+      'Роль: сотрудник деканата. Фокус — очередь заявок, статусы, объявления, дайджест клубов и что сделать сегодня.',
+      'Для афиши/клубов вызывай get_digest. Для нагрузки кабинета — get_staff_overview и get_staff_requests.',
+      'Предлагай конкретные следующие шаги в кабинете (/staff/requests, /staff/clubs, /staff/students).',
     );
   } else if (r === 'TEACHER') {
     base.push(
-      'Роль: преподаватель. Фокус — расписание/пары и уведомления. Заявки студентов не трогай.',
+      'Роль: преподаватель. Фокус — расписание/пары, задания и уведомления. Заявки студентов не трогай.',
+      'Можешь кратко рассказать дайджест клубов через get_digest.',
     );
   } else {
     base.push(
-      'Роль: студент. Помогай с расписанием, долгами/задачами, заявками и «что дальше».',
+      'Роль: студент. Помогай с расписанием, долгами/задачами, заявками, дайджестом клубов и «что дальше».',
+      'На вопросы про мероприятия/клубы вызывай get_digest.',
     );
   }
 

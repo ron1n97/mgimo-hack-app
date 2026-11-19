@@ -7,11 +7,15 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Role } from '@prisma/client';
 import {
   CurrentUser,
   JwtPayloadUser,
 } from '../common/decorators/current-user.decorator';
+import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { AnnounceDto } from './dto/announce.dto';
 import {
   CreateNotificationDto,
   SubscribePushDto,
@@ -21,7 +25,7 @@ import { NotificationsService } from './notifications.service';
 import { PushSubscriptionService } from './push-subscription.service';
 
 @Controller('notifications')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class NotificationsController {
   constructor(
     private readonly notifications: NotificationsService,
@@ -77,6 +81,17 @@ export class NotificationsController {
   ) {
     return this.notifications.createForUser({
       userId: user.userId,
+      title: dto.title,
+      body: dto.body,
+      kind: dto.kind,
+    });
+  }
+
+  /** Broadcast news / schedule move notice to all students (+ Web Push when VAPID set). */
+  @Post('announce')
+  @Roles(Role.STAFF, Role.ADMIN)
+  announce(@Body() dto: AnnounceDto) {
+    return this.notifications.announceToStudents({
       title: dto.title,
       body: dto.body,
       kind: dto.kind,

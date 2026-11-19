@@ -73,14 +73,14 @@ function DigestItem({
           {item.body ? (
             <p className="mt-1 line-clamp-3 text-sm text-ink-muted">{item.body}</p>
           ) : null}
-          {item.url ? (
+          {item.url || item.club?.id ? (
             <a
-              href={item.url}
-              target="_blank"
-              rel="noreferrer"
+              href={item.url || "/clubs"}
+              target={item.url ? "_blank" : undefined}
+              rel={item.url ? "noreferrer" : undefined}
               className="mt-1 inline-block text-sm text-copper underline-offset-2 hover:underline"
             >
-              Открыть в Telegram →
+              {item.url ? "Открыть источник →" : "К клубам →"}
             </a>
           ) : null}
         </div>

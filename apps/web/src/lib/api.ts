@@ -236,6 +236,8 @@ function mapLesson(raw: Record<string, unknown>): ScheduleItem {
     subGroup: (raw.subGroup as string | undefined) ?? undefined,
     subGroupOid: raw.subGroupOid != null ? String(raw.subGroupOid) : undefined,
     stream: (raw.stream as string | undefined) ?? undefined,
+    isMoved: Boolean(raw.isMoved),
+    isCancelled: Boolean(raw.isCancelled),
   };
 }
 
@@ -287,8 +289,9 @@ function isImportantUnread(item: NotificationItem): boolean {
   return (
     kind.startsWith("grade_") ||
     kind.startsWith("digest_") ||
-    kind === "academic_debt" ||
-    kind === "schedule_moved"
+    kind.startsWith("deanery_") ||
+    kind.startsWith("schedule_") ||
+    kind === "academic_debt"
   );
 }
 
@@ -525,6 +528,32 @@ export async function fetchSchedule(
 export async function fetchGrades(): Promise<GradeItem[]> {
   const data = await request<Record<string, unknown>[]>("/grades/me");
   return Array.isArray(data) ? data.map(mapGrade) : [];
+}
+
+export type GradesOverview = {
+  grades: GradeItem[];
+  debts: GradeItem[];
+  openTasks: LessonTaskItem[];
+  summary: { gradeCount: number; debtCount: number; openTaskCount: number };
+};
+
+export async function fetchGradesOverview(): Promise<GradesOverview> {
+  const raw = await request<{
+    grades?: Record<string, unknown>[];
+    debts?: Record<string, unknown>[];
+    openTasks?: LessonTaskItem[];
+    summary?: GradesOverview["summary"];
+  }>("/grades/me/overview");
+  return {
+    grades: (raw.grades ?? []).map(mapGrade),
+    debts: (raw.debts ?? []).map(mapGrade),
+    openTasks: Array.isArray(raw.openTasks) ? raw.openTasks : [],
+    summary: raw.summary ?? {
+      gradeCount: 0,
+      debtCount: 0,
+      openTaskCount: 0,
+    },
+  };
 }
 
 export async function fetchRequests(): Promise<ServiceRequest[]> {
@@ -1127,4 +1156,61 @@ export async function assignTeacherToLesson(payload: {
 
 export async function removeTeacherAssignment(id: string): Promise<void> {
   await request(`/staff/teacher-assignments/${id}`, { method: "DELETE" });
+}
+
+export type StaffStudentRow = {
+  id: string;
+  email: string;
+  fullName: string;
+  faculty: string;
+  program: string;
+  course: number;
+  groupLabel: string;
+  groupRuzId: string | null;
+  preferredSubGroupOids: string[];
+};
+
+export async function fetchStaffStudents(q?: string): Promise<StaffStudentRow[]> {
+  const qs = q?.trim() ? `?q=${encodeURIComponent(q.trim())}` : "";
+  const data = await request<StaffStudentRow[]>(`/admin/students${qs}`);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function updateStaffStudent(
+  id: string,
+  payload: Partial<
+    Pick<
+      StaffStudentRow,
+      | "fullName"
+      | "faculty"
+      | "program"
+      | "course"
+      | "groupLabel"
+      | "groupRuzId"
+      | "preferredSubGroupOids"
+    >
+  >,
+): Promise<StaffStudentRow> {
+  return request<StaffStudentRow>(`/admin/students/${id}`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+export async function announceToStudents(payload: {
+  title: string;
+  body: string;
+  kind?: "deanery_announce" | "schedule_moved" | "digest_morning";
+}): Promise<{ count: number; kind: string }> {
+  return request("/notifications/announce", { method: "POST", body: payload });
+}
+
+export async function markLessonMoved(
+  lessonId: string,
+  payload?: { isMoved?: boolean; isCancelled?: boolean; note?: string },
+): Promise<{ lesson: ScheduleItem; notified: number }> {
+  return request(`/schedule/lessons/${lessonId}/move`, {
+    method: "PATCH",
+    body: payload ?? { isMoved: true },
+  });
 }

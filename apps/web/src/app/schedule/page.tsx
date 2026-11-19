@@ -17,7 +17,21 @@ function localIso(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function mondayOf(d = new Date()): Date {
+/** Calendar «today» in Europe/Moscow — schedule SoT is MSK. */
+function mskNow(): Date {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Moscow",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const y = Number(parts.find((p) => p.type === "year")?.value);
+  const m = Number(parts.find((p) => p.type === "month")?.value);
+  const d = Number(parts.find((p) => p.type === "day")?.value);
+  return new Date(y, m - 1, d, 12, 0, 0, 0);
+}
+
+function mondayOf(d = mskNow()): Date {
   const x = new Date(d);
   const day = x.getDay();
   const offset = day === 0 ? -6 : 1 - day;
@@ -42,10 +56,11 @@ export default function SchedulePage() {
   const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [scrollTodayToken, setScrollTodayToken] = useState(0);
 
   const from = localIso(weekStart);
   const to = localIso(addDays(weekStart, 6));
-  const todayIso = localIso(new Date());
+  const todayIso = localIso(mskNow());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,6 +87,19 @@ export default function SchedulePage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (!scrollTodayToken || loading) return;
+    const id = `schedule-day-${todayIso}`;
+    const t = window.setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [scrollTodayToken, loading, todayIso, weekStart]);
+
   const days = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
       const date = addDays(weekStart, i);
@@ -87,10 +115,10 @@ export default function SchedulePage() {
   const isStaffView = role === "admin" || role === "staff";
   const pickGroupHint = isStaffView
     ? "Выберите группу для просмотра в профиле — появится календарь."
-    : "Выберите учебную группу в профиле — появится календарь.";
+    : "Группу задаёт деканат в карточке студента — без неё календарь пуст.";
   const pickGroupCta = isStaffView
     ? "Выбрать группу для просмотра →"
-    : "Выбрать группу →";
+    : "Открыть профиль →";
 
   return (
     <div className="animate-rise space-y-6">
@@ -123,7 +151,10 @@ export default function SchedulePage() {
           </button>
           <button
             type="button"
-            onClick={() => setWeekStart(mondayOf())}
+            onClick={() => {
+              setWeekStart(mondayOf(mskNow()));
+              setScrollTodayToken((n) => n + 1);
+            }}
             className="rounded-lg border border-ink/15 px-3 py-1.5 text-sm text-ink-muted hover:border-ink/30 hover:text-ink"
           >
             Сегодня
@@ -143,7 +174,7 @@ export default function SchedulePage() {
           <p className="text-sm text-ink">
             {isStaffView
               ? "Группа для просмотра ещё не выбрана."
-              : "Группа ещё не выбрана."}
+              : "Группа ещё не привязана деканатом."}
           </p>
           <Link
             href="/profile"
@@ -177,9 +208,10 @@ export default function SchedulePage() {
                 return (
                   <div
                     key={day.iso}
+                    id={`schedule-day-${day.iso}`}
                     className={`min-h-[12rem] rounded-2xl border p-2 ${
                       isToday
-                        ? "border-copper/40 bg-copper/5"
+                        ? "border-copper/40 bg-copper/5 ring-2 ring-copper/30"
                         : "border-cream-deep bg-white/40"
                     }`}
                   >
@@ -198,10 +230,19 @@ export default function SchedulePage() {
                         day.items.map((item) => (
                           <li
                             key={item.id}
-                            className="rounded-lg bg-cream/80 px-1.5 py-1.5"
+                            className={`rounded-lg px-1.5 py-1.5 ${
+                              item.isMoved || item.isCancelled
+                                ? "bg-copper/15 ring-1 ring-copper/35"
+                                : "bg-cream/80"
+                            }`}
                           >
                             <p className="text-[10px] font-semibold text-copper">
                               {item.startTime}–{item.endTime}
+                              {item.isCancelled
+                                ? " · отмена"
+                                : item.isMoved
+                                  ? " · перенос"
+                                  : ""}
                             </p>
                             <p className="mt-0.5 text-[11px] font-medium leading-snug text-ink">
                               {item.title}

@@ -292,13 +292,35 @@ export class ClubsService {
     return this.getInterests(userId);
   }
 
+  /** Prefer post URL; fall back to source channel URL so UI always has a link. */
+  private withDigestLinks<
+    T extends {
+      url: string | null;
+      source?: { url: string } | null;
+      club?: { sources?: { url: string; kind: string }[] } | null;
+    },
+  >(events: T[]): Array<T & { url: string | null }> {
+    return events.map((e) => {
+      if (e.url) return e;
+      const fromSource = e.source?.url?.trim();
+      if (fromSource) return { ...e, url: fromSource };
+      const clubSrc = e.club?.sources?.find(
+        (s) => s.url && (s.kind === 'TELEGRAM' || s.kind === 'VK' || s.kind === 'SITE'),
+      );
+      return { ...e, url: clubSrc?.url?.trim() || null };
+    });
+  }
+
   async listDigestFeed(params: {
     actorUserId: string;
     personalized?: boolean;
   }) {
     const include = {
       club: {
-        include: { tags: { include: { tag: true } } },
+        include: {
+          tags: { include: { tag: true } },
+          sources: true,
+        },
       },
       source: true,
     } as const;
@@ -317,7 +339,7 @@ export class ClubsService {
         take: 200,
         include,
       });
-      return { mode: 'all' as const, items: events };
+      return { mode: 'all' as const, items: this.withDigestLinks(events) };
     }
 
     // Personalized: filter by subscriptions in SQL before take, so quieter clubs
@@ -355,7 +377,7 @@ export class ClubsService {
     });
     return {
       mode: 'personalized' as const,
-      items: events,
+      items: this.withDigestLinks(events),
       interests: { tagIds, clubIds },
     };
   }

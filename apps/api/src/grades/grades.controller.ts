@@ -15,4 +15,10 @@ export class GradesController {
   me(@CurrentUser() user: JwtPayloadUser) {
     return this.grades.forUser(user.userId);
   }
+
+  /** Grades + debts + open teacher tasks (ADR 0019). */
+  @Get('me/overview')
+  overview(@CurrentUser() user: JwtPayloadUser) {
+    return this.grades.overviewForUser(user.userId);
+  }
 }

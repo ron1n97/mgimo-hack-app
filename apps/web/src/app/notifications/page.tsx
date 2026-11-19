@@ -116,22 +116,38 @@ export default function NotificationsPage() {
             {items.map((item) => (
               <li
                 key={item.id}
-                className={`rounded-2xl border px-4 py-4 ${
+                className={`rounded-2xl border px-4 py-4 shadow-sm ${
                   item.read
-                    ? "border-cream-deep bg-white/30"
-                    : "border-copper/25 bg-white/60"
+                    ? "border-cream-deep bg-white/70"
+                    : "border-copper/40 bg-ink text-cream ring-1 ring-copper/30"
                 }`}
               >
                 <div className="flex items-start gap-2">
                   {!item.read ? (
-                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-copper" aria-hidden />
+                    <span
+                      className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-copper"
+                      aria-hidden
+                    />
                   ) : (
-                    <span className="mt-1.5 h-2 w-2 shrink-0" aria-hidden />
+                    <span className="mt-1.5 h-2.5 w-2.5 shrink-0" aria-hidden />
                   )}
                   <div>
-                    <h2 className="font-medium text-ink">{item.title}</h2>
-                    <p className="mt-1 text-sm text-ink-muted">{item.body}</p>
-                    <p className="mt-2 text-xs text-ink-muted">{item.createdAt}</p>
+                    <h2
+                      className={`font-medium ${item.read ? "text-ink" : "text-cream"}`}
+                    >
+                      {item.title}
+                    </h2>
+                    <p
+                      className={`mt-1 text-sm ${item.read ? "text-ink-muted" : "text-cream/80"}`}
+                    >
+                      {item.body}
+                    </p>
+                    <p
+                      className={`mt-2 text-xs ${item.read ? "text-ink-muted" : "text-cream/55"}`}
+                    >
+                      {item.createdAt}
+                      {item.kind ? ` · ${item.kind}` : ""}
+                    </p>
                   </div>
                 </div>
               </li>

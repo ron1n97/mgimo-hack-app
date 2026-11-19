@@ -38,13 +38,21 @@ describe('profile fields by role', () => {
     }
   });
 
-  it('allows student contact fields only', () => {
+  it('rejects student edits to FIO and phone (deanery / bot surface removed)', () => {
     expect(() =>
       assertProfileFieldsForRole(Role.STUDENT, {
         fullName: 'Анна Рискова',
+      }),
+    ).toThrow(BadRequestException);
+    expect(() =>
+      assertProfileFieldsForRole(Role.STUDENT, {
         phone: '+79001111111',
       }),
-    ).not.toThrow();
+    ).toThrow(BadRequestException);
+  });
+
+  it('allows empty student patch (no writable self-service fields)', () => {
+    expect(() => assertProfileFieldsForRole(Role.STUDENT, {})).not.toThrow();
   });
 
   it('rejects department on student profile', () => {

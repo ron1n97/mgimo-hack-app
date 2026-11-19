@@ -46,7 +46,6 @@ export default function ProfilePage() {
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [groupRuzId, setGroupRuzId] = useState("");
   const [groupLabel, setGroupLabel] = useState("");
   const [preferredSubGroupOids, setPreferredSubGroupOids] = useState<string[]>([]);
@@ -67,7 +66,6 @@ export default function ProfilePage() {
       setRole(me.role);
       setFullName(me.fullName);
       setEmail(me.email);
-      setPhone(me.phone ?? "");
       setGroupRuzId(me.groupRuzId ?? "");
       setGroupLabel(me.groupName ?? "");
       setPreferredSubGroupOids(me.preferredSubGroupOids ?? []);
@@ -114,34 +112,30 @@ export default function ProfilePage() {
     setOk(null);
     try {
       const selected = groups.find((g) => g.groupRuzId === groupRuzId);
+      if (isStudent) {
+        setOk("Профиль только для просмотра — правки делает деканат.");
+        setSaving(false);
+        return;
+      }
       const updated = await updateProfile(
-        isStudent
+        isStaffView
           ? {
               fullName: fullName.trim(),
-              phone: phone.trim(),
+              department: department.trim() || undefined,
+              groupRuzId: groupRuzId || "",
+              groupLabel: selected?.groupLabel ?? "",
             }
-          : isStaffView
-            ? {
-                fullName: fullName.trim(),
-                phone: phone.trim(),
-                department: department.trim() || undefined,
-                groupRuzId: groupRuzId || "",
-                groupLabel: selected?.groupLabel ?? "",
-              }
-            : {
-                fullName: fullName.trim(),
-                phone: phone.trim(),
-                department: department.trim() || undefined,
-              },
+          : {
+              fullName: fullName.trim(),
+              department: department.trim() || undefined,
+            },
       );
       const token = getToken();
       if (token) setSession(token, updated);
       setOk(
         isStaffView
           ? "Сохранено. Расписание обновится для выбранной группы просмотра."
-          : isStudent
-            ? "Сохранены контакты. Академические данные заданы из базы."
-            : "Сохранено.",
+          : "Сохранено.",
       );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось сохранить");
@@ -163,10 +157,10 @@ export default function ProfilePage() {
         <h1 className="font-serif text-3xl text-ink">Профиль</h1>
         <p className="mt-1 text-sm text-ink-muted">
           {isStaffView
-            ? "Контакты сотрудника и группа для просмотра расписания."
+            ? "Контакты сотрудника и группа для просмотра расписания. Карточки студентов — в «Студенты»."
             : isTeacher
-              ? "Данные преподавателя и телефон для Telegram-бота."
-              : "Академические поля фиксированы из базы; можно менять ФИО и телефон."}
+              ? "Данные преподавателя."
+              : "ФИО, группа и подгруппа задаются деканатом — в кабинете только просмотр."}
         </p>
       </header>
 
@@ -174,17 +168,25 @@ export default function ProfilePage() {
         onSubmit={onSubmit}
         className="space-y-4 rounded-2xl border border-cream-deep bg-white/50 p-5"
       >
-        <label className="block text-sm">
-          <span className="text-ink-muted">ФИО</span>
-          <input
-            required
+        {isStudent ? (
+          <ReadOnlyField
+            label="ФИО"
             value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
-            placeholder={isStudent ? "Как в зачётке" : "ФИО"}
-            autoComplete="name"
+            hint="Заполняет сотрудник деканата."
           />
-        </label>
+        ) : (
+          <label className="block text-sm">
+            <span className="text-ink-muted">ФИО</span>
+            <input
+              required
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
+              placeholder="ФИО"
+              autoComplete="name"
+            />
+          </label>
+        )}
 
         <label className="block text-sm">
           <span className="text-ink-muted">Почта</span>
@@ -263,21 +265,6 @@ export default function ProfilePage() {
           </label>
         ) : null}
 
-        <label className="block text-sm">
-          <span className="text-ink-muted">Телефон для бота</span>
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
-            placeholder="+7 900 111-11-11"
-            inputMode="tel"
-            autoComplete="tel"
-          />
-          <span className="mt-1 block text-xs text-ink-muted">
-            Тот же номер отправьте контактом в Telegram-боте — войдёте в свой кабинет.
-          </span>
-        </label>
-
         {error ? (
           <p className="rounded-xl border border-copper/25 bg-copper/5 px-3 py-2 text-sm text-copper-dark" role="alert">
             {error}
@@ -289,13 +276,15 @@ export default function ProfilePage() {
           </p>
         ) : null}
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full rounded-xl bg-copper py-3 text-sm font-semibold text-cream transition hover:bg-copper-dark disabled:opacity-60"
-        >
-          {saving ? "Сохраняем…" : "Сохранить"}
-        </button>
+        {!isStudent ? (
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full rounded-xl bg-copper py-3 text-sm font-semibold text-cream transition hover:bg-copper-dark disabled:opacity-60"
+          >
+            {saving ? "Сохраняем…" : "Сохранить"}
+          </button>
+        ) : null}
       </form>
     </div>
   );

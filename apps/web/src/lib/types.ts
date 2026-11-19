@@ -100,6 +100,8 @@ export type ScheduleItem = {
   subGroup?: string;
   subGroupOid?: string;
   stream?: string;
+  isMoved?: boolean;
+  isCancelled?: boolean;
 };
 
 export type GradeItem = {

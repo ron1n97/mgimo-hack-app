@@ -181,6 +181,42 @@ export class ScheduleService {
     });
   }
 
+  /**
+   * Staff marks a lesson as moved/cancelled locally (LOCAL overlay flags).
+   * RUZ sync does not clear LOCAL ownership; isMoved stays until cleared.
+   */
+  async markLessonMoved(
+    lessonId: string,
+    input: { isMoved?: boolean; isCancelled?: boolean; note?: string },
+  ) {
+    const lesson = await this.prisma.scheduleLesson.findUnique({
+      where: { id: lessonId },
+    });
+    if (!lesson) throw new NotFoundException('Пара не найдена');
+    const updated = await this.prisma.scheduleLesson.update({
+      where: { id: lessonId },
+      data: {
+        isMoved: input.isMoved ?? true,
+        isCancelled: input.isCancelled ?? lesson.isCancelled,
+        source: 'LOCAL',
+      },
+    });
+    return {
+      lesson: updated,
+      notifyHint: {
+        title: input.isCancelled
+          ? `Отмена: ${lesson.discipline}`
+          : `Перенос: ${lesson.discipline}`,
+        body:
+          input.note?.trim() ||
+          `${lesson.groupLabel} · ${String(lesson.date).slice(0, 10)} ${lesson.begin}–${lesson.end}` +
+            (lesson.auditorium ? ` · ауд. ${lesson.auditorium}` : ''),
+        kind: 'schedule_moved' as const,
+        groupRuzId: lesson.groupRuzId,
+      },
+    };
+  }
+
   private safeDateFilter(from?: string, to?: string) {
     try {
       return buildScheduleDateFilter(from, to);

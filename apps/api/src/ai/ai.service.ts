@@ -168,7 +168,7 @@ export class AiService {
         if (r === 'STAFF' || r === 'ADMIN') {
           return { error: 'grades_not_available_for_role' };
         }
-        return this.grades.forUser(userId);
+        return this.grades.overviewForUser(userId);
       case 'get_requests':
         return this.requests.listOwn(userId);
       case 'get_staff_requests':
@@ -178,6 +178,38 @@ export class AiService {
         return this.requests.listStaff();
       case 'get_notifications':
         return this.notifications.forUser(userId);
+      case 'get_digest': {
+        const hub = await this.today.forUser(userId);
+        return {
+          today: hub.clubEventsToday ?? [],
+          week: hub.clubDigestWeek ?? null,
+        };
+      }
+      case 'get_staff_overview': {
+        if (r !== 'STAFF' && r !== 'ADMIN') {
+          return { error: 'forbidden' };
+        }
+        const [openTickets, pendingEvents, students] = await Promise.all([
+          this.prisma.requestTicket.count({
+            where: { status: { in: ['SUBMITTED', 'IN_PROGRESS'] } },
+          }),
+          this.prisma.eventCandidate.count({
+            where: { moderationStatus: 'PENDING' },
+          }),
+          this.prisma.user.count({ where: { role: 'STUDENT' } }),
+        ]);
+        return {
+          openTickets,
+          pendingClubEvents: pendingEvents,
+          students,
+          links: {
+            requests: '/staff/requests',
+            clubs: '/staff/clubs',
+            students: '/staff/students',
+            announce: '/staff/announce',
+          },
+        };
+      }
       default:
         return { error: `Unknown tool: ${name}` };
     }

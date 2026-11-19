@@ -61,6 +61,20 @@ export default function StaffRequestsPage() {
         <p className="mt-1 text-sm text-ink-muted">
           Кабинет сотрудника деканата — смена статусов заявок.
         </p>
+        <nav className="mt-3 flex flex-wrap gap-3 text-sm">
+          <a href="/staff/students" className="text-copper underline-offset-2 hover:underline">
+            Студенты
+          </a>
+          <a href="/staff/announce" className="text-copper underline-offset-2 hover:underline">
+            Объявления / переносы
+          </a>
+          <a href="/staff/clubs" className="text-copper underline-offset-2 hover:underline">
+            Клубы
+          </a>
+          <a href="/staff/teachers" className="text-copper underline-offset-2 hover:underline">
+            Преподаватели
+          </a>
+        </nav>
       </header>
 
       {loading ? <LoadingState /> : null}

@@ -66,6 +66,8 @@ const TOOL_LABELS: Record<string, string> = {
   get_grades: 'Проверяю оценки и долги',
   get_requests: 'Смотрю ваши заявки',
   get_staff_requests: 'Смотрю очередь заявок',
+  get_staff_overview: 'Смотрю сводку деканата',
+  get_digest: 'Читаю дайджест клубов',
   get_notifications: 'Читаю уведомления',
 };
 

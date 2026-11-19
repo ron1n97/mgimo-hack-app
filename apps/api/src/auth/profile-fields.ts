@@ -10,13 +10,15 @@ export const STUDENT_ENROLLMENT_FIELDS = [
 ] as const;
 
 /**
- * Fields fixed in seed / registrar DB for students (Maxim feedback).
- * Students may still edit contacts (fullName, phone).
+ * Fields fixed in seed / registrar DB for students (Maxim + deanery feedback).
+ * FIO, group and language subgroup are set by staff — not by the student.
+ * Phone/bot linking removed from student self-service.
  */
 export const STUDENT_IMMUTABLE_FIELDS = [
   ...STUDENT_ENROLLMENT_FIELDS,
   'groupLabel',
   'groupRuzId',
+  'fullName',
 ] as const;
 
 export type ProfileFieldPatch = {
@@ -40,10 +42,10 @@ export function listedPresentFields(
 
 /**
  * Role rules for PATCH /auth/me:
- * - STUDENT: contacts only; enrollment + academic/language group are read-only
- *   (seeded / registrar). Schedule binds from that data.
+ * - STUDENT: no self-service academic identity (FIO/group/subgroup/enrollment);
+ *   phone/bot field removed from product surface.
  * - STAFF/ADMIN: department + optional schedule view group (any catalog group);
- *   no student enrollment fields (course/faculty/program/subgroups).
+ *   student enrollment is edited via /admin/students/:id, not PATCH /auth/me.
  * - TEACHER: contacts + department; no student enrollment / view-group.
  */
 export function assertProfileFieldsForRole(
@@ -56,10 +58,15 @@ export function assertProfileFieldsForRole(
         'Поле department недоступно для профиля студента',
       );
     }
+    if (dto.phone !== undefined) {
+      throw new BadRequestException(
+        'Телефон для бота отключён — вход только через web/demo',
+      );
+    }
     const forbidden = listedPresentFields(dto, STUDENT_IMMUTABLE_FIELDS);
     if (forbidden.length > 0) {
       throw new BadRequestException(
-        `Академические поля профиля только из базы: ${forbidden.join(', ')}`,
+        `ФИО и академические поля задаёт деканат: ${forbidden.join(', ')}`,
       );
     }
     return;

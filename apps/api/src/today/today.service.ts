@@ -88,17 +88,32 @@ export class TodayService {
       // Newest first + high cap so TG ingest for ~70 clubs still fills «сегодня».
       orderBy: [{ startsAt: 'desc' }, { createdAt: 'desc' }],
       take: 200,
-      include: { club: { select: { id: true, name: true } } },
+      include: {
+        club: {
+          select: {
+            id: true,
+            name: true,
+            sources: { select: { url: true, kind: true }, take: 4 },
+          },
+        },
+        source: { select: { url: true } },
+      },
     });
-    const mapped = clubEvents.map((e) => ({
-      id: e.id,
-      title: e.title,
-      body: e.body,
-      url: e.url,
-      imageUrl: e.imageUrl,
-      startsAt: e.startsAt,
-      club: e.club,
-    }));
+    const mapped = clubEvents.map((e) => {
+      const fallback =
+        e.source?.url ||
+        e.club?.sources?.find((s) => Boolean(s.url))?.url ||
+        null;
+      return {
+        id: e.id,
+        title: e.title,
+        body: e.body,
+        url: e.url || fallback,
+        imageUrl: e.imageUrl,
+        startsAt: e.startsAt,
+        club: e.club ? { id: e.club.id, name: e.club.name } : null,
+      };
+    });
     const buckets = splitClubDigestByDay(mapped, day);
 
     return {

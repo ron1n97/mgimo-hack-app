@@ -242,6 +242,17 @@ function mapLesson(raw: Record<string, unknown>): ScheduleItem {
 }
 
 function mapGrade(raw: Record<string, unknown>): GradeItem {
+  const lesson = raw.scheduleLesson as Record<string, unknown> | null | undefined;
+  let lessonHint: string | undefined;
+  if (lesson) {
+    const d =
+      typeof lesson.date === "string"
+        ? lesson.date.slice(0, 10)
+        : undefined;
+    const begin = lesson.begin != null ? String(lesson.begin) : "";
+    lessonHint = [d, begin].filter(Boolean).join(" ");
+    if (lessonHint) lessonHint = `пара ${lessonHint}`;
+  }
   return {
     id: String(raw.id),
     subject: String(raw.discipline ?? raw.subject ?? ""),
@@ -249,6 +260,13 @@ function mapGrade(raw: Record<string, unknown>): GradeItem {
     date: String(raw.semester ?? raw.date ?? ""),
     kind: (raw.gradeType as string | undefined) ?? (raw.kind as string | undefined),
     isDebt: Boolean(raw.isDebt),
+    lessonHint,
+    scheduleLessonId:
+      raw.scheduleLessonId != null
+        ? String(raw.scheduleLessonId)
+        : lesson?.id != null
+          ? String(lesson.id)
+          : undefined,
   };
 }
 

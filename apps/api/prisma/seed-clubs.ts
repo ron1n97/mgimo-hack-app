@@ -11,7 +11,10 @@ import {
 import * as fs from 'fs';
 import * as path from 'path';
 import { detectSourceKind, slugifyTag } from '../src/clubs/club-slug';
-import { materializeDigestNewsFeed } from '../src/clubs/digest-news-feed';
+import {
+  buildSeedPostUrl,
+  materializeDigestNewsFeed,
+} from '../src/clubs/digest-news-feed';
 
 type RegistryRow = {
   name: string;
@@ -196,7 +199,7 @@ export async function seedDemoClubEvents(
     });
     const baseUrl = club.sources[0]?.url?.replace(/#.*$/, '') ?? null;
     const stubUrl = baseUrl
-      ? `${baseUrl}#demo/${encodeURIComponent(stub.title)}`
+      ? buildSeedPostUrl(baseUrl, `demo-${stub.title}`)
       : null;
     if (existing) {
       if (stub.refreshStartsAt) {

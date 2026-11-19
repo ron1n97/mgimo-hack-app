@@ -67,6 +67,7 @@ export default function GradesPage() {
                       <p className="text-xs text-ink-muted">
                         {item.date}
                         {item.kind ? ` · ${item.kind}` : ""}
+                        {item.lessonHint ? ` · ${item.lessonHint}` : ""}
                       </p>
                     </div>
                     <span className="font-serif text-2xl text-copper">{item.value}</span>
@@ -96,6 +97,7 @@ export default function GradesPage() {
                         {item.date}
                         {item.kind ? ` · ${item.kind}` : ""}
                         {item.isDebt ? " · долг" : ""}
+                        {item.lessonHint ? ` · ${item.lessonHint}` : ""}
                       </p>
                     </div>
                     <span className="min-w-[2.5rem] text-right font-serif text-2xl text-copper">

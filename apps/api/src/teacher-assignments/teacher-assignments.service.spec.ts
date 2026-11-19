@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TeacherAssignmentsService } from './teacher-assignments.service';
 
 type MockPrisma = {
@@ -93,11 +93,32 @@ describe('TeacherAssignmentsService IDOR / isolation', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           groupRuzId: '8033',
+          scheduleLessonId: 'l1',
           createdByUserId: 'teacher-owner',
           assignmentId: 'a1',
         }),
       }),
     );
+  });
+
+  it('createTask: rejects assignment without concrete lesson', async () => {
+    prisma.lessonTeacherAssignment.findUnique.mockResolvedValue({
+      id: 'a-soft',
+      teacherUserId: 'teacher-owner',
+      groupRuzId: '8033',
+      scheduleLessonId: null,
+      scheduleLesson: null,
+    });
+
+    await expect(
+      service.createTask('teacher-owner', 'TEACHER', {
+        assignmentId: 'a-soft',
+        title: 'ДЗ',
+        body: 'Без пары',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(prisma.lessonTask.create).not.toHaveBeenCalled();
   });
 
   it('updateTask / deleteTask: IDOR hides foreign tasks', async () => {

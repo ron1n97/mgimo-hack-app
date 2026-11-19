@@ -11,6 +11,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { detectSourceKind, slugifyTag } from './club-slug';
+import { resolveDigestEventUrl } from './digest-event-url';
 import {
   canModerateClubs,
   clubListVisibilityWhere,
@@ -292,7 +293,7 @@ export class ClubsService {
     return this.getInterests(userId);
   }
 
-  /** Prefer post URL; fall back to source channel URL so UI always has a link. */
+  /** Keep post/event URLs only — never promote bare channel homepage as the event. */
   private withDigestLinks<
     T extends {
       url: string | null;
@@ -300,15 +301,14 @@ export class ClubsService {
       club?: { sources?: { url: string; kind: string }[] } | null;
     },
   >(events: T[]): Array<T & { url: string | null }> {
-    return events.map((e) => {
-      if (e.url) return e;
-      const fromSource = e.source?.url?.trim();
-      if (fromSource) return { ...e, url: fromSource };
-      const clubSrc = e.club?.sources?.find(
-        (s) => s.url && (s.kind === 'TELEGRAM' || s.kind === 'VK' || s.kind === 'SITE'),
-      );
-      return { ...e, url: clubSrc?.url?.trim() || null };
-    });
+    return events.map((e) => ({
+      ...e,
+      url: resolveDigestEventUrl({
+        url: e.url,
+        sourceUrl: e.source?.url,
+        clubSourceUrls: e.club?.sources?.map((s) => s.url),
+      }),
+    }));
   }
 
   async listDigestFeed(params: {

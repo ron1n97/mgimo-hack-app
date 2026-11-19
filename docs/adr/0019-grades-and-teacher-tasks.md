@@ -10,19 +10,17 @@
 Два разных контура смешивались в голове продукта: «успеваемость» (оценки/зачёты/долги) и «задания по парам» (домашка от преподавателя). Старый Grade — плоский seed-список. LessonTask висел на LessonTeacherAssignment, но UI «Учёба» показывал только Grade.
 
 ## Решение
-Разделить SoT и UI:
+Разделить SoT и UI; оба артефакта **крепятся к паре**:
 
-1. **Grade** — академический результат (сессия / контрольная точка): `discipline`, `grade`, `gradeType`, `semester`, `isDebt`. Пишет деканат/импорт (сейчас seed + staff path позже); студент только читает. Картина «как у меня дела» = оценки + долги (`isDebt`).
+1. **Grade** — академический результат с обязательным `scheduleLessonId` при создании (`POST /grades`). Поля `discipline` копируются с пары. Студент только читает. Картина «как у меня дела» = оценки + долги (`isDebt`).
 
-2. **LessonTeacherAssignment** — ownership пары/серии (staff назначает TEACHER на slot или group+discipline). Не оценка.
+2. **LessonTeacherAssignment** — ownership: staff назначает TEACHER на **конкретный slot** (`scheduleLessonId`) или soft group+discipline. Soft-назначение без пары **не** принимает задания.
 
-3. **LessonTask** — задание преподавателя к assignment; scope студентам по `groupRuzId`. Дедлайны → уведомления/`/tasks`. Не подменяет Grade.
+3. **LessonTask** — только если у assignment есть `scheduleLessonId`. Scope студентам по `groupRuzId`. Не подменяет Grade.
 
-4. Экран студента **/grades** («Учёба») показывает:
-   - блок долгов / оценок (Grade);
-   - блок открытых заданий (LessonTask via `/tasks/me`).
+4. Экран **/grades** показывает долги/оценки (с датой пары) + открытые задания (с привязкой к слоту).
 
-5. AI `get_grades` остаётся про Grade; задания студент видит через today/tasks tools при необходимости — не смешивать в один tool payload без явной секции.
+5. AI `get_grades` → overview (grades + debts + lesson-bound tasks).
 
 ## Последствия
 - Нет одной таблицы «всё про учёбу».

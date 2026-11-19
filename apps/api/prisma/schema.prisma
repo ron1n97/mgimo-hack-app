@@ -163,6 +163,7 @@ model ScheduleLesson {
   rawJson       Json?
 
   teacherAssignments LessonTeacherAssignment[]
+  grades             Grade[]
 
   @@unique([ruzExternalId, groupRuzId, date, begin])
   @@index([groupRuzId, date])
@@ -171,17 +172,21 @@ model ScheduleLesson {
 }
 
 model Grade {
-  id            String  @id @default(cuid())
-  studentUserId String
-  discipline    String
-  grade         String
-  gradeType     String
-  semester      String
-  isDebt        Boolean @default(false)
+  id               String  @id @default(cuid())
+  studentUserId    String
+  discipline       String
+  grade            String
+  gradeType        String
+  semester         String
+  isDebt           Boolean @default(false)
+  /// Concrete RUZ pair this grade was issued for (ADR 0019) — not free-floating.
+  scheduleLessonId String?
 
-  student User @relation("StudentGrades", fields: [studentUserId], references: [id], onDelete: Cascade)
+  student        User             @relation("StudentGrades", fields: [studentUserId], references: [id], onDelete: Cascade)
+  scheduleLesson ScheduleLesson?  @relation(fields: [scheduleLessonId], references: [id], onDelete: SetNull)
 
   @@index([studentUserId])
+  @@index([scheduleLessonId])
 }
 
 model RequestTicket {

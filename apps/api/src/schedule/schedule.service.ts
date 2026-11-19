@@ -27,7 +27,13 @@ export class ScheduleService {
       where: { userId },
     });
     if (student) {
-      const ruzId = groupRuzId ?? student.groupRuzId;
+      // Enrollment group only — no cross-group peek; never showAll for students.
+      const ruzId = student.groupRuzId;
+      if (groupRuzId && groupRuzId !== student.groupRuzId) {
+        throw new BadRequestException(
+          'Студент видит только расписание своей учебной группы',
+        );
+      }
       const preferred = student.preferredSubGroupOids ?? [];
       if (!ruzId) {
         return this.findByGroupLabel(
@@ -35,11 +41,11 @@ export class ScheduleService {
           from,
           to,
           preferred,
-          showAll,
+          false,
         );
       }
       await this.lazyPullIfMiss(ruzId, student.groupLabel, from, to);
-      return this.findByGroupRuzId(ruzId, from, to, preferred, showAll);
+      return this.findByGroupRuzId(ruzId, from, to, preferred, false);
     }
 
     // STAFF / ADMIN: catalog group for schedule oversight (not enrollment)
@@ -86,7 +92,7 @@ export class ScheduleService {
       }));
   }
 
-  /** Distinct subGroups for an academic group (for profile picker). */
+  /** Distinct subGroups for an academic group (deanery picker / labels). */
   async listSubGroups(groupRuzId: string) {
     await this.lazyPullIfMiss(groupRuzId);
     const rows = await this.prisma.scheduleLesson.findMany({
@@ -104,6 +110,30 @@ export class ScheduleService {
         subGroupOid: r.subGroupOid as string,
         subGroup: r.subGroup ?? r.subGroupOid,
       }));
+  }
+
+  /**
+   * Students may resolve labels only for their enrollment group;
+   * staff/admin/teacher — any catalog group.
+   */
+  async listSubGroupsForActor(
+    userId: string,
+    role: string,
+    groupRuzId: string,
+  ) {
+    const r = role.toUpperCase();
+    if (r === 'STAFF' || r === 'ADMIN' || r === 'TEACHER') {
+      return this.listSubGroups(groupRuzId);
+    }
+    const student = await this.prisma.studentProfile.findUnique({
+      where: { userId },
+    });
+    if (!student?.groupRuzId || student.groupRuzId !== groupRuzId) {
+      throw new BadRequestException(
+        'Подгруппы доступны только для своей учебной группы',
+      );
+    }
+    return this.listSubGroups(groupRuzId);
   }
 
   private async lazyPullIfMiss(

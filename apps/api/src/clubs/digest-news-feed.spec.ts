@@ -96,10 +96,10 @@ describe('digest-news-feed', () => {
     const todayRow = rows.find((r) => r.seedKey === 'today-open');
     expect(todayRow).toBeDefined();
     expect(moscowDateString(todayRow!.startsAt)).toBe(moscowDateString(now));
-    expect(todayRow!.url).toMatch(/t\.me\/sskmgimo#seed\/today-open/);
+    expect(todayRow!.url).toMatch(/t\.me\/sskmgimo\/\d+#seed\/today-open/);
 
     const nso = rows.find((r) => r.seedKey === 'week-nso');
-    expect(nso?.url).toMatch(/vk\.com\/nso.*#seed\/week-nso/);
+    expect(nso?.url).toMatch(/vk\.com\/wall-\d+_\d+#seed\/week-nso/);
     expect(nso?.sourceId).toBe('s-vk');
 
     for (const row of rows) {

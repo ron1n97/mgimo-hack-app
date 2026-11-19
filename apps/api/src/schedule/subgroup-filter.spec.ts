@@ -8,13 +8,13 @@ describe('subgroup preference filter', () => {
   const langA = { subGroupOid: '501' };
   const langB = { subGroupOid: '504' };
 
-  it('shows all lessons when no preference set', () => {
-    expect(matchesPreferredSubGroups(langA, [])).toBe(true);
-    expect(matchesPreferredSubGroups(langB, null)).toBe(true);
-    expect(matchesPreferredSubGroups(wholeGroup, undefined)).toBe(true);
+  it('without preference hides other subgroup parallels (only whole-group)', () => {
+    expect(matchesPreferredSubGroups(wholeGroup, [])).toBe(true);
+    expect(matchesPreferredSubGroups(langA, [])).toBe(false);
+    expect(matchesPreferredSubGroups(langB, null)).toBe(false);
   });
 
-  it('shows all when showAll is true even with preference', () => {
+  it('showAll (staff) reveals every parallel', () => {
     expect(matchesPreferredSubGroups(langB, ['501'], true)).toBe(true);
   });
 
@@ -25,12 +25,15 @@ describe('subgroup preference filter', () => {
     expect(matchesPreferredSubGroups(langB, preferred)).toBe(false);
   });
 
-  it('builds Prisma-compatible OR filter for preferred oids', () => {
-    expect(buildSubGroupFilter([], false)).toBeUndefined();
+  it('builds Prisma filter: empty pref → whole-group only; never undefined for students', () => {
+    expect(buildSubGroupFilter([], false)).toEqual({
+      OR: [{ subGroupOid: null }, { subGroupOid: '' }],
+    });
     expect(buildSubGroupFilter(['501'], true)).toBeUndefined();
     expect(buildSubGroupFilter(['501', '504'], false)).toEqual({
       OR: [
         { subGroupOid: null },
+        { subGroupOid: '' },
         { subGroupOid: { in: ['501', '504'] } },
       ],
     });

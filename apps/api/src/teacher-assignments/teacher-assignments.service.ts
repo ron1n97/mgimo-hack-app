@@ -223,6 +223,13 @@ export class TeacherAssignmentsService {
       notFoundMessage: 'Assignment not found',
     });
 
+    const scheduleLessonId =
+      assignment.scheduleLessonId ?? assignment.scheduleLesson?.id ?? null;
+    if (!scheduleLessonId) {
+      throw new BadRequestException(
+        'Задание можно создать только к конкретной паре (нужен scheduleLessonId у назначения)',
+      );
+    }
     const groupRuzId =
       assignment.groupRuzId ??
       assignment.scheduleLesson?.groupRuzId ??
@@ -238,8 +245,7 @@ export class TeacherAssignmentsService {
         body: dto.body.trim(),
         dueAt: dto.dueAt ? new Date(dto.dueAt) : null,
         groupRuzId,
-        scheduleLessonId:
-          assignment.scheduleLessonId ?? assignment.scheduleLesson?.id ?? null,
+        scheduleLessonId,
         createdByUserId: actorUserId,
       },
     });

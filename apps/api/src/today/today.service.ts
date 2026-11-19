@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EventModerationStatus } from '@prisma/client';
+import { resolveDigestEventUrl } from '../clubs/digest-event-url';
 import { GradesService } from '../grades/grades.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -99,21 +100,19 @@ export class TodayService {
         source: { select: { url: true } },
       },
     });
-    const mapped = clubEvents.map((e) => {
-      const fallback =
-        e.source?.url ||
-        e.club?.sources?.find((s) => Boolean(s.url))?.url ||
-        null;
-      return {
-        id: e.id,
-        title: e.title,
-        body: e.body,
-        url: e.url || fallback,
-        imageUrl: e.imageUrl,
-        startsAt: e.startsAt,
-        club: e.club ? { id: e.club.id, name: e.club.name } : null,
-      };
-    });
+    const mapped = clubEvents.map((e) => ({
+      id: e.id,
+      title: e.title,
+      body: e.body,
+      url: resolveDigestEventUrl({
+        url: e.url,
+        sourceUrl: e.source?.url,
+        clubSourceUrls: e.club?.sources?.map((s) => s.url),
+      }),
+      imageUrl: e.imageUrl,
+      startsAt: e.startsAt,
+      club: e.club ? { id: e.club.id, name: e.club.name } : null,
+    }));
     const buckets = splitClubDigestByDay(mapped, day);
 
     return {

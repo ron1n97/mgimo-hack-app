@@ -12,7 +12,8 @@
 ## Решение
 1. `ruzExternalId = String(lessonOid)`; на `ScheduleLesson` хранить `subGroup`, `subGroupOid`, `stream`, `streamOid`.
 2. В `StudentProfile` — `preferredSubGroupOids[]`; после выбора учебной группы студент отмечает свои подгруппы.
-3. `schedule.forUser` / Today фильтруют по предпочтению (пары без `subGroupOid` остаются); query `showAll=1` показывает все с бейджами.
+3. `schedule.forUser` / Today фильтруют по предпочтению (пары без `subGroupOid` остаются).  
+   Студент **никогда** не видит чужие подгруппы: без `preferredSubGroupOids` — только whole-group; `showAll` игнорируется для STUDENT; `groupRuzId` query нельзя подменить. Staff/admin могут `showAll` для просмотра.
 4. Discovery sync использует course-prefixed search terms (`1МЭО`…`4МЭО`, `1МО-`…), не глотает error-dict RUZ как `[]`.
 
 ## Последствия

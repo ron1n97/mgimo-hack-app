@@ -52,8 +52,6 @@ export default function SchedulePage() {
   const [groupName, setGroupName] = useState<string | undefined>();
   const [groupRuzId, setGroupRuzId] = useState<string | undefined>();
   const [role, setRole] = useState<UserRole>("student");
-  const [hasSubPreference, setHasSubPreference] = useState(false);
-  const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [scrollTodayToken, setScrollTodayToken] = useState(0);
@@ -70,10 +68,7 @@ export default function SchedulePage() {
       setRole(me.role);
       setGroupName(me.groupName);
       setGroupRuzId(me.groupRuzId);
-      setHasSubPreference(
-        me.role === "student" && (me.preferredSubGroupOids?.length ?? 0) > 0,
-      );
-      const data = await fetchSchedule(from, to, { showAll });
+      const data = await fetchSchedule(from, to);
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось загрузить расписание");
@@ -81,7 +76,7 @@ export default function SchedulePage() {
     } finally {
       setLoading(false);
     }
-  }, [from, to, showAll]);
+  }, [from, to]);
 
   useEffect(() => {
     void load();
@@ -132,16 +127,6 @@ export default function SchedulePage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {hasSubPreference ? (
-            <label className="flex items-center gap-2 rounded-lg border border-ink/15 px-3 py-1.5 text-sm text-ink-muted">
-              <input
-                type="checkbox"
-                checked={showAll}
-                onChange={(e) => setShowAll(e.target.checked)}
-              />
-              Все подгруппы
-            </label>
-          ) : null}
           <button
             type="button"
             onClick={() => setWeekStart((w) => addDays(w, -7))}

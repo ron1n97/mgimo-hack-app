@@ -111,6 +111,9 @@ export type GradeItem = {
   date: string;
   kind?: string;
   isDebt?: boolean;
+  /** e.g. «пара 12.11 09:00» when bound to ScheduleLesson */
+  lessonHint?: string;
+  scheduleLessonId?: string;
 };
 
 export type RequestStatus = "draft" | "submitted" | "in_review" | "approved" | "rejected";

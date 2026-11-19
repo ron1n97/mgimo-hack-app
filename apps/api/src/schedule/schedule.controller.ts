@@ -38,8 +38,11 @@ export class ScheduleController {
   }
 
   @Get('groups/:ruzId/subgroups')
-  subGroups(@Param('ruzId') ruzId: string) {
-    return this.schedule.listSubGroups(ruzId);
+  subGroups(
+    @CurrentUser() user: JwtPayloadUser,
+    @Param('ruzId') ruzId: string,
+  ) {
+    return this.schedule.listSubGroupsForActor(user.userId, user.role, ruzId);
   }
 
   @Get('me')
@@ -50,16 +53,20 @@ export class ScheduleController {
     @Query('groupRuzId') groupRuzId?: string,
     @Query('showAll') showAll?: string,
   ) {
+    const role = String(user.role).toUpperCase();
+    const allowShowAll = role === 'STAFF' || role === 'ADMIN';
     return this.schedule.forUser(
       user.userId,
       from,
       to,
       groupRuzId,
-      parseShowAll(showAll),
+      allowShowAll && parseShowAll(showAll),
     );
   }
 
+  /** Raw group dump — staff oversight only (students use /schedule/me). */
   @Get('groups/:ruzId')
+  @Roles(Role.STAFF, Role.ADMIN, Role.TEACHER)
   byGroup(
     @Param('ruzId') ruzId: string,
     @Query('from') from?: string,

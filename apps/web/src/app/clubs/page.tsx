@@ -73,15 +73,19 @@ function DigestItem({
           {item.body ? (
             <p className="mt-1 line-clamp-3 text-sm text-ink-muted">{item.body}</p>
           ) : null}
-          {item.url || item.club?.id ? (
+          {item.url ? (
             <a
-              href={item.url || "/clubs"}
-              target={item.url ? "_blank" : undefined}
-              rel={item.url ? "noreferrer" : undefined}
+              href={item.url}
+              target="_blank"
+              rel="noreferrer"
               className="mt-1 inline-block text-sm text-copper underline-offset-2 hover:underline"
             >
-              {item.url ? "Открыть источник →" : "К клубам →"}
+              Открыть пост →
             </a>
+          ) : item.club?.id ? (
+            <span className="mt-1 block text-xs text-ink-muted">
+              Ссылка на пост ещё не распарсена
+            </span>
           ) : null}
         </div>
       </div>

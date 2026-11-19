@@ -203,11 +203,52 @@ const RISK_PACK: typeof GRADE_PACK = [
   },
 ];
 
+async function ensureLessonForGrade(
+  userId: string,
+  discipline: string,
+): Promise<string | null> {
+  const profile = await prisma.studentProfile.findUnique({
+    where: { userId },
+  });
+  if (!profile?.groupRuzId) return null;
+  const needle = discipline.split('(')[0].trim();
+  const existing = await prisma.scheduleLesson.findFirst({
+    where: {
+      groupRuzId: profile.groupRuzId,
+      discipline: { contains: needle, mode: 'insensitive' },
+    },
+    orderBy: { date: 'desc' },
+  });
+  if (existing) return existing.id;
+
+  const created = await prisma.scheduleLesson.create({
+    data: {
+      ruzExternalId: `seed-grade-${profile.groupRuzId}-${needle}`.slice(0, 64),
+      groupRuzId: profile.groupRuzId,
+      groupLabel: profile.groupLabel,
+      date: new Date(),
+      begin: '09:00',
+      end: '10:30',
+      discipline: needle,
+      lecturer: 'Преподаватель (seed)',
+      source: 'LOCAL',
+    },
+  });
+  return created.id;
+}
+
 async function replaceGrades(userId: string, pack: typeof GRADE_PACK) {
   await prisma.grade.deleteMany({ where: { studentUserId: userId } });
-  await prisma.grade.createMany({
-    data: pack.map((g) => ({ ...g, studentUserId: userId })),
-  });
+  for (const g of pack) {
+    const scheduleLessonId = await ensureLessonForGrade(userId, g.discipline);
+    await prisma.grade.create({
+      data: {
+        ...g,
+        studentUserId: userId,
+        scheduleLessonId,
+      },
+    });
+  }
 }
 
 async function main() {

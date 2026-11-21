@@ -91,7 +91,7 @@ async function main() {
       phoneE164: '+79003333333',
       staffProfile: {
         create: {
-          fullName: 'Елена Деканатская',
+          fullName: 'Елена Соколова',
           department: 'Учебный отдел',
         },
       },
@@ -162,7 +162,7 @@ async function main() {
           program: 'Бакалавриат МП',
           course: 2,
           groupLabel: '1МП-03',
-          groupRuzId: '8101',
+          groupRuzId: '7649',
           preferredSubGroupOids: ['701'],
         },
       },
@@ -182,7 +182,7 @@ async function main() {
           program: 'Бакалавриат МЭО',
           course: 4,
           groupLabel: '4МЭО-01',
-          groupRuzId: '8204',
+          groupRuzId: '8015',
           preferredSubGroupOids: ['804'],
         },
       },
@@ -263,7 +263,7 @@ async function main() {
       },
       {
         ruzExternalId: 'demo-l5',
-        groupRuzId: '8101',
+        groupRuzId: '7649',
         groupLabel: '1МП-03',
         date: utcDate(y, m, d),
         begin: '13:00',
@@ -275,11 +275,11 @@ async function main() {
         kindOfWork: 'Лекция',
         isCancelled: false,
         isMoved: false,
-        rawJson: { source: 'seed', group: '8101' },
+        rawJson: { source: 'seed', group: '7649' },
       },
       {
         ruzExternalId: 'demo-l6',
-        groupRuzId: '8204',
+        groupRuzId: '8015',
         groupLabel: '4МЭО-01',
         date: utcDate(y, m, d),
         begin: '15:00',
@@ -291,7 +291,7 @@ async function main() {
         kindOfWork: 'Лекция',
         isCancelled: false,
         isMoved: false,
-        rawJson: { source: 'seed', group: '8204' },
+        rawJson: { source: 'seed', group: '8015' },
       },
     ],
   });

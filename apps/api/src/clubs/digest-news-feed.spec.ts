@@ -96,18 +96,17 @@ describe('digest-news-feed', () => {
     const todayRow = rows.find((r) => r.seedKey === 'today-open');
     expect(todayRow).toBeDefined();
     expect(moscowDateString(todayRow!.startsAt)).toBe(moscowDateString(now));
-    expect(todayRow!.url).toMatch(/t\.me\/sskmgimo\/\d+#seed\/today-open/);
+    expect(todayRow!.url).toBeNull();
 
     const nso = rows.find((r) => r.seedKey === 'week-nso');
-    expect(nso?.url).toMatch(/vk\.com\/wall-\d+_\d+#seed\/week-nso/);
+    expect(nso?.url).toBeNull();
     expect(nso?.sourceId).toBe('s-vk');
 
     for (const row of rows) {
       const day = moscowDateString(row.startsAt);
       expect(day >= from && day <= to).toBe(true);
-      expect(row.url).toBeTruthy();
-      expect(row.url).toMatch(/#seed\//);
-      expect(row.url).toMatch(/vk\.com\/|t\.me\//);
+      // Seed cards intentionally have no post URL (fake ids were 404).
+      expect(row.url).toBeNull();
     }
   });
 

@@ -28,6 +28,7 @@ const teacherLinks = [
 
 const staffLinks = [
   { href: "/staff/requests", label: "Очередь" },
+  { href: "/staff/students", label: "Студенты" },
   { href: "/staff/teachers", label: "Преподаватели" },
   { href: "/profile", label: "Профиль" },
 ];

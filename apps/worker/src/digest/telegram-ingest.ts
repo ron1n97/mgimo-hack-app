@@ -44,16 +44,33 @@ const DEFAULT_UA =
   'Mozilla/5.0 (compatible; DekanatDigestBot/0.1; +https://github.com/ron1n97/mgimo-hack-app)';
 
 /** Seed/demo titles only — never match arbitrary live channel first lines. */
-const DEMO_STUB_TITLE_PREFIXES = ['Демо:', 'Демо-событие:', 'Новость:'] as const;
+const DEMO_STUB_TITLE_PREFIXES = ['Демо:', 'Демо-событие:', 'Новость:', 'Дайджест:'] as const;
 
 export async function defaultFetchTelegramHtml(url: string): Promise<string> {
-  const res = await fetch(url, {
-    headers: {
-      'User-Agent': DEFAULT_UA,
-      Accept: 'text/html,application/xhtml+xml',
-    },
-    redirect: 'follow',
-  });
+  const proxy =
+    process.env.TELEGRAM_PROXY?.trim() ||
+    process.env.HTTPS_PROXY?.trim() ||
+    process.env.HTTP_PROXY?.trim();
+  const headers = {
+    'User-Agent': DEFAULT_UA,
+    Accept: 'text/html,application/xhtml+xml',
+  };
+  let res: Response;
+  if (proxy) {
+    // RU VPS blocks t.me — HTTP CONNECT via host reverse-tunnel (same as bot).
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { ProxyAgent, fetch: undiciFetch } = require('undici') as {
+      ProxyAgent: new (u: string) => unknown;
+      fetch: (input: string, init?: Record<string, unknown>) => Promise<Response>;
+    };
+    res = await undiciFetch(url, {
+      headers,
+      redirect: 'follow',
+      dispatcher: new ProxyAgent(proxy),
+    });
+  } else {
+    res = await fetch(url, { headers, redirect: 'follow' });
+  }
   if (!res.ok) {
     throw new Error(`HTTP ${res.status} for ${url}`);
   }

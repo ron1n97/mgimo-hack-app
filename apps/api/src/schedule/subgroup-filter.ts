@@ -4,13 +4,15 @@ export type SubGroupLessonLike = {
   subGroupOid?: string | null;
 };
 
-function isWholeGroupLesson(lesson: SubGroupLessonLike): boolean {
-  return lesson.subGroupOid == null || lesson.subGroupOid === '';
+/** RUZ often stores whole-group as "0" (not null). */
+export function isWholeGroupLesson(lesson: SubGroupLessonLike): boolean {
+  const oid = lesson.subGroupOid;
+  return oid == null || oid === '' || oid === '0';
 }
 
 /**
  * Personalization filter for language/stream parallels within one academic group.
- * Whole-group lessons (no subGroupOid) always pass.
+ * Whole-group lessons (no subGroupOid / "0") always pass.
  * Students never see other subgroups: without preference → only whole-group;
  * with preference → whole-group + preferred oids. showAll is staff-only.
  */
@@ -31,17 +33,16 @@ export function buildSubGroupFilter(
   showAll = false,
 ): Prisma.ScheduleLessonWhereInput | undefined {
   if (showAll) return undefined;
+  const whole: Prisma.ScheduleLessonWhereInput[] = [
+    { subGroupOid: null },
+    { subGroupOid: '' },
+    { subGroupOid: '0' },
+  ];
   if (!preferredOids?.length) {
-    // Hide all language/stream parallels until deanery sets preferredSubGroupOids.
-    return {
-      OR: [{ subGroupOid: null }, { subGroupOid: '' }],
-    };
+    // Hide language/stream parallels until deanery sets preferredSubGroupOids.
+    return { OR: whole };
   }
   return {
-    OR: [
-      { subGroupOid: null },
-      { subGroupOid: '' },
-      { subGroupOid: { in: preferredOids.map(String) } },
-    ],
+    OR: [...whole, { subGroupOid: { in: preferredOids.map(String) } }],
   };
 }

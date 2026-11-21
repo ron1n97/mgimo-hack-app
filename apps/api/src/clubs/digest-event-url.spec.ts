@@ -5,15 +5,22 @@ import {
 } from './digest-event-url';
 
 describe('digest event URL', () => {
-  it('accepts telegram/vk posts, seed fragments, and event sites', () => {
+  it('accepts real telegram/vk posts and event sites', () => {
     expect(isPostOrEventUrl('https://t.me/sskmgimo/9991')).toBe(true);
     expect(isPostOrEventUrl('https://t.me/c/123/456')).toBe(true);
     expect(isPostOrEventUrl('https://vk.com/wall-1_2')).toBe(true);
-    expect(
-      isPostOrEventUrl('https://t.me/nsomgimo/1#seed/digest-monday'),
-    ).toBe(true);
     expect(isPostOrEventUrl('https://mgimobc.timepad.ru')).toBe(true);
     expect(isPostOrEventUrl('https://example.com/events/42')).toBe(true);
+  });
+
+  it('rejects synthetic seed/demo fragment URLs (broken fake posts)', () => {
+    expect(
+      isPostOrEventUrl('https://t.me/nsomgimo/1#seed/digest-monday'),
+    ).toBe(false);
+    expect(
+      isPostOrEventUrl('https://vk.com/wall-1_2#seed/week-nso'),
+    ).toBe(false);
+    expect(isPostOrEventUrl('https://t.me/sskmgimo/9#demo/x')).toBe(false);
   });
 
   it('rejects bare channel / club homepages', () => {

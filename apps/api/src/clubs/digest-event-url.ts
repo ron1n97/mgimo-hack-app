@@ -35,11 +35,12 @@ export function isBareSocialChannel(url: string): boolean {
   return false;
 }
 
-/** Post, event page, or seed stub — anything except bare TG/VK channel. */
+/** Real post/event page — never bare TG/VK channel, never synthetic #seed/#demo stubs. */
 export function isPostOrEventUrl(url: string | null | undefined): boolean {
   const u = url?.trim();
   if (!u) return false;
-  if (/#(seed|demo)\//i.test(u)) return true;
+  // Seed invented message ids look like posts but 404 — do not link them.
+  if (/#(seed|demo)\//i.test(u)) return false;
   if (!/^https?:\/\//i.test(u)) return false;
   if (isBareSocialChannel(u)) return false;
   return true;

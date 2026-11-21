@@ -71,7 +71,7 @@ export const DEMO_PERSONAS: readonly DemoPersona[] = [
   {
     id: 'staff-elena',
     email: 'staff@demo.local',
-    buttonLabel: 'Войти как сотрудник Деканатская',
+    buttonLabel: 'Войти как сотрудник Соколова',
     roleHint: 'staff',
   },
   {

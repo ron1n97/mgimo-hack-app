@@ -209,7 +209,7 @@ export const DEMO_PERSONAS = [
   },
   {
     id: 'staff-elena',
-    buttonLabel: 'Войти как сотрудник Деканатская',
+    buttonLabel: 'Войти как сотрудник Соколова',
     roleHint: 'staff',
   },
   {

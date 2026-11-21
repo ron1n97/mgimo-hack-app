@@ -58,6 +58,7 @@ describe('syncTelegramDigest', () => {
           OR: expect.arrayContaining([
             { title: { startsWith: 'Демо:' } },
             { title: { startsWith: 'Новость:' } },
+            { title: { startsWith: 'Дайджест:' } },
           ]),
         }),
       }),

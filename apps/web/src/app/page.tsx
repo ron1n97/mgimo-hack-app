@@ -31,7 +31,7 @@ const FALLBACK_PERSONAS: DemoPersonaPublic[] = [
   },
   {
     id: "staff-elena",
-    buttonLabel: "Войти как сотрудник Деканатская",
+    buttonLabel: "Войти как сотрудник Соколова",
     roleHint: "staff",
   },
   { id: "admin-platform", buttonLabel: "Войти как администратор", roleHint: "admin" },

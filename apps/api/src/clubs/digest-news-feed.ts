@@ -151,30 +151,12 @@ export type BuiltDigestNewsRow = {
   url: string | null;
 };
 
-/** Stable synthetic post URL so digests never link only to a channel root. */
-export function buildSeedPostUrl(sourceUrl: string, seedKey: string): string {
-  const base = sourceUrl.replace(/#.*$/, '').replace(/\/$/, '');
-  let hash = 0;
-  for (let i = 0; i < seedKey.length; i += 1) {
-    hash = (hash * 31 + seedKey.charCodeAt(i)) >>> 0;
-  }
-  const msgId = 900_000 + (hash % 90_000);
-  try {
-    const u = new URL(base);
-    const host = u.hostname.replace(/^www\./, '');
-    if (host === 't.me' || host === 'telegram.me') {
-      const user = u.pathname.replace(/^\//, '').split('/')[0];
-      if (user && user !== 'c') {
-        return `https://t.me/${user}/${msgId}#seed/${seedKey}`;
-      }
-    }
-    if (host === 'vk.com' || host === 'm.vk.com') {
-      return `https://vk.com/wall-${msgId}_${msgId}#seed/${seedKey}`;
-    }
-  } catch {
-    /* fall through */
-  }
-  return `${base}/${msgId}#seed/${seedKey}`;
+/**
+ * Seed stubs must not invent post IDs (they 404). Keep null — UI shows card without
+ * «Открыть пост»; live TG ingest fills real t.me/<ch>/<id> urls.
+ */
+export function buildSeedPostUrl(_sourceUrl: string, _seedKey: string): string | null {
+  return null;
 }
 
 /** Pure plan → rows bound to concrete clubs/sources. */
@@ -199,10 +181,8 @@ export function materializeDigestNewsFeed(
       }),
       clubId: club.id,
       sourceId: source?.id ?? null,
-      // Post-like unique URL (not bare channel). Synthetic msg id keeps seed idempotent.
-      url: source
-        ? buildSeedPostUrl(source.url, item.seedKey)
-        : null,
+      // No fake post URL — null until live ingest provides a real post link.
+      url: source ? buildSeedPostUrl(source.url, item.seedKey) : null,
     });
   }
   return rows;

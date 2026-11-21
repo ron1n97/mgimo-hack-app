@@ -34,18 +34,14 @@ export default function RequestsPage() {
 
   return (
     <div className="animate-rise space-y-6">
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-serif text-3xl text-ink">Заявки</h1>
-          <p className="mt-1 text-sm text-ink-muted">Справки, переносы, обращения.</p>
-        </div>
+      <div className="flex justify-end">
         <Link
           href="/requests/new"
           className="shrink-0 rounded-xl bg-copper px-3.5 py-2 text-sm font-semibold text-cream hover:bg-copper-dark"
         >
           Новая
         </Link>
-      </header>
+      </div>
 
       {loading ? <LoadingState /> : null}
       {error ? <ErrorState message={error} onRetry={load} /> : null}

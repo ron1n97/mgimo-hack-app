@@ -47,6 +47,7 @@ describe('today-digest', () => {
     ];
     const { today, week } = splitClubDigestByDay(events, '2026-11-14');
     expect(today.map((e) => e.id)).toEqual(['1']);
-    expect(week.map((e) => e.id).sort()).toEqual(['1', '2']);
+    // Undated posts stay in week so the feed is not silent.
+    expect(week.map((e) => e.id).sort()).toEqual(['1', '2', '4']);
   });
 });

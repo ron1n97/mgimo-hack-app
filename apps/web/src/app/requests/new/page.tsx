@@ -92,15 +92,9 @@ export default function NewRequestPage() {
 
   return (
     <div className="animate-rise mx-auto max-w-xl space-y-6">
-      <header>
-        <Link href="/requests" className="text-sm text-copper">
-          ← К заявкам
-        </Link>
-        <h1 className="mt-2 font-serif text-3xl text-ink">Новая заявка</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Черновик по ГОСТ → правки → Word (Times New Roman, поля, 1,5 интервал) → отправка.
-        </p>
-      </header>
+      <Link href="/requests" className="text-sm text-copper">
+        ← К заявкам
+      </Link>
 
       <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-cream-deep bg-white/50 p-5">
         <label className="block text-sm">

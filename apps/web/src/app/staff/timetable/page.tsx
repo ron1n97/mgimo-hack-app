@@ -49,9 +49,13 @@ export default function StaffTimetablePage() {
         fetchScheduleGroups(),
         fetchTimetableSolves(),
       ]);
-      setGroups(g);
+      const meo = g.filter((row) => {
+        const label = row.groupLabel.toLowerCase();
+        return label.includes("мэо") || label.includes("meo");
+      });
+      setGroups(meo.length > 0 ? meo : g);
       setRuns(r);
-      setGroupRuzId((cur) => cur || g[0]?.groupRuzId || "");
+      setGroupRuzId((cur) => cur || (meo[0] ?? g[0])?.groupRuzId || "");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Ошибка загрузки");
     } finally {
@@ -94,14 +98,6 @@ export default function StaffTimetablePage() {
 
   return (
     <div className="animate-rise mx-auto max-w-3xl space-y-6">
-      <header>
-        <h1 className="font-serif text-3xl text-ink">Оптимизатор расписания</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          ADR 0011: назначение пар на слот×аудиторию×преподавателя. CP-SAT (OR-Tools),
-          иначе эвристика. Результат — предложение, RUZ SoT не перезаписывается.
-        </p>
-      </header>
-
       <form
         onSubmit={onSolve}
         className="space-y-3 rounded-2xl border border-cream-deep bg-white/60 p-5"
@@ -141,7 +137,7 @@ export default function StaffTimetablePage() {
           </label>
         </div>
         <label className="block text-sm">
-          <span className="text-ink-muted">Движок</span>
+          <span className="text-ink-muted">Режим</span>
           <select
             value={engine}
             onChange={(e) =>
@@ -149,9 +145,9 @@ export default function StaffTimetablePage() {
             }
             className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
           >
-            <option value="auto">auto (CP-SAT → heuristic)</option>
-            <option value="heuristic">heuristic</option>
-            <option value="cpsat">cpsat only</option>
+            <option value="auto">Авто</option>
+            <option value="heuristic">Быстрый</option>
+            <option value="cpsat">Точный</option>
           </select>
         </label>
         <button
@@ -159,7 +155,7 @@ export default function StaffTimetablePage() {
           disabled={busy || !groupRuzId}
           className="w-full rounded-xl bg-copper py-3 text-sm font-semibold text-cream disabled:opacity-60"
         >
-          {busy ? "Считаем…" : "Запустить солвер"}
+          {busy ? "Подбираем…" : "Предложить сетку"}
         </button>
       </form>
 

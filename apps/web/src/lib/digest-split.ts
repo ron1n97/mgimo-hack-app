@@ -49,8 +49,23 @@ export function moscowWeekBounds(day = moscowDateString()): {
   };
 }
 
-export type DigestFeedLike = { startsAt?: string | null };
+export type DigestFeedLike = {
+  startsAt?: string | null;
+  publishedAt?: string | null;
+};
 
+function eventDay(item: DigestFeedLike): string | null {
+  const raw = item.startsAt || item.publishedAt;
+  if (!raw) return null;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  return moscowDateStringOf(d);
+}
+
+/**
+ * Today = calendar day by startsAt (preferred) or publishedAt.
+ * Week = same window; undated items are kept in week so the feed is not silent.
+ */
 export function splitDigestFeed<T extends DigestFeedLike>(
   items: T[],
   day = moscowDateString(),
@@ -59,8 +74,11 @@ export function splitDigestFeed<T extends DigestFeedLike>(
   const today: T[] = [];
   const week: T[] = [];
   for (const item of items) {
-    if (!item.startsAt) continue;
-    const evDay = moscowDateStringOf(item.startsAt);
+    const evDay = eventDay(item);
+    if (!evDay) {
+      week.push(item);
+      continue;
+    }
     if (evDay === day) today.push(item);
     if (evDay >= from && evDay <= to) week.push(item);
   }

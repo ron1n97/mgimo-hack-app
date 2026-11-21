@@ -1,45 +1,84 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ApiError,
   fetchScheduleGroups,
   fetchScheduleSubGroups,
+  fetchStaffRequests,
   fetchStaffStudents,
+  isMeoServiceRequest,
   updateStaffStudent,
   type ScheduleGroup,
   type ScheduleSubGroup,
   type StaffStudentRow,
 } from "@/lib/api";
 import { getUser } from "@/lib/auth";
+import type { ServiceRequest } from "@/lib/types";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
+
+function isMeoStudent(row: StaffStudentRow): boolean {
+  const blob = `${row.groupLabel} ${row.faculty} ${row.program}`.toLowerCase();
+  return blob.includes("мэо") || blob.includes("meo");
+}
+
+function requestStatusLabel(status: ServiceRequest["status"]): string {
+  switch (status) {
+    case "submitted":
+    case "draft":
+      return "Новая";
+    case "in_review":
+      return "В работе";
+    case "approved":
+      return "Одобрена";
+    case "rejected":
+      return "Отклонена";
+    default:
+      return status;
+  }
+}
 
 export default function StaffStudentsPage() {
   const router = useRouter();
   const [items, setItems] = useState<StaffStudentRow[]>([]);
   const [groups, setGroups] = useState<ScheduleGroup[]>([]);
   const [subGroups, setSubGroups] = useState<ScheduleSubGroup[]>([]);
+  const [allRequests, setAllRequests] = useState<ServiceRequest[]>([]);
   const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<StaffStudentRow | null>(null);
+  const [panel, setPanel] = useState<"card" | "requests">("card");
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const meoGroups = useMemo(
+    () =>
+      groups.filter((g) => {
+        const label = g.groupLabel.toLowerCase();
+        return label.includes("мэо") || label.includes("meo");
+      }),
+    [groups],
+  );
+
   const load = useCallback(async (query?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const [rows, g] = await Promise.all([
+      const [rows, g, reqs] = await Promise.all([
         fetchStaffStudents(query),
         fetchScheduleGroups(),
+        fetchStaffRequests().catch(() => [] as ServiceRequest[]),
       ]);
-      setItems(rows);
+      setItems(rows.filter(isMeoStudent));
       setGroups(g);
+      setAllRequests(
+        (Array.isArray(reqs) ? reqs : []).filter(isMeoServiceRequest),
+      );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Ошибка загрузки");
       setItems([]);
@@ -75,9 +114,15 @@ export default function StaffStudentsPage() {
     };
   }, [draft?.groupRuzId]);
 
-  function selectStudent(row: StaffStudentRow) {
+  const studentRequests = useMemo(() => {
+    if (!selectedId) return [];
+    return allRequests.filter((r) => r.studentUserId === selectedId);
+  }, [allRequests, selectedId]);
+
+  function selectStudent(row: StaffStudentRow, nextPanel: "card" | "requests" = "card") {
     setSelectedId(row.id);
     setDraft({ ...row });
+    setPanel(nextPanel);
     setOk(null);
     setError(null);
   }
@@ -94,7 +139,7 @@ export default function StaffStudentsPage() {
     setError(null);
     setOk(null);
     try {
-      const selected = groups.find((g) => g.groupRuzId === draft.groupRuzId);
+      const selected = meoGroups.find((g) => g.groupRuzId === draft.groupRuzId);
       const updated = await updateStaffStudent(selectedId, {
         fullName: draft.fullName.trim(),
         faculty: draft.faculty.trim(),
@@ -116,14 +161,6 @@ export default function StaffStudentsPage() {
 
   return (
     <div className="animate-rise mx-auto max-w-3xl space-y-6">
-      <header>
-        <h1 className="font-serif text-3xl text-ink">Студенты</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          ФИО, группа и подгруппа — только здесь. В кабинете студента поля только для
-          просмотра.
-        </p>
-      </header>
-
       <form onSubmit={onSearch} className="flex gap-2">
         <input
           value={q}
@@ -143,40 +180,101 @@ export default function StaffStudentsPage() {
       {error ? <ErrorState message={error} onRetry={() => void load(q)} /> : null}
 
       {!loading && !error && items.length === 0 ? (
-        <EmptyState title="Студентов нет" description="Попробуйте другой запрос." />
+        <EmptyState title="Студентов МЭО нет" description="Попробуйте другой запрос." />
       ) : null}
 
       {!loading && items.length > 0 ? (
         <ul className="divide-y divide-cream-deep overflow-hidden rounded-2xl border border-cream-deep bg-white/50">
-          {items.map((row) => (
-            <li key={row.id}>
-              <button
-                type="button"
-                onClick={() => selectStudent(row)}
-                className={`flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition hover:bg-cream/40 ${
-                  selectedId === row.id ? "bg-copper/5" : ""
-                }`}
-              >
-                <div>
-                  <p className="font-medium text-ink">{row.fullName || row.email}</p>
-                  <p className="text-xs text-ink-muted">
-                    {row.groupLabel || "Без группы"}
-                    {row.course ? ` · курс ${row.course}` : ""}
-                  </p>
+          {items.map((row) => {
+            const count = allRequests.filter((r) => r.studentUserId === row.id).length;
+            return (
+              <li key={row.id}>
+                <div
+                  className={`flex w-full items-start justify-between gap-3 px-4 py-3 ${
+                    selectedId === row.id ? "bg-copper/5" : ""
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => selectStudent(row, "card")}
+                    className="min-w-0 flex-1 text-left transition hover:opacity-80"
+                  >
+                    <p className="font-medium text-ink">{row.fullName || row.email}</p>
+                    <p className="text-xs text-ink-muted">
+                      {row.groupLabel || "Без группы"}
+                      {row.course ? ` · курс ${row.course}` : ""}
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectStudent(row, "requests")}
+                    className="shrink-0 rounded-lg border border-cream-deep px-2.5 py-1.5 text-xs font-medium text-ink hover:border-copper/40 hover:bg-cream/40"
+                    title="Заявления студента"
+                  >
+                    Заявки{count > 0 ? ` · ${count}` : ""}
+                  </button>
                 </div>
-                <span className="text-xs text-ink-muted">{row.email}</span>
-              </button>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       ) : null}
 
-      {draft ? (
+      {draft && panel === "requests" ? (
+        <section className="space-y-3 rounded-2xl border border-cream-deep bg-white/60 p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="font-serif text-xl text-ink">Заявления</h2>
+              <p className="text-sm text-ink-muted">{draft.fullName}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPanel("card")}
+              className="text-xs font-medium text-copper hover:underline"
+            >
+              К карточке
+            </button>
+          </div>
+          {studentRequests.length === 0 ? (
+            <EmptyState
+              title="Заявок нет"
+              description="Этот студент ещё ничего не подавал."
+            />
+          ) : (
+            <ul className="space-y-2">
+              {studentRequests.map((item) => (
+                <li
+                  key={item.id}
+                  className="rounded-xl border border-cream-deep bg-cream/30 px-3 py-3"
+                >
+                  <p className="text-xs text-ink-muted">{requestStatusLabel(item.status)}</p>
+                  <p className="font-medium text-ink">{item.subject}</p>
+                  <p className="mt-1 text-sm text-ink-muted">{item.type}</p>
+                  {item.body ? (
+                    <p className="mt-2 text-sm text-ink">{item.body}</p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : null}
+
+      {draft && panel === "card" ? (
         <form
           onSubmit={onSave}
           className="space-y-3 rounded-2xl border border-cream-deep bg-white/60 p-5"
         >
-          <h2 className="font-serif text-xl text-ink">Карточка</h2>
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="font-serif text-xl text-ink">Карточка</h2>
+            <button
+              type="button"
+              onClick={() => setPanel("requests")}
+              className="text-xs font-medium text-copper hover:underline"
+            >
+              Заявления
+            </button>
+          </div>
           <label className="block text-sm">
             <span className="text-ink-muted">ФИО</span>
             <input
@@ -223,7 +321,7 @@ export default function StaffStudentsPage() {
               value={draft.groupRuzId ?? ""}
               onChange={(e) => {
                 const id = e.target.value;
-                const g = groups.find((x) => x.groupRuzId === id);
+                const g = meoGroups.find((x) => x.groupRuzId === id);
                 setDraft({
                   ...draft,
                   groupRuzId: id || null,
@@ -234,7 +332,7 @@ export default function StaffStudentsPage() {
               className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
             >
               <option value="">Не выбрана</option>
-              {groups.map((g) => (
+              {meoGroups.map((g) => (
                 <option key={g.groupRuzId} value={g.groupRuzId}>
                   {g.groupLabel}
                 </option>

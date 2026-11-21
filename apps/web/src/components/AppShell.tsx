@@ -14,7 +14,6 @@ import { PwaInstallPrompt } from "./PwaInstallPrompt";
 const studentLinks = [
   { href: "/today", label: "Сегодня" },
   { href: "/schedule", label: "Расписание" },
-  { href: "/tasks", label: "Задания" },
   { href: "/grades", label: "Учёба" },
   { href: "/clubs", label: "Клубы" },
   { href: "/requests", label: "Заявки" },
@@ -27,9 +26,10 @@ const teacherLinks = [
 ];
 
 const staffLinks = [
-  { href: "/staff/requests", label: "Очередь" },
+  { href: "/staff", label: "Кабинет" },
+  { href: "/staff/requests", label: "Заявки" },
   { href: "/staff/students", label: "Студенты" },
-  { href: "/staff/teachers", label: "Преподаватели" },
+  { href: "/staff/clubs", label: "Клубы" },
   { href: "/profile", label: "Профиль" },
 ];
 
@@ -76,7 +76,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               user?.role === "teacher"
                 ? "/teacher"
                 : user?.role === "staff" || user?.role === "admin"
-                  ? "/staff/requests"
+                  ? "/staff"
                   : "/today"
             }
             className="group"
@@ -92,7 +92,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 ? staffLinks
                 : studentLinks
             ).map((link) => {
-              const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
+              const active =
+                link.href === "/staff"
+                  ? pathname === "/staff"
+                  : pathname === link.href || pathname.startsWith(`${link.href}/`);
               return (
                 <Link
                   key={link.href}
@@ -105,30 +108,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
-            {user?.role === "staff" || user?.role === "admin" ? (
-              <>
-                <Link
-                  href="/staff/requests"
-                  className={`rounded-lg px-3 py-1.5 text-sm transition ${
-                    pathname.startsWith("/staff/requests")
-                      ? "bg-copper text-cream"
-                      : "text-ink-muted hover:bg-cream-deep/60 hover:text-ink"
-                  }`}
-                >
-                  Очередь
-                </Link>
-                <Link
-                  href="/staff/clubs"
-                  className={`rounded-lg px-3 py-1.5 text-sm transition ${
-                    pathname.startsWith("/staff/clubs")
-                      ? "bg-copper text-cream"
-                      : "text-ink-muted hover:bg-cream-deep/60 hover:text-ink"
-                  }`}
-                >
-                  Клубы
-                </Link>
-              </>
-            ) : null}
             {user?.role === "admin" ? (
               <Link
                 href="/admin"

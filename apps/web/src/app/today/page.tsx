@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ApiError, fetchStudentTasksToday, fetchToday } from "@/lib/api";
+import { ApiError, fetchToday } from "@/lib/api";
 import { getUser } from "@/lib/auth";
-import type { LessonTaskItem, TodayHub, User } from "@/lib/types";
+import { summarizeDigestItem } from "@/lib/digest-summary";
+import type { TodayHub, User } from "@/lib/types";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
@@ -12,7 +13,6 @@ import { LoadingState } from "@/components/LoadingState";
 export default function TodayPage() {
   const [user, setUser] = useState<User | null>(null);
   const [data, setData] = useState<TodayHub | null>(null);
-  const [tasks, setTasks] = useState<LessonTaskItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,18 +20,10 @@ export default function TodayPage() {
     setLoading(true);
     setError(null);
     try {
-      const hub = await fetchToday();
-      setData(hub);
-      try {
-        const todayTasks = await fetchStudentTasksToday();
-        setTasks(Array.isArray(todayTasks) ? todayTasks : []);
-      } catch {
-        setTasks([]);
-      }
+      setData(await fetchToday());
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Ошибка загрузки");
       setData(null);
-      setTasks([]);
     } finally {
       setLoading(false);
     }
@@ -145,82 +137,69 @@ export default function TodayPage() {
 
           <section>
             <div className="mb-3 flex items-end justify-between gap-3">
-              <h2 className="font-serif text-xl text-ink">Клубы сегодня</h2>
+              <h2 className="font-serif text-xl text-ink">Ежедневный дайджест</h2>
               <Link href="/clubs" className="text-sm text-copper">
-                Дайджест →
+                Все →
               </Link>
             </div>
             {data.clubEventsToday.length === 0 ? (
               <p className="text-sm text-ink-muted">
-                На сегодня клубных событий в ленте нет.{" "}
-                <Link href="/clubs" className="text-copper underline-offset-2 hover:underline">
+                На сегодня анонсов нет.{" "}
+                <Link href="/clubs#weekly-digest" className="text-copper underline-offset-2 hover:underline">
                   Недельный дайджест
                 </Link>
                 {data.clubDigestWeek.items.length
-                  ? ` · ещё ${data.clubDigestWeek.items.length} на этой неделе`
+                  ? ` · ещё ${data.clubDigestWeek.items.length}`
                   : ""}
               </p>
             ) : (
               <ul className="space-y-2">
-                {data.clubEventsToday.map((ev) => (
-                  <li
-                    key={ev.id}
-                    className="flex gap-3 rounded-xl border border-cream-deep bg-white/40 px-4 py-3"
-                  >
-                    {ev.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={ev.imageUrl}
-                        alt=""
-                        className="h-14 w-14 shrink-0 rounded-lg object-cover bg-cream-deep"
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : null}
-                    <div className="min-w-0">
-                      <p className="text-[10px] uppercase tracking-wide text-copper">
-                        {ev.club?.name ?? "Клуб"}
-                        {ev.startsAt
-                          ? ` · ${(() => {
-                              const d = new Date(ev.startsAt!);
-                              const date = d.toLocaleDateString("ru-RU", {
-                                timeZone: "Europe/Moscow",
-                                day: "numeric",
-                                month: "short",
-                              });
-                              const time = d.toLocaleTimeString("ru-RU", {
-                                timeZone: "Europe/Moscow",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              });
-                              return time === "00:00" ? date : `${date}, ${time}`;
-                            })()}`
-                          : ""}
+                {data.clubEventsToday.map((ev) => {
+                  const s = summarizeDigestItem(ev);
+                  const when = [s.day, s.time].filter(Boolean).join(", ");
+                  return (
+                    <li
+                      key={ev.id}
+                      className="rounded-xl border border-cream-deep bg-white/40 px-4 py-3"
+                    >
+                      <p className="text-xs text-ink-muted">
+                        {[s.club, when].filter(Boolean).join(" · ")}
                       </p>
-                      <p className="mt-1 font-medium text-ink">{ev.title}</p>
-                      {ev.body ? (
-                        <p className="mt-1 line-clamp-2 text-sm text-ink-muted">
-                          {ev.body}
-                        </p>
-                      ) : null}
-                    </div>
-                  </li>
-                ))}
+                      <p className="mt-1 font-medium text-ink">{s.title}</p>
+                      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+                        {s.registrationUrl ? (
+                          <a
+                            href={s.registrationUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-copper underline-offset-2 hover:underline"
+                          >
+                            Регистрация
+                          </a>
+                        ) : null}
+                        {s.postUrl ? (
+                          <a
+                            href={s.postUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-copper underline-offset-2 hover:underline"
+                          >
+                            Пост →
+                          </a>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
             {data.clubDigestWeek.items.length > 0 ? (
               <div className="mt-3 rounded-xl border border-dashed border-cream-deep bg-cream/30 px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-ink-muted">
-                  Недельный дайджест
-                </p>
-                <p className="mt-1 text-sm text-ink">
-                  {data.clubDigestWeek.items.length} событий на неделю
-                  {data.clubDigestWeek.from
-                    ? ` (${data.clubDigestWeek.from} — ${data.clubDigestWeek.to})`
-                    : ""}
+                <p className="text-sm text-ink">
+                  Недельный дайджест · {data.clubDigestWeek.items.length}
                 </p>
                 <Link href="/clubs#weekly-digest" className="mt-1 inline-block text-sm text-copper">
-                  Открыть сводку в клубах →
+                  Открыть сводку →
                 </Link>
               </div>
             ) : null}
@@ -256,30 +235,6 @@ export default function TodayPage() {
               </ul>
             </section>
           ) : null}
-          <section>
-            <div className="mb-3 flex items-end justify-between gap-3">
-              <h2 className="font-serif text-xl text-ink">Задания</h2>
-              <Link href="/tasks" className="text-sm text-copper">
-                Все →
-              </Link>
-            </div>
-            {tasks.length === 0 ? (
-              <p className="text-sm text-ink-muted">На сегодня срочных заданий нет.</p>
-            ) : (
-              <ul className="space-y-2">
-                {tasks.slice(0, 3).map((task) => (
-                  <li
-                    key={task.id}
-                    className="rounded-xl border border-cream-deep bg-white/40 px-4 py-3"
-                  >
-                    <p className="font-medium text-ink">{task.title}</p>
-                    <p className="mt-1 line-clamp-2 text-sm text-ink-muted">{task.body}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
           <div className="grid gap-3 sm:grid-cols-2">
             <Link
               href="/requests"

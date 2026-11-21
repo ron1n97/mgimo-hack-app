@@ -127,6 +127,10 @@ export type ServiceRequest = {
   createdAt: string;
   updatedAt?: string;
   studentName?: string;
+  studentUserId?: string;
+  studentGroupLabel?: string;
+  studentFaculty?: string;
+  studentProgram?: string;
 };
 
 export type NotificationItem = {
@@ -145,6 +149,7 @@ export type TodayClubEvent = {
   url?: string | null;
   imageUrl?: string | null;
   startsAt?: string | null;
+  publishedAt?: string | null;
   club?: { id: string; name: string } | null;
 };
 

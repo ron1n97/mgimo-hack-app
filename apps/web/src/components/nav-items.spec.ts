@@ -13,14 +13,16 @@ assert.deepEqual(
 );
 assert.deepEqual(
   navItemsForRole("staff").map((i) => i.href),
-  ["/staff/requests", "/today", "/notifications", "/profile"],
+  ["/staff", "/staff/requests", "/staff/students", "/profile"],
 );
 assert.deepEqual(
   navItemsForRole("admin").map((i) => i.href),
-  ["/staff/requests", "/admin", "/notifications", "/profile"],
+  ["/staff", "/admin", "/staff/requests", "/profile"],
 );
 assert.equal(isNavItemActive("/grades", "/grades"), true);
 assert.equal(isNavItemActive("/grades/extra", "/grades"), true);
 assert.equal(isNavItemActive("/today", "/grades"), false);
+assert.equal(isNavItemActive("/staff", "/staff"), true);
+assert.equal(isNavItemActive("/staff/requests", "/staff"), false);
 
 console.log("nav-items.spec.ts: ok");

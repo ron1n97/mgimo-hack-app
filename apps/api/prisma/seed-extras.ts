@@ -258,7 +258,7 @@ async function main() {
     email: 'staff@demo.local',
     role: Role.STAFF,
     fullName: 'Елена Соколова',
-    department: 'Учебный отдел',
+    department: 'Деканат МЭО',
     phone: '+79003333333',
   });
 
@@ -270,46 +270,56 @@ async function main() {
     phone: '+79004444444',
   });
 
-  // Demo teacher (TeacherProfile, not staff)
-  {
-    const email = 'teacher@demo.local';
-    const phone = '+79006666666';
-    const fullName = 'Иванова Ирина Ивановна';
-    const department = 'Кафедра международного права';
-    const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      await prisma.user.update({
-        where: { id: existing.id },
-        data: { role: Role.TEACHER, passwordHash, phoneE164: phone },
-      });
-      await prisma.teacherProfile.upsert({
-        where: { userId: existing.id },
-        create: {
-          userId: existing.id,
-          fullName,
-          department,
-          constraintNotes: 'stub: no evening slots preferred (solver later)',
-        },
-        update: { fullName, department },
-      });
-    } else {
-      await prisma.user.create({
-        data: {
-          email,
-          passwordHash,
-          role: Role.TEACHER,
-          phoneE164: phone,
-          teacherProfile: {
-            create: {
-              fullName,
-              department,
-              constraintNotes: 'stub: no evening slots preferred (solver later)',
-            },
-          },
-        },
-      });
-    }
+  // Убираем прежние не-МЭО / teacher demo-аккаунты и их заявки
+  for (const email of ['teacher@demo.local', 'daria.mp@demo.local']) {
+    const gone = await prisma.user.findUnique({ where: { email } });
+    if (!gone) continue;
+    await prisma.requestEvent.deleteMany({
+      where: {
+        OR: [{ actorUserId: gone.id }, { ticket: { studentUserId: gone.id } }],
+      },
+    });
+    await prisma.requestTicket.deleteMany({ where: { studentUserId: gone.id } });
+    await prisma.notification.deleteMany({ where: { userId: gone.id } });
+    await prisma.grade.deleteMany({ where: { studentUserId: gone.id } });
+    await prisma.lessonTask.deleteMany({ where: { createdByUserId: gone.id } });
+    await prisma.lessonTeacherAssignment.deleteMany({
+      where: {
+        OR: [{ teacherUserId: gone.id }, { assignedByUserId: gone.id }],
+      },
+    });
+    await prisma.studentProfile.deleteMany({ where: { userId: gone.id } });
+    await prisma.teacherProfile.deleteMany({ where: { userId: gone.id } });
+    await prisma.staffProfile.deleteMany({ where: { userId: gone.id } });
+    await prisma.user.delete({ where: { id: gone.id } });
+  }
+
+  // Align demo МЭО profiles (faculty/program)
+  for (const row of [
+    {
+      email: 'anna.risk@demo.local',
+      fullName: 'Анна Рискова',
+      phone: '+79001111111',
+      course: 3,
+      groupLabel: '2МЭО-01',
+      groupRuzId: '8033',
+      preferredSubGroupOids: ['501'],
+    },
+    {
+      email: 'boris.ok@demo.local',
+      fullName: 'Борис Спокойный',
+      phone: '+79002222222',
+      course: 3,
+      groupLabel: '2МЭО-02',
+      groupRuzId: '8035',
+      preferredSubGroupOids: ['602'],
+    },
+  ] as const) {
+    await upsertStudent({
+      ...row,
+      faculty: 'Международные экономические отношения',
+      program: 'Бакалавриат МЭО',
+    });
   }
 
   const anna = await prisma.user.findUnique({
@@ -323,24 +333,12 @@ async function main() {
     email: 'roman.guskov@demo.local',
     fullName: 'Гуськов Роман Дмитриевич',
     phone: '+79005555555',
-    faculty: 'Международные отношения',
-    program: 'Бакалавриат МО',
+    faculty: 'Международные экономические отношения',
+    program: 'Бакалавриат МЭО',
     course: 3,
     groupLabel: '2МЭО-01',
     groupRuzId: '8033',
     preferredSubGroupOids: ['501'],
-  });
-
-  const dariaId = await upsertStudent({
-    email: 'daria.mp@demo.local',
-    fullName: 'Дарья Морозова',
-    phone: '+79007777777',
-    faculty: 'Международное право',
-    program: 'Бакалавриат МП',
-    course: 2,
-    groupLabel: '1МП-03',
-    groupRuzId: '7649',
-    preferredSubGroupOids: ['701'],
   });
 
   const kirillId = await upsertStudent({
@@ -358,7 +356,6 @@ async function main() {
   if (anna) await replaceGrades(anna.id, RISK_PACK);
   if (boris) await replaceGrades(boris.id, GRADE_PACK);
   await replaceGrades(romanId, GRADE_PACK);
-  await replaceGrades(dariaId, GRADE_PACK);
   await replaceGrades(kirillId, GRADE_PACK);
 
   // Any already-registered Гуськов* gets the same pack
@@ -383,7 +380,7 @@ async function main() {
       studentUserId: annaUser.id,
       staffUserId: staffUser.id,
     });
-    for (const uid of [romanId, dariaId, kirillId]) {
+    for (const uid of [romanId, kirillId]) {
       await seedDemoClubEvents(prisma, {
         studentUserId: uid,
         staffUserId: staffUser.id,
@@ -397,7 +394,7 @@ async function main() {
   }
 
   console.log(
-    'OK: staff/admin/teacher + 5 demo students (incl. daria.mp / kirill.meo) / Demo123!',
+    'OK: staff/admin + МЭО students (anna/boris/roman/kirill) / Demo123!',
   );
 }
 

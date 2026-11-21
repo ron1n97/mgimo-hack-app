@@ -30,13 +30,22 @@ function moscowWeekBounds(day) {
   };
 }
 
+function eventDay(item) {
+  const raw = item.startsAt || item.publishedAt;
+  if (!raw) return null;
+  return moscowDateStringOf(raw);
+}
+
 function splitDigestFeed(items, day) {
   const { from, to } = moscowWeekBounds(day);
   const today = [];
   const week = [];
   for (const item of items) {
-    if (!item.startsAt) continue;
-    const evDay = moscowDateStringOf(item.startsAt);
+    const evDay = eventDay(item);
+    if (!evDay) {
+      week.push(item);
+      continue;
+    }
     if (evDay === day) today.push(item);
     if (evDay >= from && evDay <= to) week.push(item);
   }
@@ -72,6 +81,16 @@ describe("digest-split", () => {
     const { today, week } = splitDigestFeed(items, "2026-11-15");
     assert.equal(today.length, 1);
     assert.equal(today[0].id, "t");
+    assert.equal(week.length, 2);
+  });
+
+  it("keeps undated posts in the week bucket", () => {
+    const items = [
+      { id: "u", startsAt: null, publishedAt: null, title: "undated" },
+      { id: "p", startsAt: null, publishedAt: "2026-11-14T12:00:00.000Z", title: "pub" },
+    ];
+    const { today, week } = splitDigestFeed(items, "2026-11-15");
+    assert.equal(today.length, 0);
     assert.equal(week.length, 2);
   });
 });

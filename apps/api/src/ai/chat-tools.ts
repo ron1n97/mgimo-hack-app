@@ -54,7 +54,7 @@ const TOOL_GET_STAFF_REQUESTS: ChatToolDefinition = {
   type: 'function',
   function: {
     name: 'get_staff_requests',
-    description: 'Очередь заявок сотрудников деканата.',
+    description: 'Заявки сотрудников деканата МЭО.',
     parameters: { type: 'object', properties: {}, additionalProperties: false },
   },
 };

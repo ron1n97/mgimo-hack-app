@@ -84,7 +84,18 @@ export class TodayService {
     const clubEvents = await this.prisma.eventCandidate.findMany({
       where: {
         moderationStatus: EventModerationStatus.APPROVED,
-        startsAt: { gte: weekStart, lte: weekEnd },
+        OR: [
+          { startsAt: { gte: weekStart, lte: weekEnd } },
+          {
+            startsAt: null,
+            publishedAt: { gte: weekStart, lte: weekEnd },
+          },
+          {
+            startsAt: null,
+            publishedAt: null,
+            createdAt: { gte: weekStart, lte: weekEnd },
+          },
+        ],
       },
       // Newest first + high cap so TG ingest for ~70 clubs still fills «сегодня».
       orderBy: [{ startsAt: 'desc' }, { createdAt: 'desc' }],
@@ -111,6 +122,7 @@ export class TodayService {
       }),
       imageUrl: e.imageUrl,
       startsAt: e.startsAt,
+      publishedAt: e.publishedAt ?? e.createdAt,
       club: e.club ? { id: e.club.id, name: e.club.name } : null,
     }));
     const buckets = splitClubDigestByDay(mapped, day);

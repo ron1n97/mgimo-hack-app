@@ -52,8 +52,8 @@ async function main() {
       studentProfile: {
         create: {
           fullName: 'Анна Рискова',
-          faculty: 'Международные отношения',
-          program: 'Бакалавриат МО',
+          faculty: 'Международные экономические отношения',
+          program: 'Бакалавриат МЭО',
           course: 3,
           groupLabel: '2МЭО-01',
           groupRuzId: '8033',
@@ -72,8 +72,8 @@ async function main() {
       studentProfile: {
         create: {
           fullName: 'Борис Спокойный',
-          faculty: 'Международные отношения',
-          program: 'Бакалавриат МО',
+          faculty: 'Международные экономические отношения',
+          program: 'Бакалавриат МЭО',
           course: 3,
           groupLabel: '2МЭО-02',
           groupRuzId: '8035',
@@ -92,7 +92,7 @@ async function main() {
       staffProfile: {
         create: {
           fullName: 'Елена Соколова',
-          department: 'Учебный отдел',
+          department: 'Деканат МЭО',
         },
       },
     },
@@ -113,22 +113,6 @@ async function main() {
     },
   });
 
-  const teacher = await prisma.user.create({
-    data: {
-      email: 'teacher@demo.local',
-      passwordHash,
-      role: Role.TEACHER,
-      phoneE164: '+79006666666',
-      teacherProfile: {
-        create: {
-          fullName: 'Иванова Ирина Ивановна',
-          department: 'Кафедра международного права',
-          constraintNotes: 'stub: no evening slots preferred (solver later)',
-        },
-      },
-    },
-  });
-
   const roman = await prisma.user.create({
     data: {
       email: 'roman.guskov@demo.local',
@@ -138,32 +122,12 @@ async function main() {
       studentProfile: {
         create: {
           fullName: 'Гуськов Роман Дмитриевич',
-          faculty: 'Международные отношения',
-          program: 'Бакалавриат МО',
+          faculty: 'Международные экономические отношения',
+          program: 'Бакалавриат МЭО',
           course: 3,
           groupLabel: '2МЭО-01',
           groupRuzId: '8033',
           preferredSubGroupOids: ['501'],
-        },
-      },
-    },
-  });
-
-  const daria = await prisma.user.create({
-    data: {
-      email: 'daria.mp@demo.local',
-      passwordHash,
-      role: Role.STUDENT,
-      phoneE164: '+79007777777',
-      studentProfile: {
-        create: {
-          fullName: 'Дарья Морозова',
-          faculty: 'Международное право',
-          program: 'Бакалавриат МП',
-          course: 2,
-          groupLabel: '1МП-03',
-          groupRuzId: '7649',
-          preferredSubGroupOids: ['701'],
         },
       },
     },
@@ -262,22 +226,6 @@ async function main() {
         rawJson: { source: 'seed', group: '8035' },
       },
       {
-        ruzExternalId: 'demo-l5',
-        groupRuzId: '7649',
-        groupLabel: '1МП-03',
-        date: utcDate(y, m, d),
-        begin: '13:00',
-        end: '14:30',
-        discipline: 'Конституционное право зарубежных стран',
-        lecturer: 'Лебедева Л.Л.',
-        auditorium: '220',
-        building: 'Корпус А',
-        kindOfWork: 'Лекция',
-        isCancelled: false,
-        isMoved: false,
-        rawJson: { source: 'seed', group: '7649' },
-      },
-      {
         ruzExternalId: 'demo-l6',
         groupRuzId: '8015',
         groupLabel: '4МЭО-01',
@@ -295,38 +243,6 @@ async function main() {
       },
     ],
   });
-
-  const demoLesson = await prisma.scheduleLesson.findFirst({
-    where: { ruzExternalId: 'demo-l1', groupRuzId: '8033' },
-  });
-
-  if (demoLesson) {
-    const assignment = await prisma.lessonTeacherAssignment.create({
-      data: {
-        teacherUserId: teacher.id,
-        scheduleLessonId: demoLesson.id,
-        groupRuzId: demoLesson.groupRuzId,
-        groupLabel: demoLesson.groupLabel,
-        discipline: demoLesson.discipline,
-        assignedByUserId: staff.id,
-      },
-    });
-
-    const due = new Date();
-    due.setUTCDate(due.getUTCDate() + 3);
-
-    await prisma.lessonTask.create({
-      data: {
-        assignmentId: assignment.id,
-        title: 'Конспект по Венской конвенции',
-        body: 'Подготовить краткий конспект статей 26–31 Венской конвенции о праве международных договоров (1–2 стр.).',
-        dueAt: due,
-        groupRuzId: '8033',
-        scheduleLessonId: demoLesson.id,
-        createdByUserId: teacher.id,
-      },
-    });
-  }
 
   // Anna — academic risk (debts)
   await prisma.grade.createMany({
@@ -537,8 +453,7 @@ async function main() {
     studentUserId: anna.id,
     staffUserId: staff.id,
   });
-  // Cross-faculty dogfood personas also get the demo club in interests
-  for (const uid of [boris.id, roman.id, daria.id, kirill.id]) {
+  for (const uid of [boris.id, roman.id, kirill.id]) {
     await seedDemoClubEvents(prisma, {
       studentUserId: uid,
       staffUserId: staff.id,
@@ -548,15 +463,13 @@ async function main() {
     `Clubs registry: ${clubsSeed.total} rows (${clubsSeed.created} created).`,
   );
 
-  console.log('Seed OK.');
+  console.log('Seed OK (деканат МЭО).');
   console.log('Accounts (password Demo123!):');
-  console.log('  anna.risk@demo.local   — student МО 2МЭО-01 (risk) — +79001111111');
-  console.log('  boris.ok@demo.local    — student МО 2МЭО-02 — +79002222222');
-  console.log('  roman.guskov@demo.local — student МО 2МЭО-01 — +79005555555');
-  console.log('  daria.mp@demo.local    — student МП 1МП-03 — +79007777777');
+  console.log('  anna.risk@demo.local   — student МЭО 2МЭО-01 (risk) — +79001111111');
+  console.log('  boris.ok@demo.local    — student МЭО 2МЭО-02 — +79002222222');
+  console.log('  roman.guskov@demo.local — student МЭО 2МЭО-01 — +79005555555');
   console.log('  kirill.meo@demo.local  — student МЭО 4МЭО-01 — +79008888888');
-  console.log('  staff@demo.local       — staff — +79003333333');
-  console.log('  teacher@demo.local     — teacher — +79006666666');
+  console.log('  staff@demo.local       — staff Соколова (деканат МЭО) — +79003333333');
   console.log('  admin@demo.local       — admin — +79004444444');
   console.log('DISCLAIMER: contest fictional data, not official MGIMO.');
 }

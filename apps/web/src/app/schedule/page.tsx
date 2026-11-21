@@ -118,14 +118,11 @@ export default function SchedulePage() {
   return (
     <div className="animate-rise space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-serif text-3xl text-ink">Расписание</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            {noGroup
-              ? pickGroupHint
-              : `${isStaffView ? "Просмотр" : "Группа"} ${groupName} · неделя ${from.slice(5)} — ${to.slice(5)}`}
-          </p>
-        </div>
+        <p className="text-sm text-ink-muted">
+          {noGroup
+            ? pickGroupHint
+            : `${isStaffView ? "Просмотр" : "Группа"} ${groupName} · неделя ${from.slice(5)} — ${to.slice(5)}`}
+        </p>
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"

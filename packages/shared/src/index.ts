@@ -160,28 +160,16 @@ export const DEMO_ACCOUNTS = [
     note: 'Студент — Гуськов Р.Д.',
   },
   {
-    email: 'teacher@demo.local',
-    password: 'Demo123!',
-    phone: '+79006666666',
-    note: 'Преподаватель — Иванова И.И.',
-  },
-  {
     email: 'staff@demo.local',
     password: 'Demo123!',
     phone: '+79003333333',
-    note: 'Сотрудник деканата',
+    note: 'Сотрудник деканата МЭО — Соколова',
   },
   {
     email: 'admin@demo.local',
     password: 'Demo123!',
     phone: '+79004444444',
     note: 'Админ платформы',
-  },
-  {
-    email: 'teacher@demo.local',
-    password: 'Demo123!',
-    phone: '+79006666666',
-    note: 'Преподаватель — Иванова И.И.',
   },
 ] as const;
 
@@ -203,9 +191,9 @@ export const DEMO_PERSONAS = [
     roleHint: 'student',
   },
   {
-    id: 'teacher-ivanova',
-    buttonLabel: 'Войти как преподаватель Иванова',
-    roleHint: 'teacher',
+    id: 'student-kirill',
+    buttonLabel: 'Войти как студент Орлов (МЭО)',
+    roleHint: 'student',
   },
   {
     id: 'staff-elena',

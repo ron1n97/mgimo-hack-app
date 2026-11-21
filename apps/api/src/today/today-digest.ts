@@ -52,9 +52,22 @@ export type DigestEventLike = {
   body?: string | null;
   url?: string | null;
   startsAt?: Date | string | null;
+  publishedAt?: Date | string | null;
   club?: { id: string; name: string } | null;
 };
 
+function eventDay(ev: DigestEventLike): string | null {
+  const raw = ev.startsAt || ev.publishedAt;
+  if (!raw) return null;
+  const d = typeof raw === 'string' ? new Date(raw) : raw;
+  if (Number.isNaN(d.getTime())) return null;
+  return moscowDateStringOf(d);
+}
+
+/**
+ * Today / week buckets. Prefer startsAt, else publishedAt.
+ * Undated items stay in week so ingest without schedule is still visible.
+ */
 export function splitClubDigestByDay(
   events: DigestEventLike[],
   day = moscowDateString(),
@@ -63,8 +76,11 @@ export function splitClubDigestByDay(
   const today: DigestEventLike[] = [];
   const week: DigestEventLike[] = [];
   for (const ev of events) {
-    if (!ev.startsAt) continue;
-    const evDay = moscowDateStringOf(ev.startsAt);
+    const evDay = eventDay(ev);
+    if (!evDay) {
+      week.push(ev);
+      continue;
+    }
     if (evDay === day) {
       today.push(ev);
     }

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, fetchAdminOverview } from "@/lib/api";
@@ -32,7 +31,7 @@ export default function AdminPage() {
   useEffect(() => {
     const user = getUser();
     if (user && user.role !== "admin") {
-      router.replace(user.role === "staff" ? "/staff/requests" : "/today");
+      router.replace(user.role === "staff" ? "/staff" : "/today");
       return;
     }
     void load();
@@ -40,20 +39,6 @@ export default function AdminPage() {
 
   return (
     <div className="animate-rise space-y-6">
-      <header>
-        <p className="text-xs font-medium uppercase tracking-wider text-copper">
-          Кабинет администратора
-        </p>
-        <h1 className="mt-1 font-serif text-3xl text-ink">Обзор платформы</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Сводка по аккаунтам и заявкам. Очередь деканата —{" "}
-          <Link href="/staff/requests" className="text-copper underline-offset-2 hover:underline">
-            здесь
-          </Link>
-          .
-        </p>
-      </header>
-
       {loading ? <LoadingState /> : null}
       {error ? <ErrorState message={error} onRetry={load} /> : null}
 

@@ -63,7 +63,7 @@ export default function TeacherCabinetPage() {
   useEffect(() => {
     const user = getUser();
     if (!user || user.role !== "teacher") {
-      router.replace(user?.role === "staff" || user?.role === "admin" ? "/staff/teachers" : "/today");
+      router.replace(user?.role === "staff" || user?.role === "admin" ? "/staff" : "/today");
       return;
     }
     void load();
@@ -105,16 +105,6 @@ export default function TeacherCabinetPage() {
 
   return (
     <div className="animate-rise space-y-6">
-      <header>
-        <p className="text-xs font-medium uppercase tracking-wider text-copper">
-          Кабинет преподавателя
-        </p>
-        <h1 className="mt-1 font-serif text-3xl text-ink">Мои пары и задания</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Слоты из RUZ, закреплённые деканатом. Задания видят студенты группы.
-        </p>
-      </header>
-
       {loading ? <LoadingState /> : null}
       {error ? <ErrorState message={error} onRetry={load} /> : null}
 

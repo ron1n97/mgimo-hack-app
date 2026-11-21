@@ -71,9 +71,9 @@ describe('demo persona catalog', () => {
     expect(findDemoPersona('student-anna')?.email).toBe(
       'anna.risk@demo.local',
     );
-    expect(findDemoPersona('teacher-ivanova')?.email).toBe(
-      'teacher@demo.local',
-    );
+    expect(findDemoPersona('staff-elena')?.email).toBe('staff@demo.local');
+    expect(findDemoPersona('teacher-ivanova')).toBeUndefined();
+    expect(findDemoPersona('student-daria')).toBeUndefined();
     expect(findDemoPersona('nope')).toBeUndefined();
   });
 });

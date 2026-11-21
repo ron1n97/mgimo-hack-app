@@ -13,32 +13,13 @@ import {
   unsubscribeClub,
 } from "@/lib/api";
 import { splitDigestFeed } from "@/lib/digest-split";
+import { summarizeDigestItem } from "@/lib/digest-summary";
 import type { Club, ClubTag, DigestFeedItem, StudentInterests } from "@/lib/types";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
 
 type ClubsTab = "digest" | "catalog";
-
-function formatEventWhen(iso?: string | null): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  const date = d.toLocaleDateString("ru-RU", {
-    timeZone: "Europe/Moscow",
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
-  const time = d.toLocaleTimeString("ru-RU", {
-    timeZone: "Europe/Moscow",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  // Date-only parses use 00:00 MSK — omit fake midnight clock.
-  if (time === "00:00") return date;
-  return `${date}, ${time}`;
-}
 
 function DigestItem({
   item,
@@ -47,46 +28,41 @@ function DigestItem({
   item: DigestFeedItem;
   idPrefix: string;
 }) {
-  const when = formatEventWhen(item.startsAt);
+  const s = summarizeDigestItem(item);
+  const when = [s.day, s.time].filter(Boolean).join(", ");
   return (
     <li
       key={`${idPrefix}-${item.id}`}
       className="border-b border-cream-deep/80 py-3 last:border-b-0"
     >
-      <div className="flex gap-3">
-        {item.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={item.imageUrl}
-            alt=""
-            className="h-16 w-16 shrink-0 rounded-lg object-cover bg-cream-deep"
-            loading="lazy"
-            referrerPolicy="no-referrer"
-          />
-        ) : null}
-        <div className="min-w-0 flex-1">
-          <p className="text-xs text-ink-muted">
-            {item.club?.name}
-            {when ? ` · ${when}` : ""}
-          </p>
-          <h3 className="font-medium text-ink">{item.title}</h3>
-          {item.body ? (
-            <p className="mt-1 line-clamp-3 text-sm text-ink-muted">{item.body}</p>
-          ) : null}
-          {item.url ? (
+      <div className="min-w-0">
+        <p className="text-xs text-ink-muted">
+          {[s.club, when].filter(Boolean).join(" · ")}
+        </p>
+        <h3 className="font-medium text-ink">{s.title}</h3>
+        <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+          {s.registrationUrl ? (
             <a
-              href={item.url}
+              href={s.registrationUrl}
               target="_blank"
               rel="noreferrer"
-              className="mt-1 inline-block text-sm text-copper underline-offset-2 hover:underline"
+              className="text-copper underline-offset-2 hover:underline"
             >
-              Открыть пост →
+              Регистрация
             </a>
-          ) : item.club?.id ? (
-            <span className="mt-1 block text-xs text-ink-muted">
-              Ссылка на пост ещё не распарсена
-            </span>
           ) : null}
+          {s.postUrl ? (
+            <a
+              href={s.postUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-copper underline-offset-2 hover:underline"
+            >
+              Пост →
+            </a>
+          ) : (
+            <span className="text-xs text-ink-muted">Ссылка на пост ещё не распарсена</span>
+          )}
         </div>
       </div>
     </li>
@@ -99,7 +75,7 @@ export default function ClubsPage() {
   const [interests, setInterests] = useState<StudentInterests | null>(null);
   /** Personalized feed (subscriptions). Empty until user picks tags/clubs. */
   const [interestFeed, setInterestFeed] = useState<DigestFeedItem[]>([]);
-  /** All approved stubs — powers «Что сегодня» / «Недельный дайджест». */
+  /** All approved stubs — powers ежедневный / недельный дайджест. */
   const [publicFeed, setPublicFeed] = useState<DigestFeedItem[]>([]);
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [q, setQ] = useState("");
@@ -232,14 +208,7 @@ export default function ClubsPage() {
 
   return (
     <div className="animate-rise space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="font-serif text-3xl text-ink">Клубы</h1>
-          <p className="mt-1 max-w-xl text-sm text-ink-muted">
-            Сначала дайджест анонсов — каталог клубов отдельно, без бесконечной
-            прокрутки.
-          </p>
-        </div>
+      <div className="flex justify-end">
         <button
           type="button"
           onClick={() => {
@@ -250,7 +219,7 @@ export default function ClubsPage() {
         >
           {showForm ? "Скрыть форму" : "Заявить клуб"}
         </button>
-      </header>
+      </div>
 
       <div
         role="tablist"
@@ -295,9 +264,6 @@ export default function ClubsPage() {
 
       <section className="space-y-3">
         <h2 className="font-serif text-xl text-ink">Мои интересы</h2>
-        <p className="text-sm text-ink-muted">
-          Теги фильтруют персональную ленту и будущие пуши.
-        </p>
         <div className="flex flex-wrap gap-2">
           {tags.map((tag) => {
             const on = subscribedTagIds.has(tag.id);
@@ -329,10 +295,7 @@ export default function ClubsPage() {
       {!loading && !error && tab === "digest" ? (
         <div className="space-y-8">
           <section className="space-y-3">
-            <h2 className="font-serif text-xl text-ink">Что сегодня</h2>
-            <p className="text-sm text-ink-muted">
-              Анонсы на сегодня. Подписка не нужна.
-            </p>
+            <h2 className="font-serif text-xl text-ink">Ежедневный дайджест</h2>
             {todayFeed.length === 0 ? (
               <p className="text-sm text-ink-muted">
                 На сегодня анонсов нет
@@ -352,9 +315,6 @@ export default function ClubsPage() {
 
           <section id="weekly-digest" className="scroll-mt-28 space-y-3">
             <h2 className="font-serif text-xl text-ink">Недельный дайджест</h2>
-            <p className="text-sm text-ink-muted">
-              Сводка на текущую неделю — удобнее ежедневного шума.
-            </p>
             {weekFeed.length === 0 ? (
               <p className="text-sm text-ink-muted">На этой неделе пока пусто.</p>
             ) : (
@@ -368,9 +328,6 @@ export default function ClubsPage() {
 
           <section className="space-y-3">
             <h2 className="font-serif text-xl text-ink">Лента по интересам</h2>
-            <p className="text-sm text-ink-muted">
-              Только одобренные анонсы по вашим тегам и клубам.
-            </p>
             {interestFeed.length === 0 ? (
               <EmptyState
                 title="Пока пусто"

@@ -10,7 +10,8 @@ import {
   login,
   register,
 } from "@/lib/api";
-import { getToken, setSession } from "@/lib/auth";
+import { getToken, getUser, setSession } from "@/lib/auth";
+
 
 type Mode = "login" | "register";
 
@@ -24,11 +25,7 @@ const FALLBACK_PERSONAS: DemoPersonaPublic[] = [
   { id: "student-anna", buttonLabel: "Войти как студент Рискова", roleHint: "student" },
   { id: "student-boris", buttonLabel: "Войти как студент Спокойный", roleHint: "student" },
   { id: "student-roman", buttonLabel: "Войти как студент Гуськов", roleHint: "student" },
-  {
-    id: "teacher-ivanova",
-    buttonLabel: "Войти как преподаватель Иванова",
-    roleHint: "teacher",
-  },
+  { id: "student-kirill", buttonLabel: "Войти как студент Орлов (МЭО)", roleHint: "student" },
   {
     id: "staff-elena",
     buttonLabel: "Войти как сотрудник Соколова",
@@ -39,7 +36,7 @@ const FALLBACK_PERSONAS: DemoPersonaPublic[] = [
 
 function homeForRole(role: string): string {
   if (role === "admin") return "/admin";
-  if (role === "staff") return "/staff/requests";
+  if (role === "staff") return "/staff";
   return "/today";
 }
 
@@ -58,7 +55,7 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (getToken()) {
-      router.replace("/today");
+      router.replace(homeForRole(getUser()?.role ?? "student"));
     }
   }, [router]);
 

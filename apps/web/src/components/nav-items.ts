@@ -32,16 +32,16 @@ const teacherItems: NavItem[] = [
 ];
 
 const staffItems: NavItem[] = [
-  { href: "/staff/requests", label: "Очередь", icon: "queue" },
-  { href: "/today", label: "Сегодня", icon: "today" },
-  { href: "/notifications", label: "Лента", icon: "bell" },
+  { href: "/staff", label: "Кабинет", icon: "queue" },
+  { href: "/staff/requests", label: "Заявки", icon: "bell" },
+  { href: "/staff/students", label: "Студенты", icon: "clubs" },
   { href: "/profile", label: "Профиль", icon: "profile" },
 ];
 
 const adminItems: NavItem[] = [
-  { href: "/staff/requests", label: "Очередь", icon: "queue" },
+  { href: "/staff", label: "Кабинет", icon: "queue" },
   { href: "/admin", label: "Админ", icon: "admin" },
-  { href: "/notifications", label: "Лента", icon: "bell" },
+  { href: "/staff/requests", label: "Заявки", icon: "bell" },
   { href: "/profile", label: "Профиль", icon: "profile" },
 ];
 
@@ -53,5 +53,8 @@ export function navItemsForRole(role: UserRole | null | undefined): NavItem[] {
 }
 
 export function isNavItemActive(pathname: string, href: string): boolean {
+  if (href === "/staff") {
+    return pathname === "/staff";
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }

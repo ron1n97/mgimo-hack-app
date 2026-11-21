@@ -94,14 +94,6 @@ export default function StaffAnnouncePage() {
 
   return (
     <div className="animate-rise mx-auto max-w-2xl space-y-8">
-      <header>
-        <h1 className="font-serif text-3xl text-ink">Объявления и переносы</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Новости деканата уходят в ленту и на Web Push (если VAPID настроен). Перенос
-          пары помечает слот и уведомляет группу.
-        </p>
-      </header>
-
       <form
         onSubmit={onAnnounce}
         className="space-y-3 rounded-2xl border border-cream-deep bg-white/60 p-5"

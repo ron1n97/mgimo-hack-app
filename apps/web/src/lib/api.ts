@@ -272,9 +272,25 @@ function mapGrade(raw: Record<string, unknown>): GradeItem {
 
 function mapRequest(raw: Record<string, unknown>): ServiceRequest {
   const student = raw.student as
-    | { fullName?: string; studentProfile?: { fullName?: string } }
+    | {
+        id?: string;
+        fullName?: string;
+        studentProfile?: {
+          fullName?: string;
+          groupLabel?: string;
+          faculty?: string;
+          program?: string;
+        };
+      }
     | undefined;
-  const profile = raw.studentProfile as { fullName?: string } | undefined;
+  const profile = (raw.studentProfile ?? student?.studentProfile) as
+    | {
+        fullName?: string;
+        groupLabel?: string;
+        faculty?: string;
+        program?: string;
+      }
+    | undefined;
   return {
     id: String(raw.id),
     type: String(raw.type ?? ""),
@@ -287,7 +303,20 @@ function mapRequest(raw: Record<string, unknown>): ServiceRequest {
       student?.studentProfile?.fullName ??
       student?.fullName ??
       profile?.fullName,
+    studentUserId:
+      (raw.studentUserId != null ? String(raw.studentUserId) : undefined) ??
+      (student?.id != null ? String(student.id) : undefined),
+    studentGroupLabel: profile?.groupLabel,
+    studentFaculty: profile?.faculty,
+    studentProgram: profile?.program,
   };
+}
+
+/** Деканат МЭО — заявки только по студентам МЭО. */
+export function isMeoServiceRequest(item: ServiceRequest): boolean {
+  const blob =
+    `${item.studentGroupLabel ?? ""} ${item.studentFaculty ?? ""} ${item.studentProgram ?? ""}`.toLowerCase();
+  return blob.includes("мэо") || blob.includes("meo");
 }
 
 function mapNotification(raw: Record<string, unknown>): NotificationItem {
@@ -429,6 +458,7 @@ function mapClubEvent(raw: Record<string, unknown>): TodayClubEvent {
     url: raw.url == null ? null : String(raw.url),
     imageUrl: raw.imageUrl == null ? null : String(raw.imageUrl),
     startsAt: raw.startsAt == null ? null : String(raw.startsAt),
+    publishedAt: raw.publishedAt == null ? null : String(raw.publishedAt),
     club: club
       ? { id: String(club.id ?? ""), name: String(club.name ?? "") }
       : null,

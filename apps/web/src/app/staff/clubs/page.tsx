@@ -118,17 +118,6 @@ export default function StaffClubsPage() {
 
   return (
     <div className="animate-rise space-y-6">
-      <header>
-        <p className="text-xs font-medium uppercase tracking-wider text-copper">
-          Кабинет сотрудника
-        </p>
-        <h1 className="mt-1 font-serif text-3xl text-ink">Клубы и дайджест</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Подтверждение реестра, digest и TG/VK источники. Публичные каналы
-          тянем с t.me/s/… (без Bot API).
-        </p>
-      </header>
-
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"

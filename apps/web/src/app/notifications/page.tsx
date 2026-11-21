@@ -71,11 +71,6 @@ export default function NotificationsPage() {
 
   return (
     <div className="animate-rise space-y-6">
-      <header>
-        <h1 className="font-serif text-3xl text-ink">Уведомления</h1>
-        <p className="mt-1 text-sm text-ink-muted">Переносы, статусы заявок, напоминания.</p>
-      </header>
-
       {pushSupported() ? (
         <div className="rounded-2xl border border-cream-deep bg-white/50 px-4 py-3">
           <p className="text-sm text-ink">Пуш на телефон (PWA / Android Chrome)</p>

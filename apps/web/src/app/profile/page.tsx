@@ -153,17 +153,6 @@ export default function ProfilePage() {
 
   return (
     <div className="animate-rise mx-auto max-w-lg space-y-6">
-      <header>
-        <h1 className="font-serif text-3xl text-ink">Профиль</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          {isStaffView
-            ? "Контакты сотрудника и группа для просмотра расписания. Карточки студентов — в «Студенты»."
-            : isTeacher
-              ? "Данные преподавателя."
-              : "ФИО, группа и подгруппа задаются деканатом — в кабинете только просмотр."}
-        </p>
-      </header>
-
       <form
         onSubmit={onSubmit}
         className="space-y-4 rounded-2xl border border-cream-deep bg-white/50 p-5"

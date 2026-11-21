@@ -221,7 +221,7 @@ export class AiService {
       return [
         'ИИ сейчас недоступен. Откройте очередь заявок и сводку дня:',
         '[[today]]',
-        '{{widget:request|title=Очередь заявок|href=/staff/requests}}',
+        '{{widget:request|title=Заявки|href=/staff/requests}}',
       ].join('\n');
     }
     if (r === 'TEACHER') {

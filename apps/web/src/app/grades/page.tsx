@@ -56,8 +56,14 @@ export default function GradesPage() {
       const next = await fetchGradesOverview();
       setData(next);
       const sems = next.rating?.semesters ?? [];
+      const densest =
+        [...sems].sort((a, b) => {
+          const ca = next.grades.filter((g) => g.date === a).length;
+          const cb = next.grades.filter((g) => g.date === b).length;
+          return cb - ca;
+        })[0] ?? "";
       setSemester((prev) =>
-        prev && sems.includes(prev) ? prev : (sems[0] ?? ""),
+        prev && sems.includes(prev) ? prev : densest,
       );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось загрузить учёбу");

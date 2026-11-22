@@ -76,7 +76,7 @@ export function resolveWidgetHref(
     case 'event':
     case 'notification':
       return id
-        ? `/notifications?id=${encodeURIComponent(id)}`
+        ? `/notifications/${encodeURIComponent(id)}`
         : '/notifications';
     case 'request':
       if (staffQueue) {

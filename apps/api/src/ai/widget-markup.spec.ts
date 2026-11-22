@@ -44,7 +44,7 @@ describe('widget markup DSL', () => {
     expect(widgets.find((w) => w.kind === 'schedule')?.href).toBe('/schedule');
     expect(widgets.find((w) => w.kind === 'task')?.href).toBe('/grades?task=t1');
     expect(widgets.find((w) => w.kind === 'event')?.href).toBe(
-      '/notifications?id=e1',
+      '/notifications/e1',
     );
   });
 

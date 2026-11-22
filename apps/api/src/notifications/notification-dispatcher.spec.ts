@@ -71,7 +71,7 @@ describe('NotificationDispatcher', () => {
     });
     const result = await dispatcher.dispatch({
       ...note,
-      kind: 'schedule_moved',
+      kind: 'request_status',
     });
     expect(result).toEqual({ sent: 0, skipped: 'kind' });
     expect(sendWebPush).not.toHaveBeenCalled();

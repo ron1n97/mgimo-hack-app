@@ -882,6 +882,24 @@ export async function fetchNotifications(): Promise<NotificationItem[]> {
   return Array.isArray(data) ? data.map(mapNotification) : [];
 }
 
+export async function fetchNotification(id: string): Promise<NotificationItem> {
+  const raw = await request<Record<string, unknown>>(
+    `/notifications/me/${encodeURIComponent(id)}`,
+  );
+  return mapNotification(raw);
+}
+
+/** Open card → mark viewed. */
+export async function markNotificationRead(
+  id: string,
+): Promise<NotificationItem> {
+  const raw = await request<Record<string, unknown>>(
+    `/notifications/me/${encodeURIComponent(id)}/read`,
+    { method: "PATCH", body: {} },
+  );
+  return mapNotification(raw);
+}
+
 export async function fetchUnreadNotificationCount(): Promise<number> {
   const data = await request<{ count?: number }>("/notifications/me/unread-count");
   return typeof data.count === "number" ? data.count : 0;

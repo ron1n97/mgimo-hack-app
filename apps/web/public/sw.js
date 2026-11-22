@@ -1,5 +1,5 @@
 /* PWA shell + Web Push (ADR 0013). Cache policy: apps/web/src/lib/sw-cache-policy.mjs */
-const CACHE = "dekanat-web-v3";
+const CACHE = "dekanat-web-v4";
 
 function isCacheableAsset(requestUrl) {
   try {
@@ -94,9 +94,12 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target =
-    (event.notification.data && event.notification.data.url) || "/notifications";
-  const path = typeof target === "string" ? target : "/notifications";
+  const data = event.notification.data || {};
+  let path =
+    (typeof data.url === "string" && data.url) || "/notifications";
+  if (data.notificationId && path === "/notifications") {
+    path = `/notifications/${data.notificationId}`;
+  }
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {

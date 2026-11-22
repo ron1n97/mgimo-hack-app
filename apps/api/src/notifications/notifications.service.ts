@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { assertResourceOwner } from '../common/ownership';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationDispatcher } from './notification-dispatcher';
 
@@ -19,6 +20,30 @@ export class NotificationsService {
   async unreadCount(userId: string) {
     return this.prisma.notification.count({
       where: { userId, readAt: null },
+    });
+  }
+
+  async getForUser(id: string, actorUserId: string, actorRole: string) {
+    const row = await this.prisma.notification.findUnique({ where: { id } });
+    if (!row) {
+      throw new NotFoundException('Notification not found');
+    }
+    assertResourceOwner({
+      resourceOwnerId: row.userId,
+      actorUserId,
+      actorRole,
+      notFoundMessage: 'Notification not found',
+    });
+    return row;
+  }
+
+  /** Open card → mark viewed. Idempotent. */
+  async markRead(id: string, actorUserId: string, actorRole: string) {
+    const row = await this.getForUser(id, actorUserId, actorRole);
+    if (row.readAt) return row;
+    return this.prisma.notification.update({
+      where: { id },
+      data: { readAt: new Date() },
     });
   }
 

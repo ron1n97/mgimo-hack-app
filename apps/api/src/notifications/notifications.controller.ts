@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -96,5 +98,16 @@ export class NotificationsController {
       body: dto.body,
       kind: dto.kind,
     });
+  }
+
+  /** Card detail — after static routes so `push` / `me` are not captured. */
+  @Get('me/:id')
+  getOne(@CurrentUser() user: JwtPayloadUser, @Param('id') id: string) {
+    return this.notifications.getForUser(id, user.userId, user.role);
+  }
+
+  @Patch('me/:id/read')
+  markRead(@CurrentUser() user: JwtPayloadUser, @Param('id') id: string) {
+    return this.notifications.markRead(id, user.userId, user.role);
   }
 }

@@ -1,14 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { ApiError, createDemoNotification, fetchNotifications } from "@/lib/api";
+import {
+  formatNotificationWhen,
+  notificationKindLabel,
+} from "@/lib/notification-kind";
 import type { NotificationItem } from "@/lib/types";
 import { enableWebPush, pushSupported } from "@/lib/push";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
 
-export default function NotificationsPage() {
+function NotificationsList() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +41,15 @@ export default function NotificationsPage() {
     void load();
   }, [load]);
 
+  // Deep links from push / widgets: ?id= / ?focus=
+  useEffect(() => {
+    const deep =
+      searchParams.get("id") || searchParams.get("focus") || "";
+    if (deep) {
+      router.replace(`/notifications/${encodeURIComponent(deep)}`);
+    }
+  }, [router, searchParams]);
+
   async function onEnablePush() {
     setPushBusy(true);
     setPushNote(null);
@@ -47,20 +64,22 @@ export default function NotificationsPage() {
         ? "VAPID не настроен на сервере."
         : result.reason === "denied"
           ? "Разрешение отклонено."
-          : "Не удалось включить пуш.",
+          : result.reason === "unsupported"
+            ? "На этом браузере Web Push недоступен (нужен Chrome/PWA на Android или установленное PWA)."
+            : "Не удалось включить пуш.",
     );
   }
 
-  async function onDemoGrade() {
+  async function onDemoPush() {
     setPushBusy(true);
     setPushNote(null);
     try {
       await createDemoNotification({
-        title: "Демо: новая оценка",
-        body: "Международное право — зачёт (тест Web Push).",
-        kind: "grade_posted",
+        title: "Демо: объявление деканата",
+        body: "Проверка пуша и карточки уведомления. Откройте это сообщение — оно отметится просмотренным.",
+        kind: "deanery_announce",
       });
-      setPushNote("Создали grade_posted — проверьте системное уведомление и ленту.");
+      setPushNote("Создали уведомление — проверьте системный пуш и откройте карточку в ленте.");
       await load();
     } catch {
       setPushNote("Не удалось создать уведомление.");
@@ -73,10 +92,10 @@ export default function NotificationsPage() {
     <div className="animate-rise space-y-6">
       {pushSupported() ? (
         <div className="rounded-2xl border border-cream-deep bg-white/50 px-4 py-3">
-          <p className="text-sm text-ink">Пуш на телефон (PWA / Android Chrome)</p>
+          <p className="text-sm text-ink">Пуш на телефон</p>
           <p className="mt-1 text-xs text-ink-muted">
-            Установите на домашний экран, разрешите уведомления — оценки и дайджест придут даже
-            когда вкладка закрыта.
+            Android Chrome / установленное PWA: разрешите уведомления. iOS — только после «На экран
+            Домой».
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
@@ -90,15 +109,19 @@ export default function NotificationsPage() {
             <button
               type="button"
               disabled={pushBusy}
-              onClick={() => void onDemoGrade()}
+              onClick={() => void onDemoPush()}
               className="rounded-lg border border-ink/15 px-3 py-1.5 text-xs text-ink-muted disabled:opacity-60"
             >
-              Тест grade_posted
+              Тест пуша
             </button>
           </div>
           {pushNote ? <p className="mt-2 text-xs text-copper">{pushNote}</p> : null}
         </div>
-      ) : null}
+      ) : (
+        <p className="text-xs text-ink-muted">
+          Web Push на этом устройстве недоступен. На iPhone установите PWA на домашний экран.
+        </p>
+      )}
 
       {loading ? <LoadingState /> : null}
       {error ? <ErrorState message={error} onRetry={load} /> : null}
@@ -109,47 +132,66 @@ export default function NotificationsPage() {
         ) : (
           <ul className="space-y-2">
             {items.map((item) => (
-              <li
-                key={item.id}
-                className={`rounded-2xl border px-4 py-4 shadow-sm ${
-                  item.read
-                    ? "border-cream-deep bg-white/70"
-                    : "border-copper/40 bg-ink text-cream ring-1 ring-copper/30"
-                }`}
-              >
-                <div className="flex items-start gap-2">
-                  {!item.read ? (
-                    <span
-                      className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-copper"
-                      aria-hidden
-                    />
-                  ) : (
-                    <span className="mt-1.5 h-2.5 w-2.5 shrink-0" aria-hidden />
-                  )}
-                  <div>
-                    <h2
-                      className={`font-medium ${item.read ? "text-ink" : "text-cream"}`}
-                    >
-                      {item.title}
-                    </h2>
-                    <p
-                      className={`mt-1 text-sm ${item.read ? "text-ink-muted" : "text-cream/80"}`}
-                    >
-                      {item.body}
-                    </p>
-                    <p
-                      className={`mt-2 text-xs ${item.read ? "text-ink-muted" : "text-cream/55"}`}
-                    >
-                      {item.createdAt}
-                      {item.kind ? ` · ${item.kind}` : ""}
-                    </p>
+              <li key={item.id}>
+                <Link
+                  href={`/notifications/${item.id}`}
+                  className={`block rounded-2xl border px-4 py-4 transition ${
+                    item.read
+                      ? "border-cream-deep bg-white/70 hover:border-copper/30"
+                      : "border-copper/40 bg-ink text-cream ring-1 ring-copper/30 hover:bg-ink/95"
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    {!item.read ? (
+                      <span
+                        className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-copper"
+                        aria-hidden
+                      />
+                    ) : (
+                      <span className="mt-1.5 h-2.5 w-2.5 shrink-0" aria-hidden />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`text-[10px] uppercase tracking-wide ${
+                          item.read ? "text-copper" : "text-copper/90"
+                        }`}
+                      >
+                        {notificationKindLabel(item.kind)}
+                      </p>
+                      <h2
+                        className={`mt-0.5 font-medium ${item.read ? "text-ink" : "text-cream"}`}
+                      >
+                        {item.title}
+                      </h2>
+                      <p
+                        className={`mt-1 line-clamp-2 text-sm ${
+                          item.read ? "text-ink-muted" : "text-cream/80"
+                        }`}
+                      >
+                        {item.body}
+                      </p>
+                      <p
+                        className={`mt-2 text-xs ${item.read ? "text-ink-muted" : "text-cream/55"}`}
+                      >
+                        {formatNotificationWhen(item.createdAt)}
+                        {!item.read ? " · новое" : ""}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                </Link>
               </li>
             ))}
           </ul>
         )
       ) : null}
     </div>
+  );
+}
+
+export default function NotificationsPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <NotificationsList />
+    </Suspense>
   );
 }

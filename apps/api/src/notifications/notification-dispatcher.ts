@@ -90,7 +90,7 @@ export class NotificationDispatcher {
       title: notification.title,
       body: notification.body,
       kind: notification.kind,
-      url: `/notifications?focus=${notification.id}`,
+      url: `/notifications/${notification.id}`,
       notificationId: notification.id,
     });
 

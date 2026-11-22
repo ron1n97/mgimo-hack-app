@@ -34,38 +34,33 @@ export default function TodayPage() {
     void load();
   }, [load]);
 
+  const needsGroup =
+    user &&
+    !user.groupName &&
+    (user.role === "student" || user.role === "staff" || user.role === "admin");
+
   return (
     <div className="animate-rise space-y-6">
-      <header>
+      {needsGroup ? (
         <p className="text-sm text-ink-muted">
-          {new Date().toLocaleDateString("ru-RU", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-          })}
+          {user?.role === "student" ? (
+            <>
+              Группа ещё не привязана — откройте{" "}
+              <Link href="/profile" className="text-copper underline-offset-2 hover:underline">
+                профиль
+              </Link>
+              .
+            </>
+          ) : (
+            <>
+              <Link href="/profile" className="text-copper underline-offset-2 hover:underline">
+                Выберите группу в профиле
+              </Link>
+              , чтобы видеть пары.
+            </>
+          )}
         </p>
-        <h1 className="mt-1 font-serif text-3xl text-ink">
-          {user ? `Привет, ${user.fullName.split(" ")[0]}` : "Сегодня"}
-        </h1>
-        {user?.groupName ? (
-          <p className="mt-1 text-sm text-ink-muted">Группа {user.groupName}</p>
-        ) : user?.role === "student" ? (
-          <p className="mt-1 text-sm text-ink-muted">
-            Группа ещё не привязана в базе — откройте{" "}
-            <Link href="/profile" className="text-copper underline-offset-2 hover:underline">
-              профиль
-            </Link>
-            .
-          </p>
-        ) : (
-          <p className="mt-1 text-sm text-ink-muted">
-            <Link href="/profile" className="text-copper underline-offset-2 hover:underline">
-              Выберите группу в профиле
-            </Link>
-            , чтобы видеть пары.
-          </p>
-        )}
-      </header>
+      ) : null}
 
       {loading ? <LoadingState label="Собираем день…" /> : null}
       {error ? <ErrorState message={error} onRetry={load} /> : null}
@@ -217,7 +212,7 @@ export default function TodayPage() {
                 {data.importantUnread.map((n) => (
                   <li key={n.id} className="min-w-[14rem] max-w-[18rem] shrink-0">
                     <Link
-                      href="/notifications"
+                      href={`/notifications/${n.id}`}
                       className="block rounded-2xl border border-copper/25 bg-white/70 px-3 py-3 transition hover:border-copper/50"
                     >
                       <p className="text-[10px] uppercase tracking-wide text-copper">
@@ -253,40 +248,6 @@ export default function TodayPage() {
               <p className="mt-1 text-sm text-ink-muted">непрочитанных</p>
             </Link>
           </div>
-
-          <section>
-            <div className="mb-3 flex items-end justify-between">
-              <h2 className="font-serif text-xl text-ink">Оценки</h2>
-              <Link href="/grades" className="text-sm text-copper">
-                Все
-              </Link>
-            </div>
-            {data.recentGrades.length === 0 ? (
-              <EmptyState
-                title="Оценок пока нет"
-                description="Когда появятся результаты — покажем здесь."
-              />
-            ) : (
-              <ul className="space-y-2">
-                {data.recentGrades.map((g) => (
-                  <li
-                    key={g.id}
-                    className="flex items-center justify-between rounded-xl border border-cream-deep bg-white/40 px-4 py-3"
-                  >
-                    <div>
-                      <p className="font-medium text-ink">{g.subject}</p>
-                      <p className="text-xs text-ink-muted">
-                        {g.date}
-                        {g.kind ? ` · ${g.kind}` : ""}
-                        {g.isDebt ? " · долг" : ""}
-                      </p>
-                    </div>
-                    <span className="font-serif text-xl text-copper">{g.value}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
         </>
       ) : null}
     </div>

@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsInt,
   IsOptional,
@@ -38,9 +39,10 @@ export class UpdateProfileDto {
   @IsString()
   groupRuzId?: string;
 
-  /** Preferred RUZ language/stream subgroup oids within the academic group */
+  /** Preferred RUZ language/stream subgroup oid (at most one; A2). */
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(1)
   @IsString({ each: true })
   preferredSubGroupOids?: string[];
 

@@ -1,4 +1,12 @@
-import { IsArray, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 /** Deanery edits to a student's academic identity (not self-service). */
 export class UpdateStudentDto {
@@ -28,8 +36,10 @@ export class UpdateStudentDto {
   @IsString()
   groupRuzId?: string;
 
+  /** At most one language subgroup (timetable A2 / ADR 0008). */
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(1)
   @IsString({ each: true })
   preferredSubGroupOids?: string[];
 }

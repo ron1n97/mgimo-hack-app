@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Role, TicketStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { normalizePreferredSubGroupOids } from '../schedule/subgroup-filter';
 import { UpdateStudentDto } from './dto/update-student.dto';
 
 @Injectable()
@@ -69,7 +70,9 @@ export class AdminService {
       data.groupRuzId = dto.groupRuzId.trim() || null;
     }
     if (dto.preferredSubGroupOids !== undefined) {
-      data.preferredSubGroupOids = dto.preferredSubGroupOids;
+      data.preferredSubGroupOids = normalizePreferredSubGroupOids(
+        dto.preferredSubGroupOids,
+      );
     }
     const profile = await this.prisma.studentProfile.update({
       where: { userId: studentUserId },

@@ -11,9 +11,9 @@
 
 ## Решение
 1. `ruzExternalId = String(lessonOid)`; на `ScheduleLesson` хранить `subGroup`, `subGroupOid`, `stream`, `streamOid`.
-2. В `StudentProfile` — `preferredSubGroupOids[]`; после выбора учебной группы студент отмечает свои подгруппы.
-3. `schedule.forUser` / Today фильтруют по предпочтению (пары без `subGroupOid` остаются).  
-   Студент **никогда** не видит чужие подгруппы: без `preferredSubGroupOids` — только whole-group; `showAll` игнорируется для STUDENT; `groupRuzId` query нельзя подменить. Staff/admin могут `showAll` для просмотра.
+2. В `StudentProfile` — `preferredSubGroupOids[]`, но enrollment — **ровно одна** языковая подгруппа своей академической группы (модель A2; UI staff — radio; API — `ArrayMaxSize(1)` + `normalizePreferredSubGroupOids`).
+3. `schedule.forUser` / Today фильтруют по предпочтению (пары без `subGroupOid` / `"0"` остаются).  
+   Студент **никогда** не видит чужие подгруппы: без `preferredSubGroupOids` — только whole-group; `showAll` игнорируется для STUDENT; `groupRuzId` query нельзя подменить. Staff/admin могут `showAll` для просмотра. Каталог подгрупп не отдаёт marker `"0"`.
 4. Discovery sync использует course-prefixed search terms (`1МЭО`…`4МЭО`, `1МО-`…), не глотает error-dict RUZ как `[]`.
 
 ## Последствия

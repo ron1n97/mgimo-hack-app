@@ -303,7 +303,7 @@ async function main() {
       course: 3,
       groupLabel: '2МЭО-01',
       groupRuzId: '8033',
-      preferredSubGroupOids: ['501'],
+      preferredSubGroupOids: ['10169'],
     },
     {
       email: 'boris.ok@demo.local',
@@ -312,7 +312,7 @@ async function main() {
       course: 3,
       groupLabel: '2МЭО-02',
       groupRuzId: '8035',
-      preferredSubGroupOids: ['602'],
+      preferredSubGroupOids: ['10194'],
     },
   ] as const) {
     await upsertStudent({
@@ -338,7 +338,7 @@ async function main() {
     course: 3,
     groupLabel: '2МЭО-01',
     groupRuzId: '8033',
-    preferredSubGroupOids: ['501'],
+    preferredSubGroupOids: ['10169'],
   });
 
   const kirillId = await upsertStudent({
@@ -350,7 +350,7 @@ async function main() {
     course: 4,
     groupLabel: '4МЭО-01',
     groupRuzId: '8015',
-    preferredSubGroupOids: ['804'],
+    preferredSubGroupOids: ['10118'],
   });
 
   if (anna) await replaceGrades(anna.id, RISK_PACK);

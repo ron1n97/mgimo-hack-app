@@ -25,6 +25,7 @@ import {
   assertProfileFieldsForRole,
   isStaffLike,
 } from './profile-fields';
+import { normalizePreferredSubGroupOids } from '../schedule/subgroup-filter';
 
 @Injectable()
 export class AuthService {
@@ -238,13 +239,9 @@ export class AuthService {
             : {}),
           ...(dto.preferredSubGroupOids !== undefined
             ? {
-                preferredSubGroupOids: [
-                  ...new Set(
-                    dto.preferredSubGroupOids
-                      .map((x) => String(x).trim())
-                      .filter(Boolean),
-                  ),
-                ],
+                preferredSubGroupOids: normalizePreferredSubGroupOids(
+                  dto.preferredSubGroupOids,
+                ),
               }
             : {}),
         },

@@ -10,6 +10,26 @@ export function isWholeGroupLesson(lesson: SubGroupLessonLike): boolean {
   return oid == null || oid === '' || oid === '0';
 }
 
+/** True when oid is a real language/stream parallel (not whole-group marker). */
+export function isCatalogLanguageSubGroup(lesson: SubGroupLessonLike): boolean {
+  return !isWholeGroupLesson(lesson);
+}
+
+/**
+ * One student ∈ one language subgroup (timetable model A2).
+ * Keep first non-empty / non-"0" oid; drop the rest.
+ */
+export function normalizePreferredSubGroupOids(
+  oids: string[] | null | undefined,
+): string[] {
+  if (!oids?.length) return [];
+  for (const raw of oids) {
+    const oid = String(raw ?? '').trim();
+    if (oid && oid !== '0') return [oid];
+  }
+  return [];
+}
+
 /**
  * Personalization filter for language/stream parallels within one academic group.
  * Whole-group lessons (no subGroupOid / "0") always pass.

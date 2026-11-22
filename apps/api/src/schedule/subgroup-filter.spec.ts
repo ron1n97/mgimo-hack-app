@@ -1,6 +1,8 @@
 import {
   buildSubGroupFilter,
+  isCatalogLanguageSubGroup,
   matchesPreferredSubGroups,
+  normalizePreferredSubGroupOids,
 } from './subgroup-filter';
 
 describe('subgroup preference filter', () => {
@@ -41,5 +43,22 @@ describe('subgroup preference filter', () => {
         { subGroupOid: { in: ['501', '504'] } },
       ],
     });
+  });
+
+  it('normalizes enrollment to at most one language subgroup (A2)', () => {
+    expect(normalizePreferredSubGroupOids(null)).toEqual([]);
+    expect(normalizePreferredSubGroupOids([])).toEqual([]);
+    expect(normalizePreferredSubGroupOids(['0', '', '501', '504'])).toEqual([
+      '501',
+    ]);
+    expect(normalizePreferredSubGroupOids(['10169', '10171'])).toEqual([
+      '10169',
+    ]);
+  });
+
+  it('hides whole-group marker "0" from language subgroup catalog', () => {
+    expect(isCatalogLanguageSubGroup({ subGroupOid: '10169' })).toBe(true);
+    expect(isCatalogLanguageSubGroup({ subGroupOid: '0' })).toBe(false);
+    expect(isCatalogLanguageSubGroup({ subGroupOid: null })).toBe(false);
   });
 });

@@ -341,23 +341,36 @@ export default function StaffStudentsPage() {
           </label>
           {subGroups.length > 0 ? (
             <fieldset className="text-sm">
-              <legend className="text-ink-muted">Подгруппы</legend>
+              <legend className="text-ink-muted">
+                Языковая подгруппа (одна)
+              </legend>
               <div className="mt-2 space-y-1.5">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="preferred-subgroup"
+                    checked={draft.preferredSubGroupOids.length === 0}
+                    onChange={() =>
+                      setDraft({ ...draft, preferredSubGroupOids: [] })
+                    }
+                  />
+                  <span className="text-ink-muted">Не задана</span>
+                </label>
                 {subGroups.map((s) => {
-                  const checked = draft.preferredSubGroupOids.includes(s.subGroupOid);
+                  const selected =
+                    draft.preferredSubGroupOids[0] === s.subGroupOid;
                   return (
                     <label key={s.subGroupOid} className="flex items-center gap-2">
                       <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => {
-                          const next = checked
-                            ? draft.preferredSubGroupOids.filter(
-                                (x) => x !== s.subGroupOid,
-                              )
-                            : [...draft.preferredSubGroupOids, s.subGroupOid];
-                          setDraft({ ...draft, preferredSubGroupOids: next });
-                        }}
+                        type="radio"
+                        name="preferred-subgroup"
+                        checked={selected}
+                        onChange={() =>
+                          setDraft({
+                            ...draft,
+                            preferredSubGroupOids: [s.subGroupOid],
+                          })
+                        }
                       />
                       <span>{s.subGroup}</span>
                     </label>

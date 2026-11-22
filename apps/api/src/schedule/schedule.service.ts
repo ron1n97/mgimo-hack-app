@@ -8,7 +8,10 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { buildScheduleDateFilter, parseDateOnly } from './schedule-date-filter';
 import { ensureGroupScheduleFromRuz, defaultSyncRange } from './ruz-lazy-pull';
-import { buildSubGroupFilter } from './subgroup-filter';
+import {
+  buildSubGroupFilter,
+  isCatalogLanguageSubGroup,
+} from './subgroup-filter';
 
 @Injectable()
 export class ScheduleService {
@@ -105,7 +108,7 @@ export class ScheduleService {
       orderBy: { subGroup: 'asc' },
     });
     return rows
-      .filter((r) => r.subGroupOid)
+      .filter((r) => isCatalogLanguageSubGroup(r))
       .map((r) => ({
         subGroupOid: r.subGroupOid as string,
         subGroup: r.subGroup ?? r.subGroupOid,

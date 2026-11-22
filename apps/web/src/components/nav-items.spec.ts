@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { isNavItemActive, navItemsForRole } from "./nav-items.ts";
 
-assert.equal(navItemsForRole("student").length, 4);
-assert.equal(navItemsForRole(null).length, 4);
+assert.equal(navItemsForRole("student").length, 6);
+assert.equal(navItemsForRole(null).length, 6);
 assert.deepEqual(
   navItemsForRole("student").map((i) => i.href),
-  ["/today", "/schedule", "/clubs", "/profile"],
+  ["/today", "/schedule", "/grades", "/requests", "/clubs", "/notifications"],
 );
 assert.deepEqual(
   navItemsForRole("teacher").map((i) => i.href),
@@ -13,11 +13,11 @@ assert.deepEqual(
 );
 assert.deepEqual(
   navItemsForRole("staff").map((i) => i.href),
-  ["/staff", "/staff/requests", "/staff/students", "/profile"],
+  ["/staff", "/staff/requests", "/staff/students", "/staff/clubs", "/profile"],
 );
 assert.deepEqual(
   navItemsForRole("admin").map((i) => i.href),
-  ["/staff", "/admin", "/staff/requests", "/profile"],
+  ["/staff", "/admin", "/staff/requests", "/staff/clubs", "/profile"],
 );
 assert.equal(isNavItemActive("/grades", "/grades"), true);
 assert.equal(isNavItemActive("/grades/extra", "/grades"), true);

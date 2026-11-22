@@ -113,30 +113,33 @@ export function BottomNav() {
       aria-label="Основная навигация"
       style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
     >
-      <div className="pointer-events-auto mx-auto w-[min(100%-1.5rem,28rem)]">
-        <ul className="liquid-glass-nav flex items-stretch gap-0.5 rounded-[1.35rem] px-1.5 py-1.5">
+      <div className="pointer-events-auto mx-auto w-[min(100%-0.75rem,36rem)]">
+        <ul className="liquid-glass-nav flex items-stretch gap-0.5 rounded-[1.35rem] px-1 py-1.5">
           {items.map((item) => {
             const active = isNavItemActive(pathname, item.href);
+            const dense = items.length >= 6;
             return (
               <li key={item.href} className="min-w-0 flex-1">
                 <Link
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   data-active={active ? "true" : "false"}
-                  className={`liquid-glass-tab flex flex-col items-center gap-0.5 rounded-[1.05rem] px-1 py-2 text-[10px] font-medium tracking-wide ${
+                  className={`liquid-glass-tab flex flex-col items-center gap-0.5 rounded-[1.05rem] py-1.5 font-medium tracking-wide ${
+                    dense ? "px-0.5 text-[9px]" : "px-1 text-[10px]"
+                  } ${
                     active
                       ? "bg-cream-deep text-ink"
                       : "text-ink-muted hover:text-ink"
                   }`}
                 >
                   <span
-                    className={`liquid-glass-tab-icon flex h-7 w-7 items-center justify-center rounded-full ${
-                      active ? "bg-white text-copper" : "text-ink-muted"
-                    }`}
+                    className={`liquid-glass-tab-icon flex items-center justify-center rounded-full ${
+                      dense ? "h-6 w-6" : "h-7 w-7"
+                    } ${active ? "bg-white text-copper" : "text-ink-muted"}`}
                   >
                     <TabIcon name={item.icon} active={active} />
                   </span>
-                  <span className="truncate">{item.label}</span>
+                  <span className="max-w-full truncate">{item.label}</span>
                 </Link>
               </li>
             );

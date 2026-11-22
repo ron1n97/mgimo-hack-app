@@ -181,8 +181,8 @@ export default function StaffDigestPage() {
             className="rounded-xl bg-copper px-3.5 py-2 text-sm font-semibold text-cream disabled:opacity-50"
           >
             {busyId === "ingest-weekly"
-              ? "Недельная стяжка…"
-              : "Недельная стяжка"}
+              ? "Массовая стяжка…"
+              : "Массовая стяжка (раз)"}
           </button>
           <button
             type="button"

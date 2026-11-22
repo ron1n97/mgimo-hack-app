@@ -2,17 +2,15 @@ import cron from 'node-cron';
 import { syncRuz } from './sync/sync-ruz';
 import { ingestDigest } from './digest/ingest-digest';
 import { syncTelegramDigestLocal } from './digest/sync-telegram-local';
-import { disconnectPrisma } from './db';
+import { disconnectPrisma, getPrisma } from './db';
 import { writeFile } from 'node:fs/promises';
 
 const CRON = process.env.RUZ_SYNC_CRON ?? '0 */6 * * *';
 const DIGEST_CRON = process.env.DIGEST_INGEST_CRON ?? '30 */6 * * *';
 const DIGEST_TG_CRON = process.env.DIGEST_TG_SYNC_CRON ?? '15 */2 * * *';
-/** Monday 06:30 MSK-ish — mass weekly scrape (more posts / 8-day window). */
-const DIGEST_TG_WEEKLY_CRON =
-  process.env.DIGEST_TG_WEEKLY_CRON ?? '30 3 * * 1';
 const ONCE = process.argv.includes('--once');
 const DIGEST_TG_ONLY = process.argv.includes('--digest-tg');
+/** One-shot deep scrape (staff/ops). Not a recurring cron. */
 const DIGEST_TG_WEEKLY = process.argv.includes('--digest-tg-weekly');
 const DIGEST_ONCE =
   process.argv.includes('--digest-once') ||
@@ -116,13 +114,10 @@ async function main(): Promise<void> {
   console.log(`[worker] scheduling RUZ sync with cron "${CRON}"`);
   console.log(`[worker] scheduling VK digest with cron "${DIGEST_CRON}"`);
   console.log(`[worker] scheduling TG digest with cron "${DIGEST_TG_CRON}"`);
-  console.log(
-    `[worker] scheduling TG weekly mass pull with cron "${DIGEST_TG_WEEKLY_CRON}"`,
-  );
   await runSync('boot');
   await runDigest('boot');
-  // Boot also runs a weekly-depth scrape so the review queue is warm after deploy.
-  await runTgDigest('boot-weekly', { mode: 'weekly' });
+  // One-shot deep scrape only when the review/feed queue is empty (cold start).
+  await maybeBootWeeklyMassPull();
 
   if (!cron.validate(CRON)) {
     console.error(`[worker] invalid RUZ_SYNC_CRON="${CRON}", falling back to every 6h`);
@@ -141,13 +136,31 @@ async function main(): Promise<void> {
   cron.schedule(tgExpr, () => {
     void runTgDigest('cron');
   });
+}
 
-  const weeklyExpr = cron.validate(DIGEST_TG_WEEKLY_CRON)
-    ? DIGEST_TG_WEEKLY_CRON
-    : '30 3 * * 1';
-  cron.schedule(weeklyExpr, () => {
-    void runTgDigest('weekly-cron', { mode: 'weekly' });
-  });
+/** Cold start only — not a recurring Monday job. */
+async function maybeBootWeeklyMassPull(): Promise<void> {
+  if (!process.env.DATABASE_URL) {
+    console.warn('[worker] skip boot weekly TG: DATABASE_URL missing');
+    return;
+  }
+  try {
+    const prisma = getPrisma();
+    const live = await prisma.eventCandidate.count({
+      where: {
+        moderationStatus: { in: ['PENDING', 'APPROVED'] },
+      },
+    });
+    if (live > 0) {
+      console.log(
+        `[worker] digest already has ${live} PENDING/APPROVED — skip boot weekly mass pull`,
+      );
+      return;
+    }
+    await runTgDigest('boot-empty-weekly', { mode: 'weekly' });
+  } catch (err) {
+    console.error('[worker] boot weekly mass pull failed', err);
+  }
 }
 
 main().catch((err) => {

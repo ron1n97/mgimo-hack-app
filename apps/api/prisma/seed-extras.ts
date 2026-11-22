@@ -135,6 +135,91 @@ const GRADE_PACK: Array<{
   semester: string;
   isDebt: boolean;
 }> = [
+  // «Спокойный» / Орлов — густой семестр в стиле рейтинговых вкладок
+  {
+    discipline: 'Всеобщая история',
+    grade: '99',
+    gradeType: 'exam',
+    semester: '2025-весна',
+    isDebt: false,
+  },
+  {
+    discipline: 'Математический анализ',
+    grade: '60',
+    gradeType: 'exam',
+    semester: '2025-весна',
+    isDebt: false,
+  },
+  {
+    discipline: 'Микроэкономика',
+    grade: '95',
+    gradeType: 'exam',
+    semester: '2025-весна',
+    isDebt: false,
+  },
+  {
+    discipline: 'Международные транспортные операции и логистика',
+    grade: '100',
+    gradeType: 'exam',
+    semester: '2025-весна',
+    isDebt: false,
+  },
+  {
+    discipline: 'немецкий первый',
+    grade: '70',
+    gradeType: 'exam',
+    semester: '2025-весна',
+    isDebt: false,
+  },
+  {
+    discipline: 'Генезис современного права России',
+    grade: 'зачет',
+    gradeType: 'pass',
+    semester: '2025-весна',
+    isDebt: false,
+  },
+  {
+    discipline: 'История экономики России',
+    grade: '77',
+    gradeType: 'pass',
+    semester: '2025-весна',
+    isDebt: false,
+  },
+  {
+    discipline: 'Логика',
+    grade: 'зачет',
+    gradeType: 'pass',
+    semester: '2025-весна',
+    isDebt: false,
+  },
+  {
+    discipline: 'Основы программирования',
+    grade: 'зачет',
+    gradeType: 'pass',
+    semester: '2025-весна',
+    isDebt: false,
+  },
+  {
+    discipline: 'Политология',
+    grade: 'зачет',
+    gradeType: 'pass',
+    semester: '2025-весна',
+    isDebt: false,
+  },
+  {
+    discipline: 'Социология',
+    grade: 'зачет',
+    gradeType: 'pass',
+    semester: '2025-весна',
+    isDebt: false,
+  },
+  {
+    discipline: 'Физическая культура и спорт',
+    grade: 'зачет',
+    gradeType: 'pass',
+    semester: '2025-весна',
+    isDebt: false,
+  },
   {
     discipline: 'Международное право',
     grade: '4',
@@ -161,13 +246,6 @@ const GRADE_PACK: Array<{
     grade: '3',
     gradeType: 'exam',
     semester: '2025-осень',
-    isDebt: false,
-  },
-  {
-    discipline: 'Политология',
-    grade: '4',
-    gradeType: 'pass',
-    semester: '2024-весна',
     isDebt: false,
   },
 ];
@@ -201,8 +279,35 @@ const RISK_PACK: typeof GRADE_PACK = [
     semester: '2025-осень',
     isDebt: false,
   },
+  {
+    discipline: 'Всеобщая история',
+    grade: '88',
+    gradeType: 'exam',
+    semester: '2025-весна',
+    isDebt: false,
+  },
+  {
+    discipline: 'Микроэкономика',
+    grade: '72',
+    gradeType: 'exam',
+    semester: '2025-весна',
+    isDebt: false,
+  },
+  {
+    discipline: 'Логика',
+    grade: 'зачет',
+    gradeType: 'pass',
+    semester: '2025-весна',
+    isDebt: false,
+  },
+  {
+    discipline: 'Политология',
+    grade: 'зачет',
+    gradeType: 'pass',
+    semester: '2025-весна',
+    isDebt: false,
+  },
 ];
-
 async function ensureLessonForGrade(
   userId: string,
   discipline: string,

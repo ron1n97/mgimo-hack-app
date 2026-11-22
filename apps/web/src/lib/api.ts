@@ -578,11 +578,62 @@ export async function fetchGrades(): Promise<GradeItem[]> {
   return Array.isArray(data) ? data.map(mapGrade) : [];
 }
 
+export type DisciplineScoreRow = {
+  discipline: string;
+  score: number;
+  fivePoint: number | null;
+  label: string;
+  ects: string;
+  isDebt: boolean;
+  display: string;
+};
+
+export type CurrentAttestationRow = {
+  discipline: string;
+  cuts: [number, number, number];
+  average: number;
+};
+
+export type SocialScoreRow = {
+  discipline: string;
+  erudition: number;
+  diligence: number;
+  activity: number;
+  independent: number;
+  ethics: number;
+  attendance: number;
+  b3: number;
+};
+
+export type SemesterRatingView = {
+  semester: string;
+  overall: number;
+  ects: string;
+  label: string;
+  b1: number;
+  b2: number;
+  b3: number;
+  bonus: number;
+  exams: DisciplineScoreRow[];
+  passes: DisciplineScoreRow[];
+  current: CurrentAttestationRow[];
+  social: SocialScoreRow[];
+  byDiscipline: DisciplineScoreRow[];
+};
+
+export type GradesRatingBundle = {
+  disclaimer: string;
+  semesters: string[];
+  bySemester: Record<string, SemesterRatingView>;
+  weights: { b1: number; b2: number; b3: number; bonus: number };
+};
+
 export type GradesOverview = {
   grades: GradeItem[];
   debts: GradeItem[];
   openTasks: LessonTaskItem[];
   summary: { gradeCount: number; debtCount: number; openTaskCount: number };
+  rating?: GradesRatingBundle | null;
 };
 
 export async function fetchGradesOverview(): Promise<GradesOverview> {
@@ -591,6 +642,7 @@ export async function fetchGradesOverview(): Promise<GradesOverview> {
     debts?: Record<string, unknown>[];
     openTasks?: LessonTaskItem[];
     summary?: GradesOverview["summary"];
+    rating?: GradesRatingBundle;
   }>("/grades/me/overview");
   return {
     grades: (raw.grades ?? []).map(mapGrade),
@@ -601,6 +653,7 @@ export async function fetchGradesOverview(): Promise<GradesOverview> {
       debtCount: 0,
       openTaskCount: 0,
     },
+    rating: raw.rating ?? null,
   };
 }
 

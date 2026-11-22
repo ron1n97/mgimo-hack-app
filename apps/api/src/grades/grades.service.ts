@@ -5,6 +5,12 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateGradeDto } from './dto/create-grade.dto';
+import {
+  buildSemesterRating,
+  listSemesters,
+  ratingPersonaOpts,
+  type SemesterRating,
+} from './rating-model';
 
 /**
  * Academic results bound to a concrete pair (ADR 0019).
@@ -75,6 +81,12 @@ export class GradesService {
         : Promise.resolve([]),
     ]);
     const debts = grades.filter((g) => g.isDebt);
+    const persona = ratingPersonaOpts(profile?.fullName);
+    const semesters = listSemesters(grades);
+    const ratings: Record<string, SemesterRating> = {};
+    for (const sem of semesters) {
+      ratings[sem] = buildSemesterRating(grades, sem, persona);
+    }
     return {
       grades,
       debts,
@@ -83,6 +95,13 @@ export class GradesService {
         gradeCount: grades.length,
         debtCount: debts.length,
         openTaskCount: openTasks.length,
+      },
+      rating: {
+        disclaimer:
+          'Демо-рейтинг для стенда (не офиц. ЛК вуза). Блоки Б1/Б2/Б3 + надбавка — учебная модель.',
+        semesters,
+        bySemester: ratings,
+        weights: { b1: 0.4, b2: 0.5, b3: 0.1, bonus: 0.05 },
       },
     };
   }

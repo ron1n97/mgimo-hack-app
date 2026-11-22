@@ -47,7 +47,7 @@ describe('syncTelegramDigest', () => {
       title: 'Реальная тренировка',
       body: 'Зал 3. Сбор 18 ноября в 19:30',
       imageUrl: 'https://cdn4.telesco.pe/file/train.jpg',
-      moderationStatus: EventModerationStatus.APPROVED,
+      moderationStatus: EventModerationStatus.PENDING,
     });
     expect((created[0] as { startsAt: Date }).startsAt.toISOString()).toBe(
       '2026-11-18T16:30:00.000Z', // 19:30 MSK

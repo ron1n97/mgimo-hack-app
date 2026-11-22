@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -127,6 +128,12 @@ export default function StaffClubsPage() {
         >
           {busyId === "ingest" ? "Тянем TG…" : "Стянуть посты из Telegram"}
         </button>
+        <Link
+          href="/staff/digest"
+          className="rounded-xl border border-ink/15 px-3.5 py-2 text-sm font-medium text-ink"
+        >
+          Проверка дайджеста →
+        </Link>
         {ingestInfo ? (
           <p className="text-sm text-ink-muted">{ingestInfo}</p>
         ) : null}

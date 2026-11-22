@@ -64,8 +64,23 @@ export class StaffCreateClubDto {
 }
 
 export class ModerateEventDto {
+  @IsOptional()
   @IsString()
-  status!: 'APPROVED' | 'REJECTED';
+  status?: 'APPROVED' | 'REJECTED' | 'PENDING';
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  body?: string;
+
+  /** ISO datetime or empty string to clear. */
+  @IsOptional()
+  @IsString()
+  startsAt?: string | null;
 }
 
 export class SetTagSubscriptionsDto {

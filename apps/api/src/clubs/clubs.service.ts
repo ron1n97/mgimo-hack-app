@@ -386,7 +386,12 @@ export class ClubsService {
     eventId: string,
     staffUserId: string,
     actorRole: string,
-    status: 'APPROVED' | 'REJECTED',
+    patch: {
+      status?: 'APPROVED' | 'REJECTED' | 'PENDING';
+      title?: string;
+      body?: string;
+      startsAt?: string | null;
+    },
   ) {
     this.assertStaff(actorRole);
     const event = await this.prisma.eventCandidate.findUnique({
@@ -395,26 +400,92 @@ export class ClubsService {
     if (!event) {
       throw new NotFoundException('Event not found');
     }
+
+    const data: {
+      moderationStatus?: EventModerationStatus;
+      moderatedAt?: Date;
+      moderatedByUserId?: string;
+      publishedAt?: Date | null;
+      title?: string;
+      body?: string | null;
+      startsAt?: Date | null;
+    } = {};
+
+    if (patch.title !== undefined) {
+      const title = patch.title.trim();
+      if (!title) throw new NotFoundException('Event title required');
+      data.title = title;
+    }
+    if (patch.body !== undefined) {
+      data.body = patch.body.trim() || null;
+    }
+    if (patch.startsAt !== undefined) {
+      if (patch.startsAt === null || patch.startsAt === '') {
+        data.startsAt = null;
+      } else {
+        const d = new Date(patch.startsAt);
+        if (Number.isNaN(d.getTime())) {
+          throw new NotFoundException('Invalid startsAt');
+        }
+        data.startsAt = d;
+      }
+    }
+    if (patch.status) {
+      data.moderationStatus =
+        patch.status === 'APPROVED'
+          ? EventModerationStatus.APPROVED
+          : patch.status === 'PENDING'
+            ? EventModerationStatus.PENDING
+            : EventModerationStatus.REJECTED;
+      data.moderatedAt = new Date();
+      data.moderatedByUserId = staffUserId;
+      data.publishedAt =
+        patch.status === 'APPROVED'
+          ? event.publishedAt ?? new Date()
+          : patch.status === 'REJECTED'
+            ? null
+            : event.publishedAt;
+    }
+
     return this.prisma.eventCandidate.update({
       where: { id: eventId },
-      data: {
-        moderationStatus:
-          status === 'APPROVED'
-            ? EventModerationStatus.APPROVED
-            : EventModerationStatus.REJECTED,
-        moderatedAt: new Date(),
-        moderatedByUserId: staffUserId,
-        publishedAt: status === 'APPROVED' ? new Date() : null,
+      data,
+      include: {
+        club: { select: { id: true, name: true } },
+        source: { select: { id: true, url: true, kind: true } },
       },
     });
   }
 
   async listPendingEvents(actorRole: string) {
+    return this.listDigestEvents(actorRole, 'PENDING');
+  }
+
+  /** Staff review queue — all statuses or a filter. */
+  async listDigestEvents(
+    actorRole: string,
+    status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL',
+  ) {
     this.assertStaff(actorRole);
+    const where =
+      !status || status === 'ALL'
+        ? {}
+        : {
+            moderationStatus:
+              status === 'APPROVED'
+                ? EventModerationStatus.APPROVED
+                : status === 'REJECTED'
+                  ? EventModerationStatus.REJECTED
+                  : EventModerationStatus.PENDING,
+          };
     return this.prisma.eventCandidate.findMany({
-      where: { moderationStatus: EventModerationStatus.PENDING },
-      orderBy: { createdAt: 'desc' },
-      include: { club: true, source: true },
+      where,
+      orderBy: [{ startsAt: 'desc' }, { createdAt: 'desc' }],
+      take: 200,
+      include: {
+        club: { select: { id: true, name: true } },
+        source: { select: { id: true, url: true, kind: true } },
+      },
     });
   }
 

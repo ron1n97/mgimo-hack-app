@@ -61,6 +61,16 @@ const tiles = [
       </svg>
     ),
   },
+  {
+    href: "/staff/digest",
+    title: "Дайджест",
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+        <path d="M5 5.5h14v13H5z" strokeLinejoin="round" />
+        <path d="M8 9h8M8 12h8M8 15h5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
 ] as const;
 
 export default function StaffCabinetPage() {

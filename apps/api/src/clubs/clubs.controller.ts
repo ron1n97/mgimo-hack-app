@@ -153,6 +153,20 @@ export class ClubsController {
     return this.clubs.listPendingEvents(user.role);
   }
 
+  @Get('staff/digest/events')
+  @Roles(Role.STAFF, Role.ADMIN)
+  listEvents(
+    @CurrentUser() user: JwtPayloadUser,
+    @Query('status') status?: string,
+  ) {
+    const allowed = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'] as const;
+    const normalized = (status ?? 'ALL').toUpperCase();
+    const filter = allowed.includes(normalized as (typeof allowed)[number])
+      ? (normalized as (typeof allowed)[number])
+      : 'ALL';
+    return this.clubs.listDigestEvents(user.role, filter);
+  }
+
   @Patch('staff/digest/events/:id')
   @Roles(Role.STAFF, Role.ADMIN)
   moderate(
@@ -160,7 +174,12 @@ export class ClubsController {
     @Param('id') id: string,
     @Body() dto: ModerateEventDto,
   ) {
-    return this.clubs.moderateEvent(id, user.userId, user.role, dto.status);
+    return this.clubs.moderateEvent(id, user.userId, user.role, {
+      status: dto.status,
+      title: dto.title,
+      body: dto.body,
+      startsAt: dto.startsAt,
+    });
   }
 
   @Post('staff/digest/ingest-telegram')

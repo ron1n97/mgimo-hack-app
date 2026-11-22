@@ -163,7 +163,9 @@ export async function syncTelegramDigest(
           continue;
         }
 
-        const data = {
+        // Content fields always refresh; status: new → PENDING (staff review),
+        // existing keep status (do not auto-reapprove after reject).
+        const content = {
           clubId: source.clubId,
           sourceId: source.id,
           title: post.title,
@@ -172,18 +174,21 @@ export async function syncTelegramDigest(
           imageUrl: post.imageUrl,
           // Prefer event/meeting time from text; else publish time for week feed.
           startsAt: post.eventAt ?? post.publishedAt,
-          moderationStatus: EventModerationStatus.APPROVED,
           publishedAt: post.publishedAt,
-          moderatedAt: now,
         };
         if (existing) {
           await prisma.eventCandidate.update({
             where: { id: existing.id },
-            data,
+            data: content,
           });
         } else {
           try {
-            await prisma.eventCandidate.create({ data });
+            await prisma.eventCandidate.create({
+              data: {
+                ...content,
+                moderationStatus: EventModerationStatus.PENDING,
+              },
+            });
           } catch (err) {
             const code =
               err && typeof err === 'object' && 'code' in err
@@ -214,7 +219,7 @@ export async function syncTelegramDigest(
             }
             await prisma.eventCandidate.update({
               where: { id: raced.id },
-              data,
+              data: content,
             });
           }
         }

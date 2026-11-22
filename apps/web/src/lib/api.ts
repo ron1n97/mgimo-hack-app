@@ -1149,6 +1149,41 @@ export async function ingestTelegramDigest(): Promise<{
   return request("/staff/digest/ingest-telegram", { method: "POST", body: {} });
 }
 
+export type StaffDigestEvent = {
+  id: string;
+  title: string;
+  body?: string | null;
+  url?: string | null;
+  startsAt?: string | null;
+  publishedAt?: string | null;
+  moderationStatus: "PENDING" | "APPROVED" | "REJECTED" | string;
+  club?: { id: string; name: string } | null;
+  source?: { id: string; url: string; kind: string } | null;
+};
+
+export async function fetchStaffDigestEvents(
+  status: "PENDING" | "APPROVED" | "REJECTED" | "ALL" = "ALL",
+): Promise<StaffDigestEvent[]> {
+  const qs = `?status=${encodeURIComponent(status)}`;
+  const data = await request<StaffDigestEvent[]>(`/staff/digest/events${qs}`);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function updateStaffDigestEvent(
+  id: string,
+  patch: {
+    status?: "PENDING" | "APPROVED" | "REJECTED";
+    title?: string;
+    body?: string;
+    startsAt?: string | null;
+  },
+): Promise<StaffDigestEvent> {
+  return request<StaffDigestEvent>(`/staff/digest/events/${id}`, {
+    method: "PATCH",
+    body: patch,
+  });
+}
+
 export async function fetchTeacherSlots(params?: {
   from?: string;
   to?: string;

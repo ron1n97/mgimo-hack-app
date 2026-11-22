@@ -1138,7 +1138,9 @@ export async function addDigestSource(payload: {
   });
 }
 
-export async function ingestTelegramDigest(): Promise<{
+export async function ingestTelegramDigest(
+  mode: "default" | "weekly" = "default",
+): Promise<{
   sourcesTried: number;
   sourcesOk: number;
   postsUpserted: number;
@@ -1146,7 +1148,11 @@ export async function ingestTelegramDigest(): Promise<{
   stubsRetired: number;
   errors: Array<{ sourceId: string; url: string; error: string }>;
 }> {
-  return request("/staff/digest/ingest-telegram", { method: "POST", body: {} });
+  const qs = mode === "weekly" ? "?mode=weekly" : "";
+  return request(`/staff/digest/ingest-telegram${qs}`, {
+    method: "POST",
+    body: {},
+  });
 }
 
 export type StaffDigestEvent = {

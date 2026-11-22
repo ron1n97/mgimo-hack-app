@@ -490,14 +490,18 @@ export class ClubsService {
   }
 
   /**
-   * Scrape public t.me/s previews for enabled TELEGRAM sources → APPROVED feed.
+   * Scrape public t.me/s previews for enabled TELEGRAM sources → PENDING review.
    * Staff gate = digestEnabled / source.enabled (no Bot API token).
+   * `weekly` = mass pull for the current week (more posts per channel).
    */
-  async ingestTelegramDigest(actorRole?: string): Promise<TelegramIngestResult> {
+  async ingestTelegramDigest(
+    actorRole?: string,
+    mode: 'default' | 'weekly' = 'default',
+  ): Promise<TelegramIngestResult> {
     if (actorRole !== undefined) {
       this.assertStaff(actorRole);
     }
-    return syncTelegramDigest(this.prisma);
+    return syncTelegramDigest(this.prisma, { mode });
   }
 
   private assertStaff(actorRole: string) {

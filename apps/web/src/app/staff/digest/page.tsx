@@ -96,19 +96,19 @@ export default function StaffDigestPage() {
     return n ? `${n}` : "0";
   }, [items.length]);
 
-  async function onIngest() {
-    setBusyId("ingest");
+  async function onIngest(mode: "default" | "weekly" = "default") {
+    setBusyId(mode === "weekly" ? "ingest-weekly" : "ingest");
     setError(null);
     setIngestInfo(null);
     try {
-      const result = await ingestTelegramDigest();
+      const result = await ingestTelegramDigest(mode);
       setIngestInfo(
-        `TG: ${result.sourcesOk}/${result.sourcesTried} источников, постов ${result.postsUpserted}` +
+        `${mode === "weekly" ? "Недельная стяжка" : "TG"}: ${result.sourcesOk}/${result.sourcesTried} источников, постов ${result.postsUpserted}` +
           (result.errors.length ? `, ошибок ${result.errors.length}` : "") +
-          " — новые попадут во вкладку «На проверке».",
+          " — новые во вкладке «На проверке».",
       );
-      await load(tab === "APPROVED" ? "PENDING" : tab);
-      if (tab === "APPROVED") setTab("PENDING");
+      setTab("PENDING");
+      await load("PENDING");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось стянуть TG");
     } finally {
@@ -173,14 +173,26 @@ export default function StaffDigestPage() {
             Клубы и источники
           </Link>
         </p>
-        <button
-          type="button"
-          disabled={busyId === "ingest"}
-          onClick={() => void onIngest()}
-          className="rounded-xl bg-copper px-3.5 py-2 text-sm font-semibold text-cream disabled:opacity-50"
-        >
-          {busyId === "ingest" ? "Тянем TG…" : "Стянуть из Telegram"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={busyId === "ingest" || busyId === "ingest-weekly"}
+            onClick={() => void onIngest("weekly")}
+            className="rounded-xl bg-copper px-3.5 py-2 text-sm font-semibold text-cream disabled:opacity-50"
+          >
+            {busyId === "ingest-weekly"
+              ? "Недельная стяжка…"
+              : "Недельная стяжка"}
+          </button>
+          <button
+            type="button"
+            disabled={busyId === "ingest" || busyId === "ingest-weekly"}
+            onClick={() => void onIngest("default")}
+            className="rounded-xl border border-ink/15 px-3.5 py-2 text-sm font-medium text-ink disabled:opacity-50"
+          >
+            {busyId === "ingest" ? "Тянем…" : "Быстрый TG"}
+          </button>
+        </div>
       </div>
       {ingestInfo ? <p className="text-sm text-ink-muted">{ingestInfo}</p> : null}
 

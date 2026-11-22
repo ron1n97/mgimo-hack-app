@@ -11,7 +11,10 @@ import {
 
 /** Keep in sync with apps/api/src/clubs/telegram-ingest.ts. */
 
+export type TelegramIngestMode = 'default' | 'weekly';
+
 export type TelegramIngestOptions = {
+  mode?: TelegramIngestMode;
   /** Max posts kept per source (newest first). */
   perSourceLimit?: number;
   /** Skip posts older than this many days. */
@@ -26,6 +29,17 @@ export type TelegramIngestOptions = {
   /** When true, demote seeded demo stubs after a successful ingest. */
   retireDemoStubs?: boolean;
 };
+
+export function resolveTelegramIngestLimits(
+  opts: Pick<TelegramIngestOptions, 'mode' | 'perSourceLimit' | 'maxAgeDays' | 'maxSources'>,
+): { perSourceLimit: number; maxAgeDays: number; maxSources: number } {
+  const weekly = opts.mode === 'weekly';
+  return {
+    perSourceLimit: opts.perSourceLimit ?? (weekly ? 20 : 8),
+    maxAgeDays: opts.maxAgeDays ?? (weekly ? 8 : 21),
+    maxSources: opts.maxSources ?? 120,
+  };
+}
 
 export type TelegramIngestResult = {
   sourcesTried: number;
@@ -102,9 +116,8 @@ export async function syncTelegramDigest(
   prisma: PrismaLike,
   opts: TelegramIngestOptions = {},
 ): Promise<TelegramIngestResult> {
-  const perSourceLimit = opts.perSourceLimit ?? 8;
-  const maxAgeDays = opts.maxAgeDays ?? 21;
-  const maxSources = opts.maxSources ?? 120;
+  const { perSourceLimit, maxAgeDays, maxSources } =
+    resolveTelegramIngestLimits(opts);
   const fetchHtml = opts.fetchHtml ?? defaultFetchTelegramHtml;
   const now = opts.now ?? new Date();
   const retireDemoStubs = opts.retireDemoStubs ?? true;

@@ -1,5 +1,22 @@
 import { EventModerationStatus } from '@prisma/client';
-import { sourceOwnsEvent, syncTelegramDigest } from './telegram-ingest';
+import {
+  resolveTelegramIngestLimits,
+  sourceOwnsEvent,
+  syncTelegramDigest,
+} from './telegram-ingest';
+
+describe('resolveTelegramIngestLimits', () => {
+  it('uses a deeper window for weekly mass pull', () => {
+    expect(resolveTelegramIngestLimits({ mode: 'weekly' })).toEqual({
+      perSourceLimit: 20,
+      maxAgeDays: 8,
+      maxSources: 120,
+    });
+    expect(resolveTelegramIngestLimits({ mode: 'default' }).perSourceLimit).toBe(
+      8,
+    );
+  });
+});
 
 describe('syncTelegramDigest', () => {
   it('upserts posts from enabled telegram sources and retires demo stubs only after success', async () => {

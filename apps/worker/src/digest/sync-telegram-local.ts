@@ -3,7 +3,10 @@
  * Keep logic aligned with apps/api/src/clubs/telegram-ingest.ts.
  */
 import { disconnectPrisma, getPrisma } from '../db';
-import { syncTelegramDigest } from './telegram-ingest';
+import {
+  syncTelegramDigest,
+  type TelegramIngestMode,
+} from './telegram-ingest';
 
 export type DigestSyncLocalResult = {
   skipped: boolean;
@@ -12,14 +15,16 @@ export type DigestSyncLocalResult = {
 };
 
 export async function syncTelegramDigestLocal(
-  opts: { disconnect?: boolean } = {},
+  opts: { disconnect?: boolean; mode?: TelegramIngestMode } = {},
 ): Promise<DigestSyncLocalResult> {
   if (!process.env.DATABASE_URL) {
     return { skipped: true, reason: 'DATABASE_URL missing' };
   }
   const prisma = getPrisma();
   try {
-    const body = await syncTelegramDigest(prisma);
+    const body = await syncTelegramDigest(prisma, {
+      mode: opts.mode ?? 'default',
+    });
     return { skipped: false, body };
   } finally {
     if (opts.disconnect) {

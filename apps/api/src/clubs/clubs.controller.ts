@@ -184,7 +184,14 @@ export class ClubsController {
 
   @Post('staff/digest/ingest-telegram')
   @Roles(Role.STAFF, Role.ADMIN)
-  ingestTelegram(@CurrentUser() user: JwtPayloadUser) {
-    return this.clubs.ingestTelegramDigest(user.role);
+  ingestTelegram(
+    @CurrentUser() user: JwtPayloadUser,
+    @Query('mode') mode?: string,
+  ) {
+    const weekly = (mode ?? '').toLowerCase() === 'weekly';
+    return this.clubs.ingestTelegramDigest(
+      user.role,
+      weekly ? 'weekly' : 'default',
+    );
   }
 }

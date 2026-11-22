@@ -54,6 +54,12 @@ describe('syncTelegramDigest', () => {
       fetchHtml: async () => html,
       now: new Date('2026-11-16T12:00:00Z'),
       retireDemoStubs: true,
+      // Avoid spawning sentence-transformers in unit tests.
+      classifyPost: async () => ({
+        status: EventModerationStatus.APPROVED,
+        source: 'ml',
+        reason: 'test',
+      }),
     });
 
     expect(result.sourcesOk).toBe(1);
@@ -64,8 +70,9 @@ describe('syncTelegramDigest', () => {
       title: 'Реальная тренировка',
       body: 'Зал 3. Сбор 18 ноября в 19:30',
       imageUrl: 'https://cdn4.telesco.pe/file/train.jpg',
-      moderationStatus: EventModerationStatus.PENDING,
+      moderationStatus: EventModerationStatus.APPROVED,
     });
+    expect(result.postsAiApproved).toBe(1);
     expect((created[0] as { startsAt: Date }).startsAt.toISOString()).toBe(
       '2026-11-18T16:30:00.000Z', // 19:30 MSK
     );

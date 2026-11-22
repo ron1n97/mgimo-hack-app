@@ -125,13 +125,13 @@ export function BottomNav() {
                   data-active={active ? "true" : "false"}
                   className={`liquid-glass-tab flex flex-col items-center gap-0.5 rounded-[1.05rem] px-1 py-2 text-[10px] font-medium tracking-wide ${
                     active
-                      ? "bg-ink/[0.07] text-copper"
+                      ? "bg-cream-deep text-ink"
                       : "text-ink-muted hover:text-ink"
                   }`}
                 >
                   <span
                     className={`liquid-glass-tab-icon flex h-7 w-7 items-center justify-center rounded-full ${
-                      active ? "bg-copper/15 text-copper" : "text-ink-muted"
+                      active ? "bg-white text-copper" : "text-ink-muted"
                     }`}
                   >
                     <TabIcon name={item.icon} active={active} />

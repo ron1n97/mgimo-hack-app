@@ -38,11 +38,16 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-dekanat}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dekanat}?schema=public
       REDIS_URL: redis://redis:6379
       API_PORT: 3001
+      # Staff TG ingest / digest review — bridge → host proxy (ADR 0007).
+      TELEGRAM_PROXY: ${TELEGRAM_PROXY:-http://172.17.0.1:40000}
+      DIGEST_ML_MODEL_PATH: ${DIGEST_ML_MODEL_PATH:-/app/apps/digest-ml/artifacts/model-tfidf.json}
     # Public HTTPS via Caddy only. Localhost publish is for host-network Telegram bot.
     expose:
       - "3001"
     ports:
       - "127.0.0.1:3001:3001"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
@@ -61,6 +66,11 @@ services:
       VK_SERVICE_TOKEN: ${VK_SERVICE_TOKEN:-}
       DIGEST_INGEST_CRON: ${DIGEST_INGEST_CRON:-30 */6 * * *}
       DIGEST_TG_SYNC_CRON: ${DIGEST_TG_SYNC_CRON:-15 */2 * * *}
+      # Bridge net → host HTTP CONNECT (Mac gost tunnel :40000). Same ADR 0007 as bot.
+      TELEGRAM_PROXY: ${TELEGRAM_PROXY:-http://172.17.0.1:40000}
+      DIGEST_ML_MODEL_PATH: ${DIGEST_ML_MODEL_PATH:-/app/apps/digest-ml/artifacts/model-tfidf.json}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
@@ -68,7 +78,7 @@ services:
         condition: service_healthy
       api:
         condition: service_started
-    mem_limit: 192m
+    mem_limit: 256m
 
   web:
     image: ${IMAGE_PREFIX:-ghcr.io/ron1n97/mgimo-hack-app}/web:${IMAGE_TAG:-latest}

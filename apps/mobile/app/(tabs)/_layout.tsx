@@ -8,7 +8,7 @@ function TabLabel({ label, focused }: { label: string; focused: boolean }) {
       style={{
         fontSize: 11,
         fontWeight: focused ? '700' : '500',
-        color: focused ? colors.copper : colors.inkMuted,
+        color: focused ? colors.ink : colors.inkMuted,
       }}
     >
       {label}
@@ -21,10 +21,10 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.copper,
+        tabBarActiveTintColor: colors.ink,
         tabBarInactiveTintColor: colors.inkMuted,
         tabBarStyle: {
-          backgroundColor: colors.white,
+          backgroundColor: colors.cream,
           borderTopColor: colors.creamDeep,
         },
       }}

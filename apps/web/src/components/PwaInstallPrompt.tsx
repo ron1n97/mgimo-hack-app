@@ -77,7 +77,7 @@ export function PwaInstallPrompt() {
   return (
     <div className="fixed inset-x-0 top-3 z-40 px-3 md:left-auto md:right-4 md:max-w-sm">
       <div className="rounded-2xl border border-copper/30 bg-cream px-4 py-3 text-ink shadow-soft">
-        <p className="font-serif text-lg leading-snug">Установить приложение</p>
+        <p className="text-lg leading-snug">Установить приложение</p>
         <p className="mt-1 text-xs leading-relaxed text-ink-muted">
           {iosHint
             ? "На iPhone: «Поделиться» → «На экран «Домой»»."

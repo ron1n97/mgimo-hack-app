@@ -188,7 +188,7 @@ export function AssistantChat() {
         className="fixed bottom-20 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-2xl bg-ink text-cream shadow-soft transition hover:bg-copper md:bottom-6"
         aria-label="Открыть ИИ-ассистента"
       >
-        <span className="font-serif text-lg leading-none">AI</span>
+        <span className="text-lg leading-none">AI</span>
       </button>
 
       {open ? (
@@ -207,7 +207,7 @@ export function AssistantChat() {
           >
             <header className="flex items-center justify-between border-b border-cream-deep px-4 py-3">
               <div>
-                <p className="font-serif text-lg text-ink">
+                <p className="text-lg text-ink">
                   Ассистент<span className="text-copper">+</span>
                 </p>
                 <p className="text-xs text-ink-muted">

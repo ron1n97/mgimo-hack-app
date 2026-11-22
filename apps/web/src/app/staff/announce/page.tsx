@@ -98,7 +98,7 @@ export default function StaffAnnouncePage() {
         onSubmit={onAnnounce}
         className="space-y-3 rounded-2xl border border-cream-deep bg-white/60 p-5"
       >
-        <h2 className="font-serif text-xl text-ink">Объявление</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-ink">Объявление</h2>
         <label className="block text-sm">
           <span className="text-ink-muted">Заголовок</span>
           <input
@@ -141,7 +141,7 @@ export default function StaffAnnouncePage() {
       </form>
 
       <section className="space-y-3">
-        <h2 className="font-serif text-xl text-ink">Перенос пары (неделя вперёд)</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-ink">Перенос пары (неделя вперёд)</h2>
         <p className="text-sm text-ink-muted">
           Нужна группа просмотра в профиле сотрудника — тогда здесь появятся пары.
         </p>

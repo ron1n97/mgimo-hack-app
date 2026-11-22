@@ -182,7 +182,7 @@ export default function StaffClubsPage() {
       {!loading && !error ? (
         <>
           <section className="space-y-3">
-            <h2 className="font-serif text-xl text-ink">На подтверждении</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-ink">На подтверждении</h2>
             {drafts.length === 0 ? (
               <EmptyState title="Очередь пуста" description="Студенческие заявки появятся здесь." />
             ) : (
@@ -215,7 +215,7 @@ export default function StaffClubsPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="font-serif text-xl text-ink">Подтверждённые</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-ink">Подтверждённые</h2>
             <ul className="space-y-3">
               {confirmed.map((club) => (
                 <li

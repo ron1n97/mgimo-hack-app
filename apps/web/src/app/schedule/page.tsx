@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ApiError, fetchMe, fetchSchedule } from "@/lib/api";
 import type { ScheduleItem, UserRole } from "@/lib/types";
+import { PageHeader } from "@/components/campus";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
@@ -46,6 +47,121 @@ function addDays(d: Date, n: number): Date {
   return x;
 }
 
+function lessonFlag(item: ScheduleItem): string {
+  if (item.isCancelled) return " · отмена";
+  if (item.isMoved) return " · перенос";
+  return "";
+}
+
+function LessonCard({
+  item,
+  dense = false,
+}: {
+  item: ScheduleItem;
+  dense?: boolean;
+}) {
+  const flagged = item.isMoved || item.isCancelled;
+  return (
+    <li
+      className={`min-w-0 overflow-hidden rounded-lg ${
+        dense ? "px-1.5 py-1.5" : "px-3 py-2.5"
+      } ${
+        flagged
+          ? "bg-copper/15 ring-1 ring-copper/35"
+          : dense
+            ? "bg-cream/80"
+            : "border border-cream-deep bg-cream/60"
+      }`}
+    >
+      <p
+        className={`font-semibold text-copper ${
+          dense ? "text-[10px]" : "text-xs"
+        }`}
+      >
+        {item.startTime}–{item.endTime}
+        {lessonFlag(item)}
+      </p>
+      <p
+        className={`mt-0.5 min-w-0 break-words font-medium leading-snug text-ink ${
+          dense ? "text-[11px]" : "text-sm"
+        }`}
+      >
+        {item.title}
+      </p>
+      {item.subGroup ? (
+        <p
+          className={`mt-0.5 min-w-0 break-words font-medium text-copper-dark ${
+            dense ? "text-[10px]" : "text-xs"
+          }`}
+        >
+          {item.subGroup}
+        </p>
+      ) : null}
+      <p
+        className={`mt-0.5 min-w-0 break-words leading-snug text-ink-muted ${
+          dense ? "text-[10px]" : "text-xs"
+        }`}
+      >
+        {[item.room, item.teacher].filter(Boolean).join(" · ")}
+      </p>
+    </li>
+  );
+}
+
+type DayColumn = {
+  date: Date;
+  iso: string;
+  label: string;
+  items: ScheduleItem[];
+};
+
+function DayHeader({
+  day,
+  isToday,
+  size = "md",
+}: {
+  day: DayColumn;
+  isToday: boolean;
+  size?: "sm" | "md";
+}) {
+  return (
+    <div
+      className={
+        size === "sm"
+          ? "mb-2 border-b border-cream-deep/80 pb-1.5"
+          : "mb-3 flex items-baseline justify-between gap-2 border-b border-cream-deep/80 pb-2"
+      }
+    >
+      <div className="min-w-0">
+        <p
+          className={`uppercase tracking-wide text-ink-muted ${
+            size === "sm" ? "text-[11px]" : "text-xs"
+          }`}
+        >
+          {day.label}
+        </p>
+        <p
+          className={`font-medium ${isToday ? "text-copper" : "text-ink"} ${
+            size === "sm" ? "text-sm" : "text-base"
+          }`}
+        >
+          {day.date.getDate()}
+          {size === "md" ? (
+            <span className="ml-1.5 text-sm font-normal text-ink-muted">
+              {day.iso.slice(5).replace("-", ".")}
+            </span>
+          ) : null}
+        </p>
+      </div>
+      {isToday && size === "md" ? (
+        <span className="shrink-0 rounded-full bg-copper/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-copper">
+          сегодня
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 export default function SchedulePage() {
   const [weekStart, setWeekStart] = useState(() => mondayOf());
   const [items, setItems] = useState<ScheduleItem[]>([]);
@@ -84,9 +200,14 @@ export default function SchedulePage() {
 
   useEffect(() => {
     if (!scrollTodayToken || loading) return;
-    const id = `schedule-day-${todayIso}`;
     const t = window.setTimeout(() => {
-      document.getElementById(id)?.scrollIntoView({
+      const mobile = window.matchMedia("(max-width: 767px)").matches;
+      const el = document.getElementById(
+        mobile
+          ? `schedule-day-${todayIso}`
+          : `schedule-day-desk-${todayIso}`,
+      );
+      el?.scrollIntoView({
         behavior: "smooth",
         inline: "center",
         block: "nearest",
@@ -95,7 +216,7 @@ export default function SchedulePage() {
     return () => window.clearTimeout(t);
   }, [scrollTodayToken, loading, todayIso, weekStart]);
 
-  const days = useMemo(() => {
+  const days = useMemo((): DayColumn[] => {
     return Array.from({ length: 7 }, (_, i) => {
       const date = addDays(weekStart, i);
       const iso = localIso(date);
@@ -117,17 +238,18 @@ export default function SchedulePage() {
 
   return (
     <div className="animate-rise space-y-6">
+      <PageHeader title="Пары" />
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <p className="text-sm text-ink-muted">
+        <p className="min-w-0 flex-1 break-words text-sm text-ink-muted">
           {noGroup
             ? pickGroupHint
             : `${isStaffView ? "Просмотр" : "Группа"} ${groupName} · неделя ${from.slice(5)} — ${to.slice(5)}`}
         </p>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setWeekStart((w) => addDays(w, -7))}
-            className="rounded-lg border border-ink/15 px-3 py-1.5 text-sm text-ink-muted hover:border-ink/30 hover:text-ink"
+            className="rounded-lg border border-cream-deep bg-white px-3 py-1.5 text-sm text-ink-muted hover:border-copper/40 hover:text-ink"
           >
             ←
           </button>
@@ -137,14 +259,14 @@ export default function SchedulePage() {
               setWeekStart(mondayOf(mskNow()));
               setScrollTodayToken((n) => n + 1);
             }}
-            className="rounded-lg border border-ink/15 px-3 py-1.5 text-sm text-ink-muted hover:border-ink/30 hover:text-ink"
+            className="rounded-lg border border-cream-deep bg-white px-3 py-1.5 text-sm font-medium text-ink hover:border-copper/40"
           >
             Сегодня
           </button>
           <button
             type="button"
             onClick={() => setWeekStart((w) => addDays(w, 7))}
-            className="rounded-lg border border-ink/15 px-3 py-1.5 text-sm text-ink-muted hover:border-ink/30 hover:text-ink"
+            className="rounded-lg border border-cream-deep bg-white px-3 py-1.5 text-sm text-ink-muted hover:border-copper/40 hover:text-ink"
           >
             →
           </button>
@@ -183,69 +305,67 @@ export default function SchedulePage() {
             }
           />
         ) : (
-          <div className="overflow-x-auto pb-2">
-            <div className="grid min-w-[720px] grid-cols-7 gap-2">
+          <>
+            {/* Mobile: stacked days — full width, no horizontal squeeze */}
+            <div className="space-y-4 md:hidden">
               {days.map((day) => {
                 const isToday = day.iso === todayIso;
                 return (
-                  <div
+                  <section
                     key={day.iso}
                     id={`schedule-day-${day.iso}`}
-                    className={`min-h-[12rem] rounded-2xl border p-2 ${
+                    className={`min-w-0 overflow-hidden rounded-2xl border p-3 ${
                       isToday
                         ? "border-copper/40 bg-copper/5 ring-2 ring-copper/30"
                         : "border-cream-deep bg-white/40"
                     }`}
                   >
-                    <div className="mb-2 border-b border-cream-deep/80 pb-1.5">
-                      <p className="text-[11px] uppercase tracking-wide text-ink-muted">
-                        {day.label}
-                      </p>
-                      <p className={`text-sm font-medium ${isToday ? "text-copper" : "text-ink"}`}>
-                        {day.date.getDate()}
-                      </p>
-                    </div>
-                    <ul className="space-y-1.5">
+                    <DayHeader day={day} isToday={isToday} size="md" />
+                    <ul className="space-y-2">
                       {day.items.length === 0 ? (
-                        <li className="px-1 text-[11px] text-ink-muted/70">—</li>
+                        <li className="px-1 text-xs text-ink-muted/70">Пар нет</li>
                       ) : (
                         day.items.map((item) => (
-                          <li
-                            key={item.id}
-                            className={`rounded-lg px-1.5 py-1.5 ${
-                              item.isMoved || item.isCancelled
-                                ? "bg-copper/15 ring-1 ring-copper/35"
-                                : "bg-cream/80"
-                            }`}
-                          >
-                            <p className="text-[10px] font-semibold text-copper">
-                              {item.startTime}–{item.endTime}
-                              {item.isCancelled
-                                ? " · отмена"
-                                : item.isMoved
-                                  ? " · перенос"
-                                  : ""}
-                            </p>
-                            <p className="mt-0.5 text-[11px] font-medium leading-snug text-ink">
-                              {item.title}
-                            </p>
-                            {item.subGroup ? (
-                              <p className="mt-0.5 text-[10px] font-medium text-copper-dark">
-                                {item.subGroup}
-                              </p>
-                            ) : null}
-                            <p className="mt-0.5 text-[10px] leading-snug text-ink-muted">
-                              {[item.room, item.teacher].filter(Boolean).join(" · ")}
-                            </p>
-                          </li>
+                          <LessonCard key={item.id} item={item} />
                         ))
                       )}
                     </ul>
-                  </div>
+                  </section>
                 );
               })}
             </div>
-          </div>
+
+            {/* Desktop / tablet: week grid */}
+            <div className="hidden overflow-x-auto pb-2 md:block">
+              <div className="grid min-w-[720px] grid-cols-7 gap-2">
+                {days.map((day) => {
+                  const isToday = day.iso === todayIso;
+                  return (
+                    <div
+                      key={day.iso}
+                      id={`schedule-day-desk-${day.iso}`}
+                      className={`min-h-[12rem] min-w-0 overflow-hidden rounded-2xl border p-2 ${
+                        isToday
+                          ? "border-copper/40 bg-copper/5 ring-2 ring-copper/30"
+                          : "border-cream-deep bg-white/40"
+                      }`}
+                    >
+                      <DayHeader day={day} isToday={isToday} size="sm" />
+                      <ul className="space-y-1.5">
+                        {day.items.length === 0 ? (
+                          <li className="px-1 text-[11px] text-ink-muted/70">—</li>
+                        ) : (
+                          day.items.map((item) => (
+                            <LessonCard key={item.id} item={item} dense />
+                          ))
+                        )}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
         )
       ) : null}
     </div>

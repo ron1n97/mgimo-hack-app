@@ -194,4 +194,11 @@ export class ClubsController {
       weekly ? 'weekly' : 'default',
     );
   }
+
+  /** Optional: re-run AI/heuristic on PENDING (ingest already classifies). */
+  @Post('staff/digest/ai-classify')
+  @Roles(Role.STAFF, Role.ADMIN)
+  aiClassifyPending(@CurrentUser() user: JwtPayloadUser) {
+    return this.clubs.reclassifyPendingDigest(user.role);
+  }
 }

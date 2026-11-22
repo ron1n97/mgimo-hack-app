@@ -11,20 +11,21 @@ import {
   register,
 } from "@/lib/api";
 import { getToken, getUser, setSession } from "@/lib/auth";
-
+import {
+  FieldInput,
+  PrimaryButton,
+  SurfaceCard,
+} from "@/components/campus";
 
 type Mode = "login" | "register";
 
-/** Build-time hint; production VPS images set this via Dockerfile ARG. */
 const DEMO_LOGIN_BUILD_FLAG =
   process.env.NEXT_PUBLIC_DEMO_LOGIN === "1" ||
   process.env.NEXT_PUBLIC_DEMO_LOGIN === "true";
 
-/** Fallback labels (no emails/passwords) when build flag is on before API responds. */
 const FALLBACK_PERSONAS: DemoPersonaPublic[] = [
   { id: "student-anna", buttonLabel: "Войти как студент Рискова", roleHint: "student" },
   { id: "student-boris", buttonLabel: "Войти как студент Спокойный", roleHint: "student" },
-  { id: "student-roman", buttonLabel: "Войти как студент Гуськов", roleHint: "student" },
   { id: "student-kirill", buttonLabel: "Войти как студент Орлов (МЭО)", roleHint: "student" },
   {
     id: "staff-elena",
@@ -59,14 +60,11 @@ export default function AuthPage() {
     }
   }, [router]);
 
-  // Authoritative gate is the API (DEMO_QUICK_LOGIN). Lets demo VPS enable
-  // buttons without a web rebuild; hides them if API rejects.
   useEffect(() => {
     let cancelled = false;
     fetchDemoPersonas()
       .then((items) => {
         if (cancelled) return;
-        // API is the runtime gate; hide buttons when disabled (even if build flag was on).
         setPersonas(items);
       })
       .catch(() => {
@@ -126,22 +124,21 @@ export default function AuthPage() {
   return (
     <div className="mx-auto flex min-h-[calc(100dvh-2.5rem)] max-w-md flex-col justify-center px-4 py-10">
       <div className="animate-rise">
-        <h1 className="font-serif text-4xl leading-tight text-ink sm:text-5xl">
+        <h1 className="text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
           Деканат<span className="text-copper">+</span>
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-ink-muted">
-          Расписание из RUZ, заявки и учёба — в одном кабинете. Для студентов и
-          сотрудников.
+          Расписание, заявки и учёба — в одном кабинете.
         </p>
       </div>
 
       {showDemo ? (
-        <div className="animate-rise-delay mt-8 rounded-2xl border border-cream-deep/80 bg-white/35 p-4 shadow-soft backdrop-blur-md">
-          <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+        <SurfaceCard className="animate-rise-delay mt-8">
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
             Быстрый вход для стенда
           </p>
           <p className="mt-1 text-sm text-ink-muted">
-            Один тап — кабинет нужной роли. Пароли в приложение не попадают.
+            Один тап — кабинет нужной роли.
           </p>
           <ul className="mt-4 grid gap-2">
             {personas.map((p) => (
@@ -150,23 +147,23 @@ export default function AuthPage() {
                   type="button"
                   disabled={demoBusyId !== null || loading}
                   onClick={() => onDemoPersona(p.id)}
-                  className="w-full rounded-2xl border border-white/60 bg-gradient-to-b from-white/70 to-white/35 px-3 py-3 text-left text-sm font-semibold text-ink shadow-soft backdrop-blur-sm transition hover:from-white/90 hover:to-white/50 active:scale-[0.99] disabled:opacity-60"
+                  className="w-full rounded-lg border border-cream-deep bg-cream px-3 py-3 text-left text-sm font-semibold text-ink transition hover:border-copper/40 hover:bg-white disabled:opacity-60"
                 >
                   {demoBusyId === p.id ? "Входим…" : p.buttonLabel}
                 </button>
               </li>
             ))}
           </ul>
-        </div>
+        </SurfaceCard>
       ) : null}
 
-      <div className="animate-rise-delay mt-6 rounded-2xl border border-cream-deep bg-white/50 p-5 shadow-soft">
-        <div className="mb-5 flex gap-2 rounded-xl bg-cream p-1">
+      <SurfaceCard className="animate-rise-delay mt-6">
+        <div className="mb-5 flex gap-1 rounded-lg bg-cream p-1">
           <button
             type="button"
             onClick={() => setMode("login")}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
-              mode === "login" ? "bg-ink text-cream" : "text-ink-muted"
+            className={`flex-1 rounded-md py-2 text-sm font-medium transition ${
+              mode === "login" ? "bg-white text-ink shadow-sm" : "text-ink-muted"
             }`}
           >
             Вход
@@ -174,8 +171,8 @@ export default function AuthPage() {
           <button
             type="button"
             onClick={() => setMode("register")}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
-              mode === "register" ? "bg-ink text-cream" : "text-ink-muted"
+            className={`flex-1 rounded-md py-2 text-sm font-medium transition ${
+              mode === "register" ? "bg-white text-ink shadow-sm" : "text-ink-muted"
             }`}
           >
             Регистрация
@@ -186,11 +183,10 @@ export default function AuthPage() {
           {mode === "register" ? (
             <label className="block text-sm">
               <span className="text-ink-muted">ФИО</span>
-              <input
+              <FieldInput
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
                 placeholder="Как к вам обращаться"
                 autoComplete="name"
               />
@@ -198,24 +194,22 @@ export default function AuthPage() {
           ) : null}
           <label className="block text-sm">
             <span className="text-ink-muted">Почта</span>
-            <input
+            <FieldInput
               required
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
               placeholder="имя@почта.ru"
               autoComplete="email"
             />
           </label>
           <label className="block text-sm">
             <span className="text-ink-muted">Пароль</span>
-            <input
+            <FieldInput
               required
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-cream-deep bg-cream/40 px-3 py-2.5 outline-none ring-copper/40 focus:ring-2"
               placeholder="не меньше 8 символов"
               autoComplete={
                 mode === "login" ? "current-password" : "new-password"
@@ -226,26 +220,25 @@ export default function AuthPage() {
 
           {error ? (
             <p
-              className="rounded-xl border border-copper/25 bg-copper/5 px-3 py-2 text-sm text-copper-dark"
+              className="rounded-lg border border-accent/25 bg-accent/5 px-3 py-2 text-sm text-accent"
               role="alert"
             >
               {error}
             </p>
           ) : null}
 
-          <button
+          <PrimaryButton
             type="submit"
             disabled={loading || demoBusyId !== null}
-            className="w-full rounded-xl bg-copper py-3 text-sm font-semibold text-cream transition hover:bg-copper-dark disabled:opacity-60"
           >
             {loading
               ? "Секунду…"
               : mode === "login"
                 ? "Войти"
                 : "Создать аккаунт"}
-          </button>
+          </PrimaryButton>
         </form>
-      </div>
+      </SurfaceCard>
     </div>
   );
 }

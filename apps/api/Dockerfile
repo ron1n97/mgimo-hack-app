@@ -31,7 +31,10 @@ COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/apps/api/prisma ./apps/api/prisma
 COPY apps/solver ./apps/solver
+# Digest ML fallback (TF-IDF LogReg, ADR 0020) — pure JS, no torch in api image.
+COPY apps/digest-ml/artifacts/model-tfidf.json ./apps/digest-ml/artifacts/model-tfidf.json
 ENV TIMETABLE_CPSAT_SCRIPT=/app/apps/solver/solve_cpsat.py
+ENV DIGEST_ML_MODEL_PATH=/app/apps/digest-ml/artifacts/model-tfidf.json
 WORKDIR /app/apps/api
 EXPOSE 3001
 # migrate then start

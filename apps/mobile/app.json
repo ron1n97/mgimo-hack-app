@@ -17,7 +17,7 @@
     "android": {
       "package": "plus.dekanat.mobile",
       "adaptiveIcon": {
-        "backgroundColor": "#0B1C2C"
+        "backgroundColor": "#162256"
       }
     },
     "extra": {

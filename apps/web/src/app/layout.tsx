@@ -1,19 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope, Spectral } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import { AppShell } from "@/components/AppShell";
 import { PwaRegister } from "@/components/PwaRegister";
 import "./globals.css";
 
-const manrope = Manrope({
+const montserrat = Montserrat({
   subsets: ["latin", "cyrillic"],
-  variable: "--font-manrope",
-  display: "swap",
-});
-
-const spectral = Spectral({
-  subsets: ["latin", "cyrillic"],
-  weight: ["400", "600", "700"],
-  variable: "--font-spectral",
+  variable: "--font-montserrat",
   display: "swap",
 });
 
@@ -33,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0B1C2C",
+  themeColor: "#162256",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -41,7 +34,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className={`${manrope.variable} ${spectral.variable}`}>
+    <html lang="ru" className={montserrat.variable}>
       <body className="font-sans antialiased">
         <PwaRegister />
         <AppShell>{children}</AppShell>

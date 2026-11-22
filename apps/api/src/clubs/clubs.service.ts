@@ -24,6 +24,7 @@ import {
   SetTagSubscriptionsDto,
   StaffCreateClubDto,
 } from './dto/staff-club.dto';
+import { reclassifyPendingDigest } from './digest-event-classify';
 import {
   syncTelegramDigest,
   type TelegramIngestResult,
@@ -490,8 +491,9 @@ export class ClubsService {
   }
 
   /**
-   * Scrape public t.me/s previews for enabled TELEGRAM sources → PENDING review.
-   * Staff gate = digestEnabled / source.enabled (no Bot API token).
+   * Scrape public t.me/s previews for enabled TELEGRAM sources.
+   * New/PENDING rows get AI+heuristic moderation (APPROVED/REJECTED);
+   * staff UI remains an optional override.
    * `weekly` = mass pull for the current week (more posts per channel).
    */
   async ingestTelegramDigest(
@@ -502,6 +504,14 @@ export class ClubsService {
       this.assertStaff(actorRole);
     }
     return syncTelegramDigest(this.prisma, { mode });
+  }
+
+  /** Re-run AI/heuristic on the PENDING queue (optional staff button). */
+  async reclassifyPendingDigest(actorRole?: string) {
+    if (actorRole !== undefined) {
+      this.assertStaff(actorRole);
+    }
+    return reclassifyPendingDigest(this.prisma);
   }
 
   private assertStaff(actorRole: string) {

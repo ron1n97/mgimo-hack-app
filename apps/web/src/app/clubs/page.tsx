@@ -15,6 +15,7 @@ import {
 import { splitDigestFeed } from "@/lib/digest-split";
 import { summarizeDigestItem } from "@/lib/digest-summary";
 import type { Club, ClubTag, DigestFeedItem, StudentInterests } from "@/lib/types";
+import { PageHeader } from "@/components/campus";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
@@ -208,6 +209,7 @@ export default function ClubsPage() {
 
   return (
     <div className="animate-rise space-y-6">
+      <PageHeader title="Клубы" />
       <div className="flex justify-end">
         <button
           type="button"
@@ -231,10 +233,10 @@ export default function ClubsPage() {
           role="tab"
           aria-selected={tab === "digest"}
           onClick={() => setTab("digest")}
-          className={`flex-1 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
+          className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
             tab === "digest"
-              ? "bg-ink text-cream"
-              : "text-ink-muted hover:bg-white/50 hover:text-ink"
+              ? "bg-cream-deep text-ink"
+              : "text-ink-muted hover:bg-white hover:text-ink"
           }`}
         >
           Дайджест
@@ -249,10 +251,10 @@ export default function ClubsPage() {
           role="tab"
           aria-selected={tab === "catalog"}
           onClick={() => setTab("catalog")}
-          className={`flex-1 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
+          className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
             tab === "catalog"
-              ? "bg-ink text-cream"
-              : "text-ink-muted hover:bg-white/50 hover:text-ink"
+              ? "bg-cream-deep text-ink"
+              : "text-ink-muted hover:bg-white hover:text-ink"
           }`}
         >
           Каталог
@@ -263,7 +265,7 @@ export default function ClubsPage() {
       </div>
 
       <section className="space-y-3">
-        <h2 className="font-serif text-xl text-ink">Мои интересы</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-ink">Мои интересы</h2>
         <div className="flex flex-wrap gap-2">
           {tags.map((tag) => {
             const on = subscribedTagIds.has(tag.id);
@@ -273,10 +275,10 @@ export default function ClubsPage() {
                 type="button"
                 disabled={busy}
                 onClick={() => void toggleTagInterest(tag)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                className={`rounded-md px-3 py-1 text-xs font-medium transition ${
                   on
-                    ? "bg-ink text-cream"
-                    : "border border-cream-deep bg-white/40 text-ink-muted hover:text-ink"
+                    ? "bg-cream-deep text-ink"
+                    : "border border-cream-deep bg-white text-ink-muted hover:text-ink"
                 }`}
               >
                 {tag.name}
@@ -295,7 +297,7 @@ export default function ClubsPage() {
       {!loading && !error && tab === "digest" ? (
         <div className="space-y-8">
           <section className="space-y-3">
-            <h2 className="font-serif text-xl text-ink">Ежедневный дайджест</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-ink">Ежедневный дайджест</h2>
             {todayFeed.length === 0 ? (
               <p className="text-sm text-ink-muted">
                 На сегодня анонсов нет
@@ -314,7 +316,7 @@ export default function ClubsPage() {
           </section>
 
           <section id="weekly-digest" className="scroll-mt-28 space-y-3">
-            <h2 className="font-serif text-xl text-ink">Недельный дайджест</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-ink">Недельный дайджест</h2>
             {weekFeed.length === 0 ? (
               <p className="text-sm text-ink-muted">На этой неделе пока пусто.</p>
             ) : (
@@ -327,7 +329,7 @@ export default function ClubsPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="font-serif text-xl text-ink">Лента по интересам</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-ink">Лента по интересам</h2>
             {interestFeed.length === 0 ? (
               <EmptyState
                 title="Пока пусто"
@@ -399,7 +401,7 @@ export default function ClubsPage() {
 
           <section className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-serif text-xl text-ink">Каталог</h2>
+              <h2 className="text-lg font-semibold tracking-tight text-ink">Каталог</h2>
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -492,10 +494,10 @@ export default function ClubsPage() {
                             type="button"
                             disabled={busy}
                             onClick={() => void toggleClubSub(club)}
-                            className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold ${
+                            className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold ${
                               sub
-                                ? "border border-ink/20 text-ink"
-                                : "bg-ink text-cream"
+                                ? "border border-cream-deep text-ink"
+                                : "bg-copper text-white"
                             }`}
                           >
                             {sub ? "Отписаться" : "В интересы"}

@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { syncRuz } from './sync/sync-ruz';
 import { ingestDigest } from './digest/ingest-digest';
 import { syncTelegramDigestLocal } from './digest/sync-telegram-local';
+import { reclassifyPendingDigest } from './digest/digest-event-classify';
 import { disconnectPrisma, getPrisma } from './db';
 import { writeFile } from 'node:fs/promises';
 
@@ -116,6 +117,8 @@ async function main(): Promise<void> {
   console.log(`[worker] scheduling TG digest with cron "${DIGEST_TG_CRON}"`);
   await runSync('boot');
   await runDigest('boot');
+  // Drain PENDING via AI/heuristic (staff override stays optional).
+  await maybeBootAiClassify();
   // One-shot deep scrape only when the review/feed queue is empty (cold start).
   await maybeBootWeeklyMassPull();
 
@@ -136,6 +139,17 @@ async function main(): Promise<void> {
   cron.schedule(tgExpr, () => {
     void runTgDigest('cron');
   });
+}
+
+async function maybeBootAiClassify(): Promise<void> {
+  if (!process.env.DATABASE_URL) return;
+  try {
+    const prisma = getPrisma();
+    const result = await reclassifyPendingDigest(prisma);
+    console.log('[worker] digest AI classify:', JSON.stringify(result));
+  } catch (err) {
+    console.error('[worker] digest AI classify failed', err);
+  }
 }
 
 /** Cold start only — not a recurring Monday job. */

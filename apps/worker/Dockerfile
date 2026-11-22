@@ -30,5 +30,7 @@ COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/apps/worker/dist ./apps/worker/dist
 COPY --from=build /app/apps/worker/package.json ./apps/worker/package.json
 COPY --from=build /app/apps/api/prisma ./apps/api/prisma
+COPY apps/digest-ml/artifacts/model-tfidf.json ./apps/digest-ml/artifacts/model-tfidf.json
+ENV DIGEST_ML_MODEL_PATH=/app/apps/digest-ml/artifacts/model-tfidf.json
 WORKDIR /app/apps/worker
 CMD ["node", "dist/index.js"]

@@ -4,6 +4,13 @@ import {
   PrismaClient,
 } from '@prisma/client';
 import {
+  classifyDigestPost,
+  improveDigestTitle,
+  type DigestClassifyInput,
+  type DigestClassifyLlmOpts,
+  type DigestClassifyResult,
+} from './digest-event-classify';
+import {
   parseTelegramPreviewHtml,
   telegramPreviewUrl,
   type TelegramPreviewPost,
@@ -30,6 +37,14 @@ export type TelegramIngestOptions = {
   now?: Date;
   /** When true, demote seeded demo stubs after a successful ingest. */
   retireDemoStubs?: boolean;
+  /**
+   * AI/heuristic moderation for new + still-PENDING rows.
+   * Staff APPROVED/REJECTED are never overwritten here.
+   */
+  classifyPost?: (
+    input: DigestClassifyInput,
+  ) => Promise<DigestClassifyResult> | DigestClassifyResult;
+  classifyLlm?: DigestClassifyLlmOpts;
 };
 
 export function resolveTelegramIngestLimits(
@@ -53,6 +68,10 @@ export type TelegramIngestResult = {
   /** Existing post URL already owned by another club/source — do not reassign. */
   postsSkippedForeign: number;
   stubsRetired: number;
+  /** New/PENDING rows AI or heuristic set to APPROVED. */
+  postsAiApproved: number;
+  /** New/PENDING rows AI or heuristic set to REJECTED. */
+  postsAiRejected: number;
   errors: Array<{ sourceId: string; url: string; error: string }>;
 };
 
@@ -125,6 +144,10 @@ export async function syncTelegramDigest(
   const fetchHtml = opts.fetchHtml ?? defaultFetchTelegramHtml;
   const now = opts.now ?? new Date();
   const retireDemoStubs = opts.retireDemoStubs ?? true;
+  const resolveStatus = async (input: DigestClassifyInput) => {
+    if (opts.classifyPost) return opts.classifyPost(input);
+    return classifyDigestPost(input, opts.classifyLlm ?? {});
+  };
 
   const sources = await prisma.clubSource.findMany({
     where: {
@@ -144,6 +167,8 @@ export async function syncTelegramDigest(
     postsSkippedRejected: 0,
     postsSkippedForeign: 0,
     stubsRetired: 0,
+    postsAiApproved: 0,
+    postsAiRejected: 0,
     errors: [],
   };
 
@@ -182,12 +207,13 @@ export async function syncTelegramDigest(
           continue;
         }
 
-        // Content fields always refresh; status: new → PENDING (staff review),
-        // existing keep status (do not auto-reapprove after reject).
+        // Content always refreshes. Status: AI/heuristic for new + PENDING;
+        // staff APPROVED stays; REJECTED already skipped above.
+        const title = improveDigestTitle(post.title, post.body || null);
         const content = {
           clubId: source.clubId,
           sourceId: source.id,
-          title: post.title,
+          title,
           body: post.body || null,
           url: post.url,
           imageUrl: post.imageUrl,
@@ -195,17 +221,50 @@ export async function syncTelegramDigest(
           startsAt: post.eventAt ?? post.publishedAt,
           publishedAt: post.publishedAt,
         };
+        const mayClassify =
+          !existing ||
+          existing.moderationStatus === EventModerationStatus.PENDING;
+        let nextStatus: EventModerationStatus | undefined;
+        if (mayClassify) {
+          const classified = await resolveStatus({
+            title,
+            body: post.body || null,
+          });
+          nextStatus = classified.status;
+          if (nextStatus === EventModerationStatus.APPROVED) {
+            result.postsAiApproved += 1;
+          } else if (nextStatus === EventModerationStatus.REJECTED) {
+            result.postsAiRejected += 1;
+          }
+        }
         if (existing) {
           await prisma.eventCandidate.update({
             where: { id: existing.id },
-            data: content,
+            data: {
+              ...content,
+              ...(nextStatus
+                ? {
+                    moderationStatus: nextStatus,
+                    moderatedAt:
+                      nextStatus === EventModerationStatus.PENDING
+                        ? null
+                        : now,
+                  }
+                : {}),
+            },
           });
         } else {
           try {
             await prisma.eventCandidate.create({
               data: {
                 ...content,
-                moderationStatus: EventModerationStatus.PENDING,
+                moderationStatus:
+                  nextStatus ?? EventModerationStatus.PENDING,
+                moderatedAt:
+                  nextStatus &&
+                  nextStatus !== EventModerationStatus.PENDING
+                    ? now
+                    : null,
               },
             });
           } catch (err) {
@@ -236,9 +295,22 @@ export async function syncTelegramDigest(
               result.postsSkippedForeign += 1;
               continue;
             }
+            const raceMayClassify =
+              raced.moderationStatus === EventModerationStatus.PENDING;
             await prisma.eventCandidate.update({
               where: { id: raced.id },
-              data: content,
+              data: {
+                ...content,
+                ...(raceMayClassify && nextStatus
+                  ? {
+                      moderationStatus: nextStatus,
+                      moderatedAt:
+                        nextStatus === EventModerationStatus.PENDING
+                          ? null
+                          : now,
+                    }
+                  : {}),
+              },
             });
           }
         }

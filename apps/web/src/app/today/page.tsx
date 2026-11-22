@@ -6,6 +6,14 @@ import { ApiError, fetchToday } from "@/lib/api";
 import { getUser } from "@/lib/auth";
 import { summarizeDigestItem } from "@/lib/digest-summary";
 import type { TodayHub, User } from "@/lib/types";
+import {
+  ListPanel,
+  ListRow,
+  NowChip,
+  PageHeader,
+  SectionHeader,
+  SurfaceCard,
+} from "@/components/campus";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
@@ -40,20 +48,25 @@ export default function TodayPage() {
     (user.role === "student" || user.role === "staff" || user.role === "admin");
 
   return (
-    <div className="animate-rise space-y-6">
+    <div className="animate-rise space-y-8">
+      <PageHeader
+        title="Сегодня"
+        action={{ href: "/schedule", label: "Неделя →" }}
+      />
+
       {needsGroup ? (
         <p className="text-sm text-ink-muted">
           {user?.role === "student" ? (
             <>
               Группа ещё не привязана — откройте{" "}
-              <Link href="/profile" className="text-copper underline-offset-2 hover:underline">
+              <Link href="/profile" className="font-medium text-link hover:underline">
                 профиль
               </Link>
               .
             </>
           ) : (
             <>
-              <Link href="/profile" className="text-copper underline-offset-2 hover:underline">
+              <Link href="/profile" className="font-medium text-link hover:underline">
                 Выберите группу в профиле
               </Link>
               , чтобы видеть пары.
@@ -68,12 +81,7 @@ export default function TodayPage() {
       {!loading && !error && data ? (
         <>
           <section>
-            <div className="mb-3 flex items-end justify-between gap-3">
-              <h2 className="font-serif text-xl text-ink">Пары сегодня</h2>
-              <Link href="/schedule" className="text-sm text-copper">
-                Календарь недели →
-              </Link>
-            </div>
+            <SectionHeader title="Пары сегодня" />
 
             {data.lessons.length === 0 ? (
               <EmptyState
@@ -81,39 +89,22 @@ export default function TodayPage() {
                 description="Можно дышать — или откройте календарь на неделю."
               />
             ) : (
-              <ul className="space-y-3">
+              <ListPanel>
                 {data.lessons.map((lesson) => {
                   const isNext = data.nextLesson?.id === lesson.id;
                   return (
-                    <li
-                      key={lesson.id}
-                      className={`rounded-2xl border px-4 py-4 ${
-                        isNext
-                          ? "border-copper/40 bg-ink text-cream shadow-soft"
-                          : "border-cream-deep bg-white/50"
-                      }`}
-                    >
-                      <p
-                        className={`text-xs font-medium uppercase tracking-wide ${
-                          isNext ? "text-copper" : "text-copper"
-                        }`}
-                      >
-                        {lesson.startTime}–{lesson.endTime}
-                        {lesson.kind ? ` · ${lesson.kind}` : ""}
-                        {isNext ? " · сейчас / следующая" : ""}
-                      </p>
-                      <h3
-                        className={`mt-1 font-serif text-lg ${
-                          isNext ? "text-cream" : "text-ink"
-                        }`}
-                      >
+                    <ListRow key={lesson.id} active={isNext}>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-copper">
+                          {lesson.startTime}–{lesson.endTime}
+                          {lesson.kind ? ` · ${lesson.kind}` : ""}
+                        </p>
+                        {isNext ? <NowChip /> : null}
+                      </div>
+                      <h3 className="mt-1 text-base font-semibold text-ink">
                         {lesson.title}
                       </h3>
-                      <p
-                        className={`mt-2 text-sm ${
-                          isNext ? "text-cream/80" : "text-ink-muted"
-                        }`}
-                      >
+                      <p className="mt-1 text-sm text-ink-muted">
                         {[
                           lesson.room
                             ? `ауд. ${lesson.room}${lesson.building ? `, ${lesson.building}` : ""}`
@@ -123,24 +114,25 @@ export default function TodayPage() {
                           .filter(Boolean)
                           .join(" · ") || "Преподаватель и кабинет уточняются"}
                       </p>
-                    </li>
+                    </ListRow>
                   );
                 })}
-              </ul>
+              </ListPanel>
             )}
           </section>
 
           <section>
-            <div className="mb-3 flex items-end justify-between gap-3">
-              <h2 className="font-serif text-xl text-ink">Ежедневный дайджест</h2>
-              <Link href="/clubs" className="text-sm text-copper">
-                Все →
-              </Link>
-            </div>
+            <SectionHeader
+              title="Дайджест"
+              action={{ href: "/clubs", label: "Все →" }}
+            />
             {data.clubEventsToday.length === 0 ? (
               <p className="text-sm text-ink-muted">
                 На сегодня анонсов нет.{" "}
-                <Link href="/clubs#weekly-digest" className="text-copper underline-offset-2 hover:underline">
+                <Link
+                  href="/clubs#weekly-digest"
+                  className="font-medium text-link hover:underline"
+                >
                   Недельный дайджест
                 </Link>
                 {data.clubDigestWeek.items.length
@@ -148,15 +140,12 @@ export default function TodayPage() {
                   : ""}
               </p>
             ) : (
-              <ul className="space-y-2">
+              <ListPanel>
                 {data.clubEventsToday.map((ev) => {
                   const s = summarizeDigestItem(ev);
                   const when = [s.day, s.time].filter(Boolean).join(", ");
                   return (
-                    <li
-                      key={ev.id}
-                      className="rounded-xl border border-cream-deep bg-white/40 px-4 py-3"
-                    >
+                    <ListRow key={ev.id}>
                       <p className="text-xs text-ink-muted">
                         {[s.club, when].filter(Boolean).join(" · ")}
                       </p>
@@ -167,7 +156,7 @@ export default function TodayPage() {
                             href={s.registrationUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-copper underline-offset-2 hover:underline"
+                            className="font-medium text-link hover:underline"
                           >
                             Регистрация
                           </a>
@@ -177,23 +166,26 @@ export default function TodayPage() {
                             href={s.postUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-copper underline-offset-2 hover:underline"
+                            className="font-medium text-link hover:underline"
                           >
                             Пост →
                           </a>
                         ) : null}
                       </div>
-                    </li>
+                    </ListRow>
                   );
                 })}
-              </ul>
+              </ListPanel>
             )}
             {data.clubDigestWeek.items.length > 0 ? (
-              <div className="mt-3 rounded-xl border border-dashed border-cream-deep bg-cream/30 px-4 py-3">
+              <div className="mt-3 rounded-xl border border-dashed border-cream-deep bg-cream px-4 py-3">
                 <p className="text-sm text-ink">
                   Недельный дайджест · {data.clubDigestWeek.items.length}
                 </p>
-                <Link href="/clubs#weekly-digest" className="mt-1 inline-block text-sm text-copper">
+                <Link
+                  href="/clubs#weekly-digest"
+                  className="mt-1 inline-block text-sm font-medium text-link hover:underline"
+                >
                   Открыть сводку →
                 </Link>
               </div>
@@ -202,50 +194,48 @@ export default function TodayPage() {
 
           {data.importantUnread.length > 0 ? (
             <section aria-label="Важные непрочитанные">
-              <div className="mb-2 flex items-end justify-between gap-3">
-                <h2 className="font-serif text-xl text-ink">Важно сейчас</h2>
-                <Link href="/notifications" className="text-sm text-copper">
-                  Вся лента →
-                </Link>
-              </div>
-              <ul className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+              <SectionHeader
+                title="Важно сейчас"
+                action={{ href: "/notifications", label: "Вся лента →" }}
+              />
+              <ListPanel>
                 {data.importantUnread.map((n) => (
-                  <li key={n.id} className="min-w-[14rem] max-w-[18rem] shrink-0">
-                    <Link
-                      href={`/notifications/${n.id}`}
-                      className="block rounded-2xl border border-copper/25 bg-white/70 px-3 py-3 transition hover:border-copper/50"
-                    >
-                      <p className="text-[10px] uppercase tracking-wide text-copper">
-                        {n.kind?.startsWith("grade_")
-                          ? "Оценка"
-                          : n.kind?.startsWith("digest_")
-                            ? "Дайджест"
-                            : "Событие"}
-                      </p>
-                      <p className="mt-1 line-clamp-2 font-medium text-ink">{n.title}</p>
-                      <p className="mt-1 line-clamp-2 text-xs text-ink-muted">{n.body}</p>
-                    </Link>
-                  </li>
+                  <ListRow key={n.id} href={`/notifications/${n.id}`}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-accent">
+                      {n.kind?.startsWith("grade_")
+                        ? "Оценка"
+                        : n.kind?.startsWith("digest_")
+                          ? "Дайджест"
+                          : "Событие"}
+                    </p>
+                    <p className="mt-1 line-clamp-2 font-medium text-ink">{n.title}</p>
+                    <p className="mt-1 line-clamp-2 text-xs text-ink-muted">{n.body}</p>
+                  </ListRow>
                 ))}
-              </ul>
+              </ListPanel>
             </section>
           ) : null}
+
           <div className="grid gap-3 sm:grid-cols-2">
-            <Link
-              href="/requests"
-              className="rounded-2xl border border-cream-deep bg-white/50 p-4 transition hover:border-copper/40"
-            >
-              <p className="text-xs uppercase tracking-wide text-ink-muted">Заявки</p>
-              <p className="mt-2 font-serif text-3xl text-ink">{data.openRequests}</p>
-              <p className="mt-1 text-sm text-ink-muted">открытых</p>
+            <Link href="/requests">
+              <SurfaceCard className="transition hover:border-copper/40">
+                <p className="text-xs uppercase tracking-wide text-ink-muted">Заявки</p>
+                <p className="mt-2 text-3xl font-semibold tabular-nums text-ink">
+                  {data.openRequests}
+                </p>
+                <p className="mt-1 text-sm text-ink-muted">открытых</p>
+              </SurfaceCard>
             </Link>
-            <Link
-              href="/notifications"
-              className="rounded-2xl border border-cream-deep bg-white/50 p-4 transition hover:border-copper/40"
-            >
-              <p className="text-xs uppercase tracking-wide text-ink-muted">Уведомления</p>
-              <p className="mt-2 font-serif text-3xl text-ink">{data.unreadNotifications}</p>
-              <p className="mt-1 text-sm text-ink-muted">непрочитанных</p>
+            <Link href="/notifications">
+              <SurfaceCard className="transition hover:border-copper/40">
+                <p className="text-xs uppercase tracking-wide text-ink-muted">
+                  Уведомления
+                </p>
+                <p className="mt-2 text-3xl font-semibold tabular-nums text-ink">
+                  {data.unreadNotifications}
+                </p>
+                <p className="mt-1 text-sm text-ink-muted">непрочитанных</p>
+              </SurfaceCard>
             </Link>
           </div>
         </>

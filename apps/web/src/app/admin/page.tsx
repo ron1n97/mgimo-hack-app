@@ -61,13 +61,13 @@ export default function AdminPage() {
                 className="rounded-2xl border border-cream-deep bg-white/50 px-4 py-4"
               >
                 <p className="text-xs uppercase tracking-wide text-ink-muted">{label}</p>
-                <p className="mt-2 font-serif text-3xl text-ink">{value}</p>
+                <p className="mt-2 text-3 font-semiboldxl text-ink">{value}</p>
               </div>
             ))}
           </div>
 
           <section>
-            <h2 className="font-serif text-xl text-ink">Пользователи</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-ink">Пользователи</h2>
             <ul className="mt-3 divide-y divide-cream-deep overflow-hidden rounded-2xl border border-cream-deep bg-white/50">
               {data.users.map((u) => (
                 <li key={u.id} className="flex items-center justify-between gap-3 px-4 py-3">

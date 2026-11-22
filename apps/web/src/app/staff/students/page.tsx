@@ -224,7 +224,7 @@ export default function StaffStudentsPage() {
         <section className="space-y-3 rounded-2xl border border-cream-deep bg-white/60 p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="font-serif text-xl text-ink">Заявления</h2>
+              <h2 className="text-lg font-semibold tracking-tight text-ink">Заявления</h2>
               <p className="text-sm text-ink-muted">{draft.fullName}</p>
             </div>
             <button
@@ -266,7 +266,7 @@ export default function StaffStudentsPage() {
           className="space-y-3 rounded-2xl border border-cream-deep bg-white/60 p-5"
         >
           <div className="flex items-start justify-between gap-3">
-            <h2 className="font-serif text-xl text-ink">Карточка</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-ink">Карточка</h2>
             <button
               type="button"
               onClick={() => setPanel("requests")}

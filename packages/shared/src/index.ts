@@ -154,12 +154,6 @@ export const DEMO_ACCOUNTS = [
     note: 'Студент B — спокойный',
   },
   {
-    email: 'roman.guskov@demo.local',
-    password: 'Demo123!',
-    phone: '+79005555555',
-    note: 'Студент — Гуськов Р.Д.',
-  },
-  {
     email: 'staff@demo.local',
     password: 'Demo123!',
     phone: '+79003333333',
@@ -186,11 +180,6 @@ export const DEMO_PERSONAS = [
     roleHint: 'student',
   },
   {
-    id: 'student-roman',
-    buttonLabel: 'Войти как студент Гуськов',
-    roleHint: 'student',
-  },
-  {
     id: 'student-kirill',
     buttonLabel: 'Войти как студент Орлов (МЭО)',
     roleHint: 'student',
@@ -207,12 +196,21 @@ export const DEMO_PERSONAS = [
   },
 ] as const;
 
-/** Shared visual tokens (web + mobile) */
+/**
+ * Shared visual tokens (web + mobile + PWA).
+ * Concept A «Кампус» × MGIMO official logo/CSS (mgimo.ru/about/logo) —
+ * palette only; no university crest in product chrome.
+ * Token names kept for class/API stability (cream≈surface, copper≈primary).
+ */
 export const BRAND_COLORS = {
-  ink: '#0B1C2C',
-  cream: '#F3EADC',
-  copper: '#C45C26',
-  copperDark: '#9A4519',
-  inkMuted: '#3A4F63',
-  creamDeep: '#E8D9C4',
+  ink: '#162256',
+  cream: '#F3F4F8',
+  copper: '#18488B',
+  copperDark: '#123A6E',
+  inkMuted: '#5A6478',
+  creamDeep: '#E8EAF2',
+  /** Logo red — status chips / tertiary emphasis */
+  accent: '#C32827',
+  /** Logo grid blue — links */
+  link: '#1586C8',
 } as const;

@@ -76,4 +76,13 @@ describe('demo persona catalog', () => {
     expect(findDemoPersona('student-daria')).toBeUndefined();
     expect(findDemoPersona('nope')).toBeUndefined();
   });
+
+  it('does not expose student Guskov as a quick-login persona', () => {
+    expect(findDemoPersona('student-roman')).toBeUndefined();
+    expect(
+      publicDemoPersonas().some(
+        (p) => p.id === 'student-roman' || /Гуськов/i.test(p.buttonLabel),
+      ),
+    ).toBe(false);
+  });
 });

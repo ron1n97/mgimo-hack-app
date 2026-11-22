@@ -41,7 +41,7 @@ export default function GradesPage() {
         <>
           {debts.length > 0 ? (
             <section className="space-y-2">
-              <h2 className="font-serif text-xl text-ink">Долги</h2>
+              <h2 className="text-lg font-semibold tracking-tight text-ink">Долги</h2>
               <ul className="divide-y divide-copper/20 overflow-hidden rounded-2xl border border-copper/30 bg-copper/5">
                 {debts.map((item) => (
                   <li
@@ -56,7 +56,7 @@ export default function GradesPage() {
                         {item.lessonHint ? ` · ${item.lessonHint}` : ""}
                       </p>
                     </div>
-                    <span className="font-serif text-2xl text-copper">{item.value}</span>
+                    <span className="text-2 font-semiboldxl text-copper">{item.value}</span>
                   </li>
                 ))}
               </ul>
@@ -64,7 +64,7 @@ export default function GradesPage() {
           ) : null}
 
           <section className="space-y-2">
-            <h2 className="font-serif text-xl text-ink">Оценки и зачёты</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-ink">Оценки и зачёты</h2>
             {grades.length === 0 ? (
               <EmptyState
                 title="Пока нет оценок"
@@ -86,7 +86,7 @@ export default function GradesPage() {
                         {item.lessonHint ? ` · ${item.lessonHint}` : ""}
                       </p>
                     </div>
-                    <span className="min-w-[2.5rem] text-right font-serif text-2xl text-copper">
+                    <span className="min-w-[2.5rem] text-right text-2 font-semiboldxl text-copper">
                       {item.value}
                     </span>
                   </li>

@@ -1145,6 +1145,8 @@ export async function ingestTelegramDigest(
   sourcesOk: number;
   postsUpserted: number;
   postsSkippedRejected?: number;
+  postsAiApproved?: number;
+  postsAiRejected?: number;
   stubsRetired: number;
   errors: Array<{ sourceId: string; url: string; error: string }>;
 }> {
@@ -1153,6 +1155,15 @@ export async function ingestTelegramDigest(
     method: "POST",
     body: {},
   });
+}
+
+export async function aiClassifyPendingDigest(): Promise<{
+  scanned: number;
+  approved: number;
+  rejected: number;
+  leftPending: number;
+}> {
+  return request("/staff/digest/ai-classify", { method: "POST", body: {} });
 }
 
 export type StaffDigestEvent = {

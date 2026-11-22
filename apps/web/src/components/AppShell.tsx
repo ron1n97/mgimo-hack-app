@@ -69,7 +69,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh bg-cream text-ink">
       <DisclaimerBanner />
-      <header className="border-b border-cream-deep/80 bg-cream/90 backdrop-blur">
+      <header className="border-b border-cream-deep bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
           <Link
             href={
@@ -81,7 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             }
             className="group"
           >
-            <span className="font-serif text-xl tracking-tight text-ink sm:text-2xl">
+            <span className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">
               Деканат<span className="text-copper">+</span>
             </span>
           </Link>
@@ -100,8 +100,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`rounded-lg px-3 py-1.5 text-sm transition ${
-                    active ? "bg-ink text-cream" : "text-ink-muted hover:bg-cream-deep/60 hover:text-ink"
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                    active
+                      ? "bg-cream-deep text-ink"
+                      : "text-ink-muted hover:bg-cream hover:text-ink"
                   }`}
                 >
                   {link.label}
@@ -111,10 +113,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {user?.role === "admin" ? (
               <Link
                 href="/admin"
-                className={`rounded-lg px-3 py-1.5 text-sm transition ${
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
                   pathname.startsWith("/admin")
-                    ? "bg-copper text-cream"
-                    : "text-ink-muted hover:bg-cream-deep/60 hover:text-ink"
+                    ? "bg-copper text-white"
+                    : "text-ink-muted hover:bg-cream hover:text-ink"
                 }`}
               >
                 Админ

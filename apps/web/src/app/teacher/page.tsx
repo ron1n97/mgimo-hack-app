@@ -111,7 +111,7 @@ export default function TeacherCabinetPage() {
       {!loading ? (
         <>
           <section className="space-y-3">
-            <h2 className="font-serif text-xl text-ink">Мои слоты</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-ink">Мои слоты</h2>
             {slots.length === 0 ? (
               <EmptyState
                 title="Нет закреплённых пар"
@@ -157,7 +157,7 @@ export default function TeacherCabinetPage() {
           </section>
 
           <section className="rounded-2xl border border-cream-deep bg-white/50 p-4">
-            <h2 className="font-serif text-xl text-ink">Новое задание</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-ink">Новое задание</h2>
             <form onSubmit={onCreate} className="mt-3 space-y-3">
               <label className="block text-sm">
                 <span className="text-ink-muted">К слоту (assignment)</span>
@@ -218,7 +218,7 @@ export default function TeacherCabinetPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="font-serif text-xl text-ink">Мои задания</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-ink">Мои задания</h2>
             {tasks.length === 0 ? (
               <EmptyState title="Пока пусто" description="Создайте задание к слоту." />
             ) : (

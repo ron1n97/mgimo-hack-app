@@ -160,7 +160,7 @@ export default function NewRequestPage() {
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={14}
-            className="w-full rounded-xl border border-cream-deep bg-[#fbf8f1] px-4 py-3 font-serif text-[15px] leading-relaxed text-ink outline-none ring-copper/40 focus:ring-2"
+            className="w-full rounded-xl border border-cream-deep bg-white px-4 py-3 text-[15px] leading-relaxed text-ink outline-none ring-copper/40 focus:ring-2"
             placeholder="Текст официального заявления…"
             spellCheck
           />

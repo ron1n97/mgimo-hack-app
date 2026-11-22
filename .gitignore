@@ -39,3 +39,9 @@ scripts/logs/
 # agent worktrees / local Claude
 .claude/
 .gstack/
+
+# digest-ml local
+apps/digest-ml/.venv/
+apps/digest-ml/.hf-cache/
+*.tsbuildinfo
+__pycache__/

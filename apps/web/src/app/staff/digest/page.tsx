@@ -5,6 +5,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ApiError,
+  aiClassifyPendingDigest,
   fetchStaffDigestEvents,
   ingestTelegramDigest,
   updateStaffDigestEvent,
@@ -96,19 +97,43 @@ export default function StaffDigestPage() {
     return n ? `${n}` : "0";
   }, [items.length]);
 
+  async function onAiClassify() {
+    setBusyId("ai-classify");
+    setError(null);
+    setIngestInfo(null);
+    try {
+      const result = await aiClassifyPendingDigest();
+      setIngestInfo(
+        `ИИ: просмотрено ${result.scanned}, в ленту +${result.approved}, отклонено ${result.rejected}, спорных ${result.leftPending}.`,
+      );
+      await load(tab);
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Не удалось прогнать ИИ",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function onIngest(mode: "default" | "weekly" = "default") {
     setBusyId(mode === "weekly" ? "ingest-weekly" : "ingest");
     setError(null);
     setIngestInfo(null);
     try {
       const result = await ingestTelegramDigest(mode);
+      const aiOk =
+        typeof result.postsAiApproved === "number"
+          ? `, ИИ: +${result.postsAiApproved} в ленту / −${result.postsAiRejected ?? 0}`
+          : "";
       setIngestInfo(
         `${mode === "weekly" ? "Недельная стяжка" : "TG"}: ${result.sourcesOk}/${result.sourcesTried} источников, постов ${result.postsUpserted}` +
+          aiOk +
           (result.errors.length ? `, ошибок ${result.errors.length}` : "") +
-          " — новые во вкладке «На проверке».",
+          " — спорные остаются «На проверке» (опционально).",
       );
-      setTab("PENDING");
-      await load("PENDING");
+      setTab("APPROVED");
+      await load("APPROVED");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось стянуть TG");
     } finally {
@@ -168,12 +193,20 @@ export default function StaffDigestPage() {
     <div className="animate-rise mx-auto max-w-3xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-ink-muted">
-          Проверка мероприятий для студенческого дайджеста.{" "}
+          ИИ сам пускает мероприятия в ленту; сюда — только спорные и ручной override.{" "}
           <Link href="/staff/clubs" className="text-copper underline-offset-2 hover:underline">
             Клубы и источники
           </Link>
         </p>
         <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={Boolean(busyId)}
+            onClick={() => void onAiClassify()}
+            className="rounded-xl border border-cream-deep bg-white/70 px-3.5 py-2 text-sm font-semibold text-ink disabled:opacity-50"
+          >
+            {busyId === "ai-classify" ? "ИИ…" : "ИИ по очереди"}
+          </button>
           <button
             type="button"
             disabled={busyId === "ingest" || busyId === "ingest-weekly"}
@@ -230,7 +263,7 @@ export default function StaffDigestPage() {
           title="Пусто"
           description={
             tab === "PENDING"
-              ? "Стяните посты из Telegram — новые окажутся здесь на проверку."
+              ? "Очередь пуста — ИИ уже разобрал спорные, либо стяните TG ещё раз."
               : "В этой вкладке пока нет записей."
           }
         />

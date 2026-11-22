@@ -86,7 +86,7 @@ export function PushPrompt() {
   return (
     <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 px-3 md:bottom-4 md:left-auto md:right-4 md:max-w-sm">
       <div className="rounded-2xl border border-copper/30 bg-ink px-4 py-3 text-cream shadow-soft">
-        <p className="font-serif text-lg leading-snug">
+        <p className="text-lg leading-snug">
           Уведомления на телефон
         </p>
         <p className="mt-1 text-xs leading-relaxed text-cream/75">
